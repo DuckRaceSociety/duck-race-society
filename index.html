@@ -1,61 +1,26 @@
 <!DOCTYPE html>
 <html>
 <head>
-
-<title>Duck Race Society TRC</title>
-
+<title>Duck Race Society 🦆</title>
 <style>
-
 body{
 font-family:Arial;
+text-align:center;
 background:#0f172a;
 color:white;
-text-align:center;
-margin:0;
-}
-
-header{
-background:#020617;
-padding:20px;
 }
 
 h1{
 color:#facc15;
 }
 
-nav{
-margin-top:10px;
-}
-
-nav a{
-color:white;
-margin:15px;
-text-decoration:none;
-font-size:18px;
-}
-
-.hero{
-padding:60px;
-}
-
-button{
-padding:15px 30px;
-font-size:18px;
-margin:10px;
-cursor:pointer;
-}
-
-.section{
-padding:60px;
-}
-
 .track{
-width:80%;
+width:90%;
 height:300px;
-border:4px solid white;
+border:3px solid white;
 margin:auto;
 position:relative;
-background:#1e293b;
+overflow:hidden;
 }
 
 .duck{
@@ -64,96 +29,27 @@ font-size:30px;
 left:0;
 }
 
-.finish{
-position:absolute;
-right:0;
-height:100%;
-width:5px;
-background:red;
+button{
+padding:10px 20px;
+font-size:18px;
+margin:10px;
+cursor:pointer;
 }
-
-#winner{
-font-size:24px;
-margin-top:20px;
-color:#22c55e;
-}
-
-footer{
-background:#020617;
-padding:20px;
-margin-top:50px;
-}
-
 </style>
-
 </head>
 
 <body>
 
-<header>
+<h1>Duck Race Society (TRC) 🦆🔥</h1>
 
-<h1>Duck Race Society 🦆🔥</h1>
+<p>Enter your wallet to join the race</p>
 
-<nav>
-<a href="#mint">Mint</a>
-<a href="#race">Duck Race</a>
-<a href="#collection">Collection</a>
-<a href="#stream">Livestream</a>
-</nav>
-
-</header>
-
-<div class="hero">
-
-<h2>Mint your Duck. Join the Race. Win SOL.</h2>
-
-<button>Mint TRC NFT</button>
-
-<button onclick="scrollToRace()">Join Duck Race</button>
-
-</div>
-
-<div class="section" id="race">
-
-<h2>Duck Race Arena 🦆</h2>
-
-<input id="wallet" placeholder="Enter Wallet">
-
+<input id="wallet" placeholder="Enter Wallet Address">
 <button onclick="addDuck()">Join Race</button>
 
-<div class="track" id="track">
-
-<div class="finish"></div>
-
-</div>
+<div class="track" id="track"></div>
 
 <button onclick="startRace()">Start Race</button>
-
-<div id="winner"></div>
-
-</div>
-
-<div class="section" id="collection">
-
-<h2>TRC NFT Collection</h2>
-
-<p>Epic • Rare • Legendary Ducks</p>
-
-</div>
-
-<div class="section" id="stream">
-
-<h2>Live Duck Race Stream</h2>
-
-<p>Watch races live on YouTube or Twitch.</p>
-
-</div>
-
-<footer>
-
-Duck Race Society TRC ©
-
-</footer>
 
 <script>
 
@@ -164,19 +60,18 @@ function addDuck(){
 
 let wallet=document.getElementById("wallet").value
 
-if(wallet==="") return
+if(wallet=="") return
 
 let duck=document.createElement("div")
 
 duck.className="duck"
-
 duck.innerHTML="🦆 "+wallet.slice(0,6)
 
-duck.style.top=(ducks.length*35)+"px"
+duck.style.top=(ducks.length*30)+"px"
 
 track.appendChild(duck)
 
-ducks.push({element:duck,name:wallet})
+ducks.push(duck)
 
 document.getElementById("wallet").value=""
 
@@ -184,34 +79,15 @@ document.getElementById("wallet").value=""
 
 function startRace(){
 
-let best=0
-let winner=""
+ducks.forEach(duck=>{
 
-ducks.forEach(d=>{
+let distance=Math.random()*800
 
-let distance=600+Math.random()*300
+duck.style.transition="5s"
 
-d.element.style.transition="4s linear"
-d.element.style.left=distance+"px"
-
-if(distance>best){
-best=distance
-winner=d.name
-}
+duck.style.left=distance+"px"
 
 })
-
-setTimeout(()=>{
-
-document.getElementById("winner").innerHTML="🏆 Winner: "+winner
-
-},4200)
-
-}
-
-function scrollToRace(){
-
-document.getElementById("race").scrollIntoView()
 
 }
 
