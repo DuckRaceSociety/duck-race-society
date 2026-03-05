@@ -7,28 +7,32 @@
 <style>
 
 body{
-background:linear-gradient(#4ec5ff,#87e1ff);
+margin:0;
 font-family:Arial;
 text-align:center;
+background:linear-gradient(#5cc8ff,#b4ecff);
+overflow:hidden;
 }
 
 h1{
 color:white;
 font-size:50px;
+margin-top:20px;
 }
 
 .track{
-width:900px;
+width:1000px;
 margin:auto;
 margin-top:40px;
 }
 
 .lane{
-height:70px;
+height:90px;
 background:white;
-margin:10px 0;
-border-radius:40px;
+margin:15px 0;
+border-radius:50px;
 position:relative;
+box-shadow:0 5px 10px rgba(0,0,0,0.2);
 }
 
 .finish{
@@ -43,8 +47,8 @@ background:red;
 .duck{
 position:absolute;
 left:10px;
-top:15px;
-font-size:40px;
+top:20px;
+width:60px;
 }
 
 button{
@@ -55,19 +59,38 @@ background:#ffd000;
 border:none;
 border-radius:10px;
 cursor:pointer;
+box-shadow:0 0 20px #ffd000;
 }
 
-input{
-padding:10px;
-font-size:16px;
-border-radius:8px;
-border:none;
+button:hover{
+transform:scale(1.1);
 }
 
 #winner{
-font-size:35px;
+font-size:40px;
 color:white;
-margin-top:20px;
+margin-top:30px;
+animation:pop 1s infinite alternate;
+}
+
+@keyframes pop{
+from{transform:scale(1)}
+to{transform:scale(1.1)}
+}
+
+.water{
+position:fixed;
+bottom:0;
+left:0;
+width:100%;
+height:120px;
+background:linear-gradient(#3bb0ff,#1a8cff);
+animation:wave 4s infinite linear;
+}
+
+@keyframes wave{
+0%{background-position:0 0}
+100%{background-position:1000px 0}
 }
 
 </style>
@@ -77,63 +100,69 @@ margin-top:20px;
 
 <h1>🦆 Duck Race Society</h1>
 
-<input id="wallet" placeholder="Enter Wallet Name">
+<button onclick="startRace()">START RACE</button>
 
-<button onclick="addDuck()">Add Duck</button>
+<div class="track">
 
-<button onclick="startRace()">Start Race</button>
+<div class="lane">
+<img src="duck.png" class="duck" id="duck1">
+<div class="finish"></div>
+</div>
 
-<div class="track" id="track"></div>
+<div class="lane">
+<img src="duck.png" class="duck" id="duck2">
+<div class="finish"></div>
+</div>
+
+<div class="lane">
+<img src="duck.png" class="duck" id="duck3">
+<div class="finish"></div>
+</div>
+
+<div class="lane">
+<img src="duck.png" class="duck" id="duck4">
+<div class="finish"></div>
+</div>
+
+<div class="lane">
+<img src="duck.png" class="duck" id="duck5">
+<div class="finish"></div>
+</div>
+
+</div>
 
 <div id="winner"></div>
 
+<div class="water"></div>
+
 <script>
 
-let ducks=[]
-let positions=[]
-
-function addDuck(){
-
-let wallet=document.getElementById("wallet").value
-
-if(wallet==="") return
-
-let lane=document.createElement("div")
-lane.className="lane"
-
-let duck=document.createElement("div")
-duck.className="duck"
-duck.innerHTML="🦆 "+wallet
-
-let finish=document.createElement("div")
-finish.className="finish"
-
-lane.appendChild(duck)
-lane.appendChild(finish)
-
-document.getElementById("track").appendChild(lane)
-
-ducks.push(duck)
-positions.push(10)
-
-}
-
 function startRace(){
+
+let ducks=[
+document.getElementById("duck1"),
+document.getElementById("duck2"),
+document.getElementById("duck3"),
+document.getElementById("duck4"),
+document.getElementById("duck5")
+]
+
+let positions=[10,10,10,10,10]
 
 let race=setInterval(function(){
 
 for(let i=0;i<ducks.length;i++){
 
-positions[i]+=Math.random()*12
+positions[i]+=Math.random()*15
 
 ducks[i].style.left=positions[i]+"px"
 
-if(positions[i]>800){
+if(positions[i]>900){
 
 clearInterval(race)
 
 document.getElementById("winner").innerHTML=
-"🏆 Winner: "+ducks[i].innerText
+"🏆 WINNER DUCK "+(i+1)
 
 }
 
