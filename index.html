@@ -14,7 +14,7 @@
 :root{
 --gold:#FFD700;
 --bg:#0f0f0f;
---card:#1a1a1a;
+--card:#1b1b1b;
 }
 
 *{
@@ -27,11 +27,9 @@ margin:0;
 font-family:'Orbitron',sans-serif;
 background:var(--bg);
 color:white;
-text-align:center;
 max-width:500px;
 margin:auto;
-line-height:1.6;
--webkit-font-smoothing:antialiased;
+text-align:center;
 }
 
 header{
@@ -42,61 +40,81 @@ border-bottom:2px solid var(--gold);
 
 h1{
 color:var(--gold);
-font-size:28px;
 margin:0;
+font-size:26px;
 }
 
-.hero{
-padding:50px 20px;
+.section{
+padding:35px 20px;
+}
+
+h2{
+color:var(--gold);
+margin-bottom:15px;
 }
 
 button{
 width:100%;
 padding:16px;
 margin:8px 0;
-font-size:18px;
 border:none;
 border-radius:10px;
 background:var(--gold);
+font-size:18px;
 font-weight:bold;
 cursor:pointer;
-min-height:48px;
 }
 
 button:hover{
 background:#ffcc00;
 }
 
-.section{
-padding:40px 20px;
-}
-
-h2{
-color:var(--gold);
-margin-bottom:20px;
-}
-
-.duck-grid{
-display:grid;
-grid-template-columns:1fr 1fr;
-gap:12px;
-}
-
-.duck-card{
-background:var(--card);
-padding:12px;
+.race-track{
+background:#222;
 border-radius:10px;
+padding:10px;
+margin-top:20px;
 }
 
-.duck-card img{
-width:100%;
+.lane{
+position:relative;
+height:50px;
+margin:10px 0;
+background:#333;
 border-radius:8px;
+overflow:hidden;
+}
+
+.duck{
+position:absolute;
+left:0;
+top:5px;
+font-size:30px;
+}
+
+.leaderboard{
+background:var(--card);
+border-radius:10px;
+padding:15px;
+text-align:left;
+}
+
+.leaderboard div{
+display:flex;
+justify-content:space-between;
+margin:6px 0;
 }
 
 .countdown{
-margin-top:20px;
+margin-top:10px;
 color:var(--gold);
-font-size:18px;
+}
+
+footer{
+padding:20px;
+background:black;
+border-top:2px solid var(--gold);
+margin-top:40px;
 }
 
 iframe{
@@ -104,40 +122,6 @@ width:100%;
 height:220px;
 border:none;
 border-radius:10px;
-}
-
-a{
-color:var(--gold);
-text-decoration:none;
-}
-
-footer{
-padding:25px;
-background:black;
-border-top:2px solid var(--gold);
-margin-top:40px;
-}
-
-.race-track{
-position:relative;
-height:80px;
-background:#222;
-border-radius:10px;
-overflow:hidden;
-margin-top:20px;
-}
-
-.duck{
-position:absolute;
-top:20px;
-left:0;
-font-size:32px;
-animation:race 6s linear infinite;
-}
-
-@keyframes race{
-0%{left:0;}
-100%{left:90%;}
 }
 
 </style>
@@ -149,87 +133,76 @@ animation:race 6s linear infinite;
 <header>
 
 <h1>Duck Race Society</h1>
-<p>The Web3 Duck Racing Game</p>
+<p>Web3 Duck Racing Game</p>
 
 </header>
 
-<section class="hero">
+<section class="section">
 
-<h2>Watch Ducks Compete</h2>
+<h2>Connect Wallet</h2>
 
-<p>Own NFT ducks, join races and win rewards.</p>
+<button id="walletBtn">Connect MetaMask</button>
 
-<button id="raceBtn">
-Watch Live Race
-</button>
+<p id="walletStatus"></p>
 
-<button id="walletBtn">
-Connect Wallet
-</button>
+</section>
 
-<button id="twitterBtn">
-Follow on X
-</button>
+<section class="section">
+
+<h2>Next Race</h2>
 
 <div class="countdown" id="countdown"></div>
 
+<button id="startRace">Start Duck Race</button>
+
+</section>
+
+<section class="section">
+
+<h2>Duck Race</h2>
+
 <div class="race-track">
-<div class="duck">🦆</div>
+
+<div class="lane">
+<div class="duck" id="duck1">🦆</div>
+</div>
+
+<div class="lane">
+<div class="duck" id="duck2">🦆</div>
+</div>
+
+<div class="lane">
+<div class="duck" id="duck3">🦆</div>
+</div>
+
+<div class="lane">
+<div class="duck" id="duck4">🦆</div>
+</div>
+
 </div>
 
 </section>
 
 <section class="section">
 
-<h2>How It Works</h2>
+<h2>Leaderboard</h2>
 
-<p>
-1️⃣ Own a Duck NFT<br><br>
-2️⃣ Enter the race<br><br>
-3️⃣ Watch the livestream<br><br>
-4️⃣ Win rewards
-</p>
+<div class="leaderboard" id="leaderboard">
+
+<div><span>Pirate Duck</span><span>0 Wins</span></div>
+<div><span>Cyber Duck</span><span>0 Wins</span></div>
+<div><span>Golden Duck</span><span>0 Wins</span></div>
+<div><span>Alien Duck</span><span>0 Wins</span></div>
+
+</div>
 
 </section>
 
 <section class="section">
 
-<h2>NFT Ducks</h2>
+<h2>Live Stream</h2>
 
-<div class="duck-grid">
-
-<div class="duck-card">
-<img src="https://i.imgur.com/Qr71crq.png" alt="Pirate Duck">
-<p>Pirate Duck</p>
-</div>
-
-<div class="duck-card">
-<img src="https://i.imgur.com/Qr71crq.png" alt="Cyber Duck">
-<p>Cyber Duck</p>
-</div>
-
-<div class="duck-card">
-<img src="https://i.imgur.com/Qr71crq.png" alt="Golden Duck">
-<p>Golden Duck</p>
-</div>
-
-<div class="duck-card">
-<img src="https://i.imgur.com/Qr71crq.png" alt="Alien Duck">
-<p>Alien Duck</p>
-</div>
-
-</div>
-
-</section>
-
-<section class="section" id="live">
-
-<h2>Live Race</h2>
-
-<iframe
-src="https://www.youtube.com/embed/live_stream?channel="
-allowfullscreen>
-</iframe>
+<iframe src="https://www.youtube.com/embed/live_stream?channel=" allowfullscreen></iframe>
 
 </section>
 
@@ -241,52 +214,110 @@ allowfullscreen>
 
 <script>
 
-const raceDate = new Date("2026-04-01T20:00:00").getTime();
-const countdown = document.getElementById("countdown");
+let wins=[0,0,0,0]
 
-function updateCountdown(){
+const ducks=[
+document.getElementById("duck1"),
+document.getElementById("duck2"),
+document.getElementById("duck3"),
+document.getElementById("duck4")
+]
 
-const now = Date.now();
-const distance = raceDate - now;
+function startRace(){
 
-if(distance <= 0){
-countdown.textContent = "Race is LIVE!";
-return;
+ducks.forEach(d=>{
+d.style.left="0px"
+})
+
+let race=setInterval(()=>{
+
+ducks.forEach(d=>{
+
+let current=parseInt(d.style.left)||0
+let move=Math.random()*20
+
+d.style.left=current+move+"px"
+
+if(current>320){
+
+clearInterval(race)
+
+let winner=ducks.indexOf(d)
+
+wins[winner]++
+
+updateLeaderboard()
+
+alert("Winner: Duck "+(winner+1))
+
 }
 
-const days = Math.floor(distance / 86400000);
-const hours = Math.floor((distance % 86400000) / 3600000);
-const minutes = Math.floor((distance % 3600000) / 60000);
+})
 
-countdown.textContent =
-`Next Race: ${days}d ${hours}h ${minutes}m`;
+},100)
 
 }
 
-setInterval(updateCountdown,1000);
-updateCountdown();
+function updateLeaderboard(){
 
-document.getElementById("raceBtn")
-.addEventListener("click",()=>{
+const board=document.getElementById("leaderboard")
 
-document.getElementById("live")
-.scrollIntoView({behavior:"smooth"});
+board.innerHTML=`
+<div><span>Pirate Duck</span><span>${wins[0]} Wins</span></div>
+<div><span>Cyber Duck</span><span>${wins[1]} Wins</span></div>
+<div><span>Golden Duck</span><span>${wins[2]} Wins</span></div>
+<div><span>Alien Duck</span><span>${wins[3]} Wins</span></div>
+`
 
-});
+}
 
-document.getElementById("walletBtn")
-.addEventListener("click",()=>{
+document.getElementById("startRace").onclick=startRace
 
-alert("Wallet connection coming soon");
+// Countdown
 
-});
+const raceDate = new Date("2026-04-01T20:00:00").getTime()
+const countdown=document.getElementById("countdown")
 
-document.getElementById("twitterBtn")
-.addEventListener("click",()=>{
+setInterval(()=>{
 
-window.open("https://twitter.com","_blank");
+const now=Date.now()
+const distance=raceDate-now
 
-});
+const days=Math.floor(distance/86400000)
+const hours=Math.floor((distance%86400000)/3600000)
+const minutes=Math.floor((distance%3600000)/60000)
+
+countdown.textContent=
+`Next Race: ${days}d ${hours}h ${minutes}m`
+
+},1000)
+
+// Wallet Connect (basic)
+
+document.getElementById("walletBtn").onclick=async()=>{
+
+if(window.ethereum){
+
+try{
+
+const accounts=await ethereum.request({method:"eth_requestAccounts"})
+
+document.getElementById("walletStatus").textContent=
+"Connected: "+accounts[0]
+
+}catch{
+
+alert("Connection rejected")
+
+}
+
+}else{
+
+alert("MetaMask not installed")
+
+}
+
+}
 
 </script>
 
