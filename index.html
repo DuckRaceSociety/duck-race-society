@@ -10,14 +10,22 @@ body{
 margin:0;
 font-family:Arial;
 text-align:center;
-background:linear-gradient(#5cc8ff,#b4ecff);
-overflow:hidden;
+background:linear-gradient(120deg,#4ec5ff,#7cf0ff,#ffd000);
+background-size:400% 400%;
+animation:bgmove 10s infinite;
+}
+
+@keyframes bgmove{
+0%{background-position:0% 50%}
+50%{background-position:100% 50%}
+100%{background-position:0% 50%}
 }
 
 h1{
 color:white;
 font-size:50px;
 margin-top:20px;
+text-shadow:0 0 20px #fff;
 }
 
 .track{
@@ -27,12 +35,12 @@ margin-top:40px;
 }
 
 .lane{
-height:90px;
+height:70px;
 background:white;
-margin:15px 0;
-border-radius:50px;
+margin:8px 0;
+border-radius:40px;
 position:relative;
-box-shadow:0 5px 10px rgba(0,0,0,0.2);
+box-shadow:0 4px 10px rgba(0,0,0,0.2);
 }
 
 .finish{
@@ -40,42 +48,52 @@ position:absolute;
 right:0;
 top:0;
 bottom:0;
-width:6px;
+width:8px;
 background:red;
 }
 
 .duck{
 position:absolute;
 left:10px;
-top:20px;
-width:60px;
+top:15px;
+font-size:35px;
+animation:bounce 1s infinite;
+}
+
+@keyframes bounce{
+0%{transform:translateY(0)}
+50%{transform:translateY(-5px)}
+100%{transform:translateY(0)}
 }
 
 button{
 margin-top:20px;
-padding:15px 30px;
-font-size:20px;
+padding:18px 40px;
+font-size:22px;
 background:#ffd000;
 border:none;
 border-radius:10px;
 cursor:pointer;
 box-shadow:0 0 20px #ffd000;
+transition:0.3s;
 }
 
 button:hover{
 transform:scale(1.1);
+box-shadow:0 0 40px #ffd000;
 }
 
 #winner{
 font-size:40px;
 color:white;
 margin-top:30px;
-animation:pop 1s infinite alternate;
+animation:flash 1s infinite;
 }
 
-@keyframes pop{
-from{transform:scale(1)}
-to{transform:scale(1.1)}
+@keyframes flash{
+0%{opacity:1}
+50%{opacity:0.5}
+100%{opacity:1}
 }
 
 .water{
@@ -84,8 +102,8 @@ bottom:0;
 left:0;
 width:100%;
 height:120px;
-background:linear-gradient(#3bb0ff,#1a8cff);
-animation:wave 4s infinite linear;
+background:linear-gradient(#2aa7ff,#0077ff);
+animation:wave 6s infinite linear;
 }
 
 @keyframes wave{
@@ -102,34 +120,7 @@ animation:wave 4s infinite linear;
 
 <button onclick="startRace()">START RACE</button>
 
-<div class="track">
-
-<div class="lane">
-<img src="duck.png" class="duck" id="duck1">
-<div class="finish"></div>
-</div>
-
-<div class="lane">
-<img src="duck.png" class="duck" id="duck2">
-<div class="finish"></div>
-</div>
-
-<div class="lane">
-<img src="duck.png" class="duck" id="duck3">
-<div class="finish"></div>
-</div>
-
-<div class="lane">
-<img src="duck.png" class="duck" id="duck4">
-<div class="finish"></div>
-</div>
-
-<div class="lane">
-<img src="duck.png" class="duck" id="duck5">
-<div class="finish"></div>
-</div>
-
-</div>
+<div class="track" id="track"></div>
 
 <div id="winner"></div>
 
@@ -137,23 +128,44 @@ animation:wave 4s infinite linear;
 
 <script>
 
+let ducks=[]
+let positions=[]
+
+function createDucks(){
+
+let track=document.getElementById("track")
+
+for(let i=0;i<25;i++){
+
+let lane=document.createElement("div")
+lane.className="lane"
+
+let duck=document.createElement("div")
+duck.className="duck"
+duck.innerHTML="🦆"
+
+let finish=document.createElement("div")
+finish.className="finish"
+
+lane.appendChild(duck)
+lane.appendChild(finish)
+
+track.appendChild(lane)
+
+ducks.push(duck)
+positions.push(10)
+
+}
+
+}
+
 function startRace(){
-
-let ducks=[
-document.getElementById("duck1"),
-document.getElementById("duck2"),
-document.getElementById("duck3"),
-document.getElementById("duck4"),
-document.getElementById("duck5")
-]
-
-let positions=[10,10,10,10,10]
 
 let race=setInterval(function(){
 
 for(let i=0;i<ducks.length;i++){
 
-positions[i]+=Math.random()*15
+positions[i]+=Math.random()*14
 
 ducks[i].style.left=positions[i]+"px"
 
@@ -162,7 +174,7 @@ if(positions[i]>900){
 clearInterval(race)
 
 document.getElementById("winner").innerHTML=
-"🏆 WINNER DUCK "+(i+1)
+"🏆 WINNER DUCK #"+(i+1)
 
 }
 
@@ -171,6 +183,8 @@ document.getElementById("winner").innerHTML=
 },100)
 
 }
+
+createDucks()
 
 </script>
 
