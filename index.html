@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html>
-
 <head>
 
 <title>Duck Race Society TRC</title>
@@ -8,104 +7,82 @@
 <style>
 
 body{
-margin:0;
 font-family:Arial;
+background:#0f172a;
+color:white;
 text-align:center;
-background:linear-gradient(120deg,#4ec5ff,#7cf0ff,#ffd000);
-background-size:400% 400%;
-animation:bgmove 12s infinite;
+margin:0;
 }
 
-@keyframes bgmove{
-0%{background-position:0% 50%}
-50%{background-position:100% 50%}
-100%{background-position:0% 50%}
+header{
+background:#020617;
+padding:20px;
 }
 
 h1{
+color:#facc15;
+}
+
+nav{
+margin-top:10px;
+}
+
+nav a{
 color:white;
-font-size:50px;
-text-shadow:0 0 20px #fff;
-margin-top:20px;
+margin:15px;
+text-decoration:none;
+font-size:18px;
+}
+
+.hero{
+padding:60px;
+}
+
+button{
+padding:15px 30px;
+font-size:18px;
+margin:10px;
+cursor:pointer;
+}
+
+.section{
+padding:60px;
 }
 
 .track{
-width:1000px;
+width:80%;
+height:300px;
+border:4px solid white;
 margin:auto;
-margin-top:40px;
+position:relative;
+background:#1e293b;
 }
 
-.lane{
-height:60px;
-background:white;
-margin:6px 0;
-border-radius:40px;
-position:relative;
-box-shadow:0 3px 10px rgba(0,0,0,0.2);
+.duck{
+position:absolute;
+font-size:30px;
+left:0;
 }
 
 .finish{
 position:absolute;
 right:0;
-top:0;
-bottom:0;
-width:8px;
+height:100%;
+width:5px;
 background:red;
 }
 
-.duck{
-position:absolute;
-left:10px;
-top:12px;
-font-size:28px;
-animation:bounce 0.8s infinite;
-}
-
-@keyframes bounce{
-0%{transform:translateY(0)}
-50%{transform:translateY(-5px)}
-100%{transform:translateY(0)}
-}
-
-button{
-margin:10px;
-padding:18px 40px;
-font-size:22px;
-background:#ffd000;
-border:none;
-border-radius:10px;
-cursor:pointer;
-box-shadow:0 0 20px #ffd000;
-transition:0.3s;
-}
-
-button:hover{
-transform:scale(1.1);
-box-shadow:0 0 40px #ffd000;
-}
-
-.mint{
-background:#00ffcc;
-box-shadow:0 0 25px #00ffcc;
-}
-
 #winner{
-font-size:40px;
-color:white;
-margin-top:30px;
-animation:flash 1s infinite;
+font-size:24px;
+margin-top:20px;
+color:#22c55e;
 }
 
-@keyframes flash{
-0%{opacity:1}
-50%{opacity:0.5}
-100%{opacity:1}
+footer{
+background:#020617;
+padding:20px;
+margin-top:50px;
 }
-
-.legendary{color:gold}
-.epic{color:#a335ee}
-.rare{color:#0070ff}
-.common{color:#555}
 
 </style>
 
@@ -113,105 +90,132 @@ animation:flash 1s infinite;
 
 <body>
 
-<h1>🦆 Duck Race Society (TRC)</h1>
+<header>
 
-<button class="mint" onclick="mintNFT()">🪙 MINT TRC NFT</button>
+<h1>Duck Race Society 🦆🔥</h1>
 
-<button onclick="startRace()">🏁 START RACE</button>
+<nav>
+<a href="#mint">Mint</a>
+<a href="#race">Duck Race</a>
+<a href="#collection">Collection</a>
+<a href="#stream">Livestream</a>
+</nav>
 
-<div class="track" id="track"></div>
+</header>
+
+<div class="hero">
+
+<h2>Mint your Duck. Join the Race. Win SOL.</h2>
+
+<button>Mint TRC NFT</button>
+
+<button onclick="scrollToRace()">Join Duck Race</button>
+
+</div>
+
+<div class="section" id="race">
+
+<h2>Duck Race Arena 🦆</h2>
+
+<input id="wallet" placeholder="Enter Wallet">
+
+<button onclick="addDuck()">Join Race</button>
+
+<div class="track" id="track">
+
+<div class="finish"></div>
+
+</div>
+
+<button onclick="startRace()">Start Race</button>
 
 <div id="winner"></div>
+
+</div>
+
+<div class="section" id="collection">
+
+<h2>TRC NFT Collection</h2>
+
+<p>Epic • Rare • Legendary Ducks</p>
+
+</div>
+
+<div class="section" id="stream">
+
+<h2>Live Duck Race Stream</h2>
+
+<p>Watch races live on YouTube or Twitch.</p>
+
+</div>
+
+<footer>
+
+Duck Race Society TRC ©
+
+</footer>
 
 <script>
 
 let ducks=[]
-let positions=[]
-
-let rarities=["legendary","epic","rare","common"]
-
-function createDucks(){
-
 let track=document.getElementById("track")
 
-for(let i=0;i<40;i++){
+function addDuck(){
 
-let lane=document.createElement("div")
-lane.className="lane"
+let wallet=document.getElementById("wallet").value
+
+if(wallet==="") return
 
 let duck=document.createElement("div")
+
 duck.className="duck"
 
-let rarity=rarities[Math.floor(Math.random()*rarities.length)]
+duck.innerHTML="🦆 "+wallet.slice(0,6)
 
-duck.classList.add(rarity)
+duck.style.top=(ducks.length*35)+"px"
 
-duck.innerHTML="🦆 "+rarity.toUpperCase()
+track.appendChild(duck)
 
-let finish=document.createElement("div")
-finish.className="finish"
+ducks.push({element:duck,name:wallet})
 
-lane.appendChild(duck)
-lane.appendChild(finish)
-
-track.appendChild(lane)
-
-ducks.push({element:duck,rarity:rarity})
-
-positions.push(10)
-
-}
-
-}
-
-function rarityBoost(rarity){
-
-if(rarity=="legendary") return 18
-if(rarity=="epic") return 14
-if(rarity=="rare") return 12
-return 10
+document.getElementById("wallet").value=""
 
 }
 
 function startRace(){
 
-let race=setInterval(function(){
+let best=0
+let winner=""
 
-for(let i=0;i<ducks.length;i++){
+ducks.forEach(d=>{
 
-let speed=Math.random()*rarityBoost(ducks[i].rarity)
+let distance=600+Math.random()*300
 
-positions[i]+=speed
+d.element.style.transition="4s linear"
+d.element.style.left=distance+"px"
 
-ducks[i].element.style.left=positions[i]+"px"
+if(distance>best){
+best=distance
+winner=d.name
+}
 
-if(positions[i]>900){
+})
 
-clearInterval(race)
+setTimeout(()=>{
 
-document.getElementById("winner").innerHTML=
-"🏆 WINNER: "+ducks[i].rarity.toUpperCase()+" DUCK"
+document.getElementById("winner").innerHTML="🏆 Winner: "+winner
+
+},4200)
 
 }
 
-}
+function scrollToRace(){
 
-},100)
-
-}
-
-function mintNFT(){
-
-alert("Mint your Duck Race Society NFT!")
-
-window.open("https://launchmynft.io","_blank")
+document.getElementById("race").scrollIntoView()
 
 }
-
-createDucks()
 
 </script>
 
 </body>
-
 </html>
