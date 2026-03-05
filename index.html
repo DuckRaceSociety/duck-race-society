@@ -1,63 +1,89 @@
 <!DOCTYPE html>
 <html>
 <head>
+
 <title>Duck Race Society</title>
 
 <style>
 
 body{
+background:linear-gradient(#4ec5ff,#87e1ff);
 font-family:Arial;
-background:#6ec6ff;
 text-align:center;
+overflow:hidden;
 }
 
 h1{
 color:white;
+font-size:50px;
 }
 
 .track{
-width:80%;
+width:900px;
 margin:auto;
 margin-top:40px;
 }
 
 .lane{
+height:80px;
 background:white;
-height:70px;
-margin:20px 0;
-border-radius:40px;
+margin:15px 0;
+border-radius:50px;
 position:relative;
+box-shadow:0 5px 10px rgba(0,0,0,0.2);
 }
 
-.duck{
-font-size:40px;
+.start{
 position:absolute;
 left:0;
-top:10px;
+top:0;
+bottom:0;
+width:5px;
+background:black;
 }
 
 .finish{
 position:absolute;
-right:10px;
+right:0;
 top:0;
 bottom:0;
-width:5px;
+width:6px;
 background:red;
 }
 
+.duck{
+position:absolute;
+left:10px;
+top:15px;
+font-size:45px;
+transition:0.1s;
+}
+
 button{
-padding:15px 30px;
-font-size:20px;
+margin-top:30px;
+padding:18px 40px;
+font-size:22px;
+background:#ffd000;
 border:none;
 border-radius:10px;
-background:#ffd000;
 cursor:pointer;
+box-shadow:0 0 15px #ffd000;
+}
+
+button:hover{
+transform:scale(1.1);
 }
 
 #winner{
-font-size:30px;
-margin-top:30px;
+font-size:40px;
 color:white;
+margin-top:30px;
+}
+
+#countdown{
+font-size:60px;
+color:white;
+margin-top:20px;
 }
 
 </style>
@@ -67,27 +93,39 @@ color:white;
 
 <h1>🦆 Duck Race Society</h1>
 
-<button onclick="startRace()">START RACE</button>
+<div id="countdown"></div>
+
+<button onclick="countdown()">START RACE</button>
 
 <div class="track">
 
 <div class="lane">
+<div class="start"></div>
 <div class="duck" id="duck1">🦆</div>
 <div class="finish"></div>
 </div>
 
 <div class="lane">
+<div class="start"></div>
 <div class="duck" id="duck2">🦆</div>
 <div class="finish"></div>
 </div>
 
 <div class="lane">
+<div class="start"></div>
 <div class="duck" id="duck3">🦆</div>
 <div class="finish"></div>
 </div>
 
 <div class="lane">
+<div class="start"></div>
 <div class="duck" id="duck4">🦆</div>
+<div class="finish"></div>
+</div>
+
+<div class="lane">
+<div class="start"></div>
+<div class="duck" id="duck5">🦆</div>
 <div class="finish"></div>
 </div>
 
@@ -97,25 +135,51 @@ color:white;
 
 <script>
 
+function countdown(){
+
+let count=3
+
+let counter=setInterval(function(){
+
+document.getElementById("countdown").innerHTML=count
+
+count--
+
+if(count<0){
+
+clearInterval(counter)
+
+document.getElementById("countdown").innerHTML="GO!"
+
+startRace()
+
+}
+
+},1000)
+
+}
+
 function startRace(){
 
 let ducks=[
 document.getElementById("duck1"),
 document.getElementById("duck2"),
 document.getElementById("duck3"),
-document.getElementById("duck4")
+document.getElementById("duck4"),
+document.getElementById("duck5")
 ]
 
-let positions=[0,0,0,0]
+let positions=[10,10,10,10,10]
 
 let race=setInterval(function(){
 
 for(let i=0;i<ducks.length;i++){
 
-positions[i]+=Math.random()*10
+positions[i]+=Math.random()*15
+
 ducks[i].style.left=positions[i]+"px"
 
-if(positions[i]>700){
+if(positions[i]>820){
 
 clearInterval(race)
 
