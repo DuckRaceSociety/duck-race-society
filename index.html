@@ -1,164 +1,195 @@
 <!DOCTYPE html>
 <html>
 <head>
+
 <title>Duck Race Society TRC</title>
 
 <style>
 
 body{
-background:#0f172a;
-color:white;
+margin:0;
 font-family:Arial;
 text-align:center;
+background:linear-gradient(120deg,#4ec5ff,#7cf0ff,#ffd000);
+background-size:400% 400%;
+animation:bgmove 12s infinite;
+}
+
+@keyframes bgmove{
+0%{background-position:0% 50%}
+50%{background-position:100% 50%}
+100%{background-position:0% 50%}
 }
 
 h1{
-color:#facc15;
+color:white;
+font-size:50px;
+text-shadow:0 0 20px #fff;
 }
 
 .track{
-width:90%;
-height:400px;
-border:5px solid white;
+width:1000px;
 margin:auto;
+margin-top:40px;
+}
+
+.lane{
+height:60px;
+background:white;
+margin:6px 0;
+border-radius:40px;
 position:relative;
-background:#1e293b;
-overflow:hidden;
+box-shadow:0 3px 10px rgba(0,0,0,0.2);
 }
 
 .finish{
 position:absolute;
 right:0;
 top:0;
-width:5px;
-height:100%;
+bottom:0;
+width:8px;
 background:red;
 }
 
 .duck{
 position:absolute;
-left:0;
-font-size:32px;
+left:10px;
+top:12px;
+font-size:30px;
+animation:bounce 0.8s infinite;
 }
 
-.legendary{color:gold}
-.epic{color:violet}
-.rare{color:#38bdf8}
-.common{color:white}
+@keyframes bounce{
+0%{transform:translateY(0)}
+50%{transform:translateY(-5px)}
+100%{transform:translateY(0)}
+}
 
 button{
-padding:12px 25px;
-font-size:16px;
-margin:10px;
+margin-top:20px;
+padding:18px 40px;
+font-size:22px;
+background:#ffd000;
+border:none;
+border-radius:10px;
 cursor:pointer;
+box-shadow:0 0 20px #ffd000;
 }
 
-input,select{
-padding:10px;
-font-size:16px;
+button:hover{
+transform:scale(1.1);
+box-shadow:0 0 40px #ffd000;
 }
 
 #winner{
-font-size:26px;
-margin-top:20px;
-color:#22c55e;
+font-size:40px;
+color:white;
+margin-top:30px;
+animation:flash 1s infinite;
 }
+
+@keyframes flash{
+0%{opacity:1}
+50%{opacity:0.5}
+100%{opacity:1}
+}
+
+.legendary{color:gold}
+.epic{color:#a335ee}
+.rare{color:#0070ff}
+.common{color:#555}
 
 </style>
 </head>
 
 <body>
 
-<h1>Duck Race Society (TRC) 🦆🔥</h1>
+<h1>🦆 Duck Race Society (TRC)</h1>
 
-<p>Enter wallet to join the race</p>
+<button onclick="startRace()">START RACE</button>
 
-<input id="wallet" placeholder="Wallet">
-
-<select id="rarity">
-<option value="legendary">Legendary</option>
-<option value="epic">Epic</option>
-<option value="rare">Rare</option>
-<option value="common">Common</option>
-</select>
-
-<button onclick="addDuck()">Join Race</button>
-
-<div class="track" id="track">
-
-<div class="finish"></div>
-
-</div>
-
-<button onclick="startRace()">Start Race</button>
+<div class="track" id="track"></div>
 
 <div id="winner"></div>
 
 <script>
 
 let ducks=[]
+let positions=[]
+
+let rarities=["legendary","epic","rare","common"]
+
+function createDucks(){
+
 let track=document.getElementById("track")
 
-function addDuck(){
+for(let i=0;i<40;i++){
 
-let wallet=document.getElementById("wallet").value
-let rarity=document.getElementById("rarity").value
-
-if(wallet==="") return
+let lane=document.createElement("div")
+lane.className="lane"
 
 let duck=document.createElement("div")
+duck.className="duck"
 
-duck.className="duck "+rarity
+let rarity=rarities[Math.floor(Math.random()*rarities.length)]
 
-duck.innerHTML="🦆 "+wallet.slice(0,6)
+duck.classList.add(rarity)
 
-duck.style.top=(ducks.length*40)+"px"
+duck.innerHTML="🦆 "+rarity.toUpperCase()
 
-track.appendChild(duck)
+let finish=document.createElement("div")
+finish.className="finish"
 
-ducks.push({element:duck,rarity:rarity,name:wallet})
+lane.appendChild(duck)
+lane.appendChild(finish)
 
-document.getElementById("wallet").value=""
+track.appendChild(lane)
+
+ducks.push({element:duck,rarity:rarity})
+
+positions.push(10)
 
 }
 
-function getSpeed(rarity){
+}
 
-if(rarity==="legendary") return 900+Math.random()*200
-if(rarity==="epic") return 800+Math.random()*200
-if(rarity==="rare") return 700+Math.random()*200
-return 600+Math.random()*200
+function rarityBoost(rarity){
+
+if(rarity=="legendary") return 18
+if(rarity=="epic") return 14
+if(rarity=="rare") return 12
+return 10
 
 }
 
 function startRace(){
 
-let best=0
-let winner=""
+let race=setInterval(function(){
 
-ducks.forEach(d=>{
+for(let i=0;i<ducks.length;i++){
 
-let distance=getSpeed(d.rarity)
+let speed=Math.random()*rarityBoost(ducks[i].rarity)
 
-d.element.style.transition="4s linear"
-d.element.style.left=distance+"px"
+positions[i]+=speed
 
-if(distance>best){
+ducks[i].element.style.left=positions[i]+"px"
 
-best=distance
-winner=d.name
+if(positions[i]>900){
+
+clearInterval(race)
+
+document.getElementById("winner").innerHTML=
+"🏆 WINNER: "+ducks[i].rarity.toUpperCase()+" DUCK"
+
+}
 
 }
 
-})
-
-setTimeout(()=>{
-
-document.getElementById("winner").innerHTML="🏆 Winner: "+winner
-
-},4200)
+},100)
 
 }
+
+createDucks()
 
 </script>
 
