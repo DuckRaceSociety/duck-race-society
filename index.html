@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
 
 <meta charset="UTF-8">
@@ -12,28 +11,39 @@
 
 <style>
 
+:root{
+--gold:#FFD700;
+--bg:#0f0f0f;
+--card:#1a1a1a;
+}
+
 *{
 box-sizing:border-box;
+margin:0;
+padding:0;
 }
 
 body{
-margin:0;
-background:#0f0f0f;
-font-family:Orbitron, sans-serif;
+background:var(--bg);
+font-family:'Orbitron',sans-serif;
 color:white;
 text-align:center;
+line-height:1.6;
 }
 
-header{
-padding:20px;
+header,footer{
 background:black;
-border-bottom:2px solid #FFD700;
+padding:20px;
+border-color:var(--gold);
+border-style:solid;
 }
 
-h1{
-color:#FFD700;
-font-size:34px;
-margin:0;
+header{border-bottom-width:2px;}
+footer{border-top-width:2px;}
+
+h1,h2{
+color:var(--gold);
+margin-bottom:15px;
 }
 
 .hero{
@@ -41,27 +51,26 @@ padding:80px 20px;
 background:linear-gradient(#000,#1b1b1b);
 }
 
-.hero h2{
-font-size:28px;
-margin-bottom:15px;
+.hero p{
+margin-bottom:25px;
 }
 
-.hero p{
-font-size:16px;
-margin-bottom:30px;
+.button-group{
+display:flex;
+flex-wrap:wrap;
+gap:10px;
+justify-content:center;
 }
 
 button{
-padding:16px;
-margin:10px;
-background:#FFD700;
+padding:15px 25px;
+background:var(--gold);
 border:none;
 border-radius:10px;
 font-weight:bold;
 cursor:pointer;
-font-size:18px;
-width:90%;
-max-width:320px;
+font-size:16px;
+transition:0.2s;
 }
 
 button:hover{
@@ -74,24 +83,16 @@ max-width:1000px;
 margin:auto;
 }
 
-.section h2{
-color:#FFD700;
-margin-bottom:30px;
-}
-
 .duck-grid{
-display:flex;
-flex-direction:column;
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
 gap:20px;
-align-items:center;
 }
 
 .duck-card{
-background:#1a1a1a;
-padding:20px;
+background:var(--card);
+padding:15px;
 border-radius:12px;
-width:90%;
-max-width:320px;
 }
 
 .duck-card img{
@@ -100,68 +101,29 @@ border-radius:8px;
 }
 
 .roadmap{
-text-align:left;
 max-width:500px;
 margin:auto;
+text-align:left;
 }
 
 .countdown{
-font-size:22px;
-color:#FFD700;
 margin-top:20px;
+font-size:20px;
+color:var(--gold);
 }
 
 iframe{
 width:100%;
 max-width:600px;
-height:260px;
+height:315px;
 border:none;
 border-radius:10px;
 }
 
-footer{
-padding:30px;
-background:black;
-border-top:2px solid #FFD700;
-}
-
 a{
-color:#FFD700;
+color:var(--gold);
 text-decoration:none;
 font-size:18px;
-}
-
-/* Desktop Layout */
-
-@media (min-width:768px){
-
-.hero h2{
-font-size:36px;
-}
-
-.hero p{
-font-size:18px;
-}
-
-button{
-width:auto;
-padding:15px 30px;
-}
-
-.duck-grid{
-flex-direction:row;
-flex-wrap:wrap;
-justify-content:center;
-}
-
-.duck-card{
-width:220px;
-}
-
-iframe{
-height:315px;
-}
-
 }
 
 </style>
@@ -171,29 +133,30 @@ height:315px;
 <body>
 
 <header>
-
 <h1>Duck Race Society</h1>
 <p>The Web3 Duck Racing Game</p>
-
 </header>
 
 <section class="hero">
 
 <h2>Watch Ducks Compete Live</h2>
-
 <p>Own NFT ducks, join races and win rewards.</p>
 
-<button onclick="document.getElementById('live').scrollIntoView()">
+<div class="button-group">
+
+<button id="watchRace">
 Watch Live Race
 </button>
 
-<button onclick="alert('Wallet connect coming soon')">
+<button id="walletBtn">
 Connect Wallet
 </button>
 
 <button onclick="window.open('https://twitter.com','_blank')">
 Follow on X
 </button>
+
+</div>
 
 <div class="countdown" id="countdown"></div>
 
@@ -204,15 +167,10 @@ Follow on X
 <h2>How It Works</h2>
 
 <p>
-
-1️⃣ Own a Duck NFT  
-<br><br>
-2️⃣ Enter the race  
-<br><br>
-3️⃣ Watch the livestream  
-<br><br>
+1️⃣ Own a Duck NFT<br><br>
+2️⃣ Enter the race<br><br>
+3️⃣ Watch the livestream<br><br>
 4️⃣ Winners earn rewards
-
 </p>
 
 </section>
@@ -224,22 +182,22 @@ Follow on X
 <div class="duck-grid">
 
 <div class="duck-card">
-<img src="https://i.imgur.com/Qr71crq.png">
+<img src="https://i.imgur.com/Qr71crq.png" alt="Pirate Duck">
 <p>Pirate Duck</p>
 </div>
 
 <div class="duck-card">
-<img src="https://i.imgur.com/Qr71crq.png">
+<img src="https://i.imgur.com/Qr71crq.png" alt="Cyber Duck">
 <p>Cyber Duck</p>
 </div>
 
 <div class="duck-card">
-<img src="https://i.imgur.com/Qr71crq.png">
+<img src="https://i.imgur.com/Qr71crq.png" alt="Golden Duck">
 <p>Golden Duck</p>
 </div>
 
 <div class="duck-card">
-<img src="https://i.imgur.com/Qr71crq.png">
+<img src="https://i.imgur.com/Qr71crq.png" alt="Alien Duck">
 <p>Alien Duck</p>
 </div>
 
@@ -253,21 +211,17 @@ Follow on X
 
 <p>
 
-Phase 1  
-Website Launch  
-NFT Ducks  
+<strong>Phase 1</strong><br>
+Website Launch<br>
+NFT Ducks<br><br>
 
-<br><br>
+<strong>Phase 2</strong><br>
+Live Duck Races<br>
+Community Events<br><br>
 
-Phase 2  
-Live Duck Races  
-Community Events  
-
-<br><br>
-
-Phase 3  
-Tournaments  
-Mobile Game  
+<strong>Phase 3</strong><br>
+Tournaments<br>
+Mobile Game
 
 </p>
 
@@ -276,7 +230,6 @@ Mobile Game
 <section class="section" id="live">
 
 <h2>Live Duck Race</h2>
-
 <p>Watch the next race live</p>
 
 <iframe
@@ -291,40 +244,53 @@ allowfullscreen>
 <h2>Community</h2>
 
 <p>
-
-<a href="https://twitter.com">Twitter / X</a>
-
+<a href="https://twitter.com" target="_blank">Twitter / X</a>
 </p>
 
 </section>
 
 <footer>
-
 <p>© 2026 Duck Race Society</p>
-
 </footer>
 
 <script>
 
-const raceDate = new Date("April 1, 2026 20:00:00").getTime();
+const raceDate = new Date("2026-04-01T20:00:00").getTime();
+const countdownEl = document.getElementById("countdown");
 
-setInterval(function(){
+function updateCountdown(){
 
-const now = new Date().getTime();
-
+const now = Date.now();
 const distance = raceDate - now;
 
-const days = Math.floor(distance / (1000*60*60*24));
-const hours = Math.floor((distance % (1000*60*60*24)) / (1000*60*60));
-const minutes = Math.floor((distance % (1000*60*60)) / (1000*60));
+if(distance <= 0){
+countdownEl.textContent = "Race is live!";
+return;
+}
 
-document.getElementById("countdown").innerHTML =
-"Next Race: " + days + "d " + hours + "h " + minutes + "m";
+const days = Math.floor(distance / 86400000);
+const hours = Math.floor((distance % 86400000) / 3600000);
+const minutes = Math.floor((distance % 3600000) / 60000);
 
-},1000);
+countdownEl.textContent =
+`Next Race: ${days}d ${hours}h ${minutes}m`;
+
+}
+
+setInterval(updateCountdown,1000);
+updateCountdown();
+
+document.getElementById("watchRace")
+.addEventListener("click",()=>{
+document.getElementById("live").scrollIntoView({behavior:"smooth"});
+});
+
+document.getElementById("walletBtn")
+.addEventListener("click",()=>{
+alert("Wallet connect coming soon");
+});
 
 </script>
 
 </body>
-
 </html>
