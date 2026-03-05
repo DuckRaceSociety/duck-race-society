@@ -10,7 +10,6 @@ body{
 background:linear-gradient(#4ec5ff,#87e1ff);
 font-family:Arial;
 text-align:center;
-overflow:hidden;
 }
 
 h1{
@@ -25,21 +24,11 @@ margin-top:40px;
 }
 
 .lane{
-height:80px;
+height:70px;
 background:white;
-margin:15px 0;
-border-radius:50px;
+margin:10px 0;
+border-radius:40px;
 position:relative;
-box-shadow:0 5px 10px rgba(0,0,0,0.2);
-}
-
-.start{
-position:absolute;
-left:0;
-top:0;
-bottom:0;
-width:5px;
-background:black;
 }
 
 .finish{
@@ -55,33 +44,28 @@ background:red;
 position:absolute;
 left:10px;
 top:15px;
-font-size:45px;
-transition:0.1s;
+font-size:40px;
 }
 
 button{
-margin-top:30px;
-padding:18px 40px;
-font-size:22px;
+margin-top:20px;
+padding:15px 30px;
+font-size:20px;
 background:#ffd000;
 border:none;
 border-radius:10px;
 cursor:pointer;
-box-shadow:0 0 15px #ffd000;
 }
 
-button:hover{
-transform:scale(1.1);
+input{
+padding:10px;
+font-size:16px;
+border-radius:8px;
+border:none;
 }
 
 #winner{
-font-size:40px;
-color:white;
-margin-top:30px;
-}
-
-#countdown{
-font-size:60px;
+font-size:35px;
 color:white;
 margin-top:20px;
 }
@@ -93,98 +77,63 @@ margin-top:20px;
 
 <h1>🦆 Duck Race Society</h1>
 
-<div id="countdown"></div>
+<input id="wallet" placeholder="Enter Wallet Name">
 
-<button onclick="countdown()">START RACE</button>
+<button onclick="addDuck()">Add Duck</button>
 
-<div class="track">
+<button onclick="startRace()">Start Race</button>
 
-<div class="lane">
-<div class="start"></div>
-<div class="duck" id="duck1">🦆</div>
-<div class="finish"></div>
-</div>
-
-<div class="lane">
-<div class="start"></div>
-<div class="duck" id="duck2">🦆</div>
-<div class="finish"></div>
-</div>
-
-<div class="lane">
-<div class="start"></div>
-<div class="duck" id="duck3">🦆</div>
-<div class="finish"></div>
-</div>
-
-<div class="lane">
-<div class="start"></div>
-<div class="duck" id="duck4">🦆</div>
-<div class="finish"></div>
-</div>
-
-<div class="lane">
-<div class="start"></div>
-<div class="duck" id="duck5">🦆</div>
-<div class="finish"></div>
-</div>
-
-</div>
+<div class="track" id="track"></div>
 
 <div id="winner"></div>
 
 <script>
 
-function countdown(){
+let ducks=[]
+let positions=[]
 
-let count=3
+function addDuck(){
 
-let counter=setInterval(function(){
+let wallet=document.getElementById("wallet").value
 
-document.getElementById("countdown").innerHTML=count
+if(wallet==="") return
 
-count--
+let lane=document.createElement("div")
+lane.className="lane"
 
-if(count<0){
+let duck=document.createElement("div")
+duck.className="duck"
+duck.innerHTML="🦆 "+wallet
 
-clearInterval(counter)
+let finish=document.createElement("div")
+finish.className="finish"
 
-document.getElementById("countdown").innerHTML="GO!"
+lane.appendChild(duck)
+lane.appendChild(finish)
 
-startRace()
+document.getElementById("track").appendChild(lane)
 
-}
-
-},1000)
+ducks.push(duck)
+positions.push(10)
 
 }
 
 function startRace(){
 
-let ducks=[
-document.getElementById("duck1"),
-document.getElementById("duck2"),
-document.getElementById("duck3"),
-document.getElementById("duck4"),
-document.getElementById("duck5")
-]
-
-let positions=[10,10,10,10,10]
-
 let race=setInterval(function(){
 
 for(let i=0;i<ducks.length;i++){
 
-positions[i]+=Math.random()*15
+positions[i]+=Math.random()*12
 
 ducks[i].style.left=positions[i]+"px"
 
-if(positions[i]>820){
+if(positions[i]>800){
 
 clearInterval(race)
 
 document.getElementById("winner").innerHTML=
-"🏆 Winner: Duck "+(i+1)
+"🏆 Winner: "+ducks[i].innerText
 
 }
 
