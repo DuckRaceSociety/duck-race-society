@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-
-<title>Duck Race Society TRC</title>
+<title>Duck Race Society PRO</title>
 
 <style>
 
@@ -23,7 +22,7 @@ animation:bgmove 12s infinite;
 
 h1{
 color:white;
-font-size:50px;
+font-size:48px;
 text-shadow:0 0 20px #fff;
 }
 
@@ -40,6 +39,7 @@ margin:6px 0;
 border-radius:40px;
 position:relative;
 box-shadow:0 3px 10px rgba(0,0,0,0.2);
+overflow:hidden;
 }
 
 .finish{
@@ -47,7 +47,7 @@ position:absolute;
 right:0;
 top:0;
 bottom:0;
-width:8px;
+width:10px;
 background:red;
 }
 
@@ -55,60 +55,53 @@ background:red;
 position:absolute;
 left:10px;
 top:12px;
-font-size:30px;
-animation:bounce 0.8s infinite;
+font-size:28px;
+animation:bounce 0.6s infinite;
 }
 
 @keyframes bounce{
 0%{transform:translateY(0)}
-50%{transform:translateY(-5px)}
+50%{transform:translateY(-6px)}
 100%{transform:translateY(0)}
 }
 
 button{
-margin-top:20px;
-padding:18px 40px;
-font-size:22px;
+margin:10px;
+padding:16px 30px;
+font-size:20px;
 background:#ffd000;
 border:none;
 border-radius:10px;
 cursor:pointer;
-box-shadow:0 0 20px #ffd000;
+box-shadow:0 0 15px #ffd000;
 }
 
 button:hover{
 transform:scale(1.1);
-box-shadow:0 0 40px #ffd000;
 }
 
 #winner{
 font-size:40px;
 color:white;
-margin-top:30px;
-animation:flash 1s infinite;
-}
-
-@keyframes flash{
-0%{opacity:1}
-50%{opacity:0.5}
-100%{opacity:1}
+margin-top:20px;
 }
 
 .legendary{color:gold}
 .epic{color:#a335ee}
 .rare{color:#0070ff}
-.common{color:#555}
+.common{color:#444}
 
 </style>
 </head>
 
 <body>
 
-<h1>🦆 Duck Race Society (TRC)</h1>
-<br>
+<h1>🦆 Duck Race Society PRO</h1>
 
-<button onclick="mintNFT()">🪙 MINT TRC NFT</button>
-<button onclick="startRace()">START RACE</button>
+<button onclick="connectWallet()">👛 Connect Wallet</button>
+<button onclick="mintNFT()">🪙 Mint Duck NFT</button>
+<button onclick="startRace()">🚀 Start Race</button>
+<button onclick="resetRace()">🔄 Reset</button>
 
 <div class="track" id="track"></div>
 
@@ -118,6 +111,7 @@ animation:flash 1s infinite;
 
 let ducks=[]
 let positions=[]
+let race=null
 
 let rarities=["legendary","epic","rare","common"]
 
@@ -136,54 +130,52 @@ duck.className="duck"
 let rarity=rarities[Math.floor(Math.random()*rarities.length)]
 
 duck.classList.add(rarity)
-
-duck.innerHTML="🦆 "+rarity.toUpperCase()
+duck.innerHTML="🦆 "+rarity
 
 let finish=document.createElement("div")
 finish.className="finish"
 
 lane.appendChild(duck)
 lane.appendChild(finish)
-
 track.appendChild(lane)
 
 ducks.push({element:duck,rarity:rarity})
-
 positions.push(10)
 
 }
 
 }
 
-function rarityBoost(rarity){
+function rarityBoost(r){
 
-if(rarity=="legendary") return 18
-if(rarity=="epic") return 14
-if(rarity=="rare") return 12
+if(r=="legendary") return 18
+if(r=="epic") return 14
+if(r=="rare") return 12
 return 10
 
 }
 
 function startRace(){
-}  
-function mintNFT(){
-alert("Mint your Duck Race Society NFT!")
-window.open("https://launchmynft.io","_blank")
 
-}
-let race=setInterval(function(){
+if(race) clearInterval(race)
+
+document.getElementById("winner").innerHTML=""
+
+race=setInterval(function(){
 
 for(let i=0;i<ducks.length;i++){
 
-let speed=Math.random()*rarityBoost(ducks[i].rarity)
+let boost=Math.random()*rarityBoost(ducks[i].rarity)
 
-positions[i]+=speed
+positions[i]+=boost
 
 ducks[i].element.style.left=positions[i]+"px"
 
 if(positions[i]>900){
 
 clearInterval(race)
+
+ducks[i].element.style.fontSize="40px"
 
 document.getElementById("winner").innerHTML=
 "🏆 WINNER: "+ducks[i].rarity.toUpperCase()+" DUCK"
@@ -192,7 +184,50 @@ document.getElementById("winner").innerHTML=
 
 }
 
-},100)
+},80)
+
+}
+
+function resetRace(){
+
+clearInterval(race)
+
+positions=[]
+
+for(let i=0;i<ducks.length;i++){
+
+positions.push(10)
+ducks[i].element.style.left="10px"
+
+}
+
+document.getElementById("winner").innerHTML=""
+
+}
+
+function mintNFT(){
+
+alert("Minting soon! Connect to Web3 contract.")
+
+window.open("https://launchmynft.io","_blank")
+
+}
+
+async function connectWallet(){
+
+if(window.ethereum){
+
+let accounts=await window.ethereum.request({
+method:"eth_requestAccounts"
+})
+
+alert("Connected: "+accounts[0])
+
+}else{
+
+alert("Install MetaMask!")
+
+}
 
 }
 
@@ -202,4 +237,3 @@ createDucks()
 
 </body>
 </html>
-
