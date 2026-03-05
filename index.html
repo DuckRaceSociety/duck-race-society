@@ -115,6 +115,11 @@ color:#aaa;
 font-size:14px;
 }
 
+.betStatus{
+color:#00ff9c;
+font-size:14px;
+}
+
 footer{
 padding:15px;
 background:black;
@@ -139,7 +144,8 @@ font-size:12px;
 <h2>Wallet</h2>
 
 <button id="walletBtn">Connect Phantom</button>
-<p id="walletStatus"></p>
+
+<p id="walletStatus">Not connected</p>
 
 </section>
 
@@ -147,10 +153,12 @@ font-size:12px;
 
 <h2>Betting</h2>
 
-<button onclick="betDuck(0)">Bet Pirate Duck (0.01 SOL)</button>
+<button onclick="betDuck(0)">Bet Pirate Duck</button>
 <button onclick="betDuck(1)">Bet Cyber Duck</button>
 <button onclick="betDuck(2)">Bet Golden Duck</button>
 <button onclick="betDuck(3)">Bet Alien Duck</button>
+
+<p class="betStatus" id="betStatus"></p>
 
 <p>Prize Pool: <span id="pool">0</span> SOL</p>
 
@@ -208,6 +216,10 @@ let wins=JSON.parse(localStorage.getItem("duckWins"))||[0,0,0,0]
 
 let running=false
 
+let bets=[0,0,0,0]
+
+let prizePool=0
+
 const trackWidth=Math.min(window.innerWidth,500)-90
 
 let provider
@@ -216,12 +228,6 @@ let walletAddress
 const connection=new solanaWeb3.Connection(
 "https://api.mainnet-beta.solana.com"
 )
-
-const poolWallet=new solanaWeb3.PublicKey(
-"YOUR_SOLANA_POOL_ADDRESS"
-)
-
-let prizePool=0
 
 function updateLeaderboard(){
 
@@ -249,7 +255,15 @@ updateLeaderboard()
 
 function startRace(){
 
-if(running) return
+if(running)return
+
+if(prizePool===0){
+
+alert("No bets placed")
+
+return
+
+}
 
 running=true
 
@@ -259,7 +273,7 @@ document.getElementById("raceStatus").textContent="Race started!"
 
 function frame(){
 
-if(!running) return
+if(!running)return
 
 ducks.forEach((d,i)=>{
 
@@ -278,6 +292,10 @@ updateLeaderboard()
 document.getElementById("raceStatus").textContent=
 "🏆 Winner Duck "+(i+1)
 
+let payout=prizePool*0.9
+
+alert("Winner gets "+payout+" SOL")
+
 }
 
 })
@@ -293,6 +311,14 @@ frame()
 function resetRace(){
 
 running=false
+
+bets=[0,0,0,0]
+
+prizePool=0
+
+document.getElementById("pool").innerText="0"
+
+document.getElementById("betStatus").innerText=""
 
 ducks.forEach(d=>d.style.left="0px")
 
@@ -340,43 +366,14 @@ return
 
 }
 
-try{
-
-const transaction=new solanaWeb3.Transaction()
-
-const instruction=solanaWeb3.SystemProgram.transfer({
-
-fromPubkey:provider.publicKey,
-
-toPubkey:poolWallet,
-
-lamports:10000000
-
-})
-
-transaction.add(instruction)
-
-transaction.feePayer=provider.publicKey
-
-let blockhash=await connection.getRecentBlockhash()
-
-transaction.recentBlockhash=blockhash.blockhash
-
-const signed=await provider.signTransaction(transaction)
-
-await connection.sendRawTransaction(signed.serialize())
+bets[duck]++
 
 prizePool+=0.01
 
 document.getElementById("pool").innerText=prizePool
 
-alert("Bet placed!")
-
-}catch(err){
-
-alert("Transaction failed")
-
-}
+document.getElementById("betStatus").innerText=
+"Bet placed on Duck "+(duck+1)
 
 }
 
@@ -401,4 +398,4 @@ document.getElementById("countdown").textContent=
 </script>
 
 </body>
-</html>
+</html
