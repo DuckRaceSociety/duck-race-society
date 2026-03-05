@@ -105,7 +105,9 @@ animation:flash 1s infinite;
 <body>
 
 <h1>🦆 Duck Race Society (TRC)</h1>
+<br>
 
+<button onclick="mintNFT()">🪙 MINT TRC NFT</button>
 <button onclick="startRace()">START RACE</button>
 
 <div class="track" id="track"></div>
@@ -163,7 +165,12 @@ return 10
 }
 
 function startRace(){
+}  
+function mintNFT(){
+alert("Mint your Duck Race Society NFT!")
+window.open("https://launchmynft.io","_blank")
 
+}
 let race=setInterval(function(){
 
 for(let i=0;i<ducks.length;i++){
@@ -195,3 +202,4 @@ createDucks()
 
 </body>
 </html>
+
