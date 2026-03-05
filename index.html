@@ -3,7 +3,7 @@
 <head>
 
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
 <title>Duck Race Society</title>
 
@@ -13,39 +13,62 @@
 
 :root{
 --gold:#FFD700;
---gold-hover:#ffcc00;
 --bg:#0f0f0f;
 --card:#1a1a1a;
---max-width:1100px;
 }
 
 *{
 box-sizing:border-box;
-margin:0;
-padding:0;
+-webkit-tap-highlight-color:transparent;
 }
 
 body{
+margin:0;
 font-family:'Orbitron',sans-serif;
 background:var(--bg);
 color:white;
 text-align:center;
+max-width:500px;
+margin:auto;
 line-height:1.6;
+-webkit-font-smoothing:antialiased;
 }
 
-header,footer{
+header{
 background:black;
-padding:25px;
-border-color:var(--gold);
-border-style:solid;
+padding:20px;
+border-bottom:2px solid var(--gold);
 }
-
-header{border-bottom-width:2px;}
-footer{border-top-width:2px;}
 
 h1{
 color:var(--gold);
-margin-bottom:5px;
+font-size:28px;
+margin:0;
+}
+
+.hero{
+padding:50px 20px;
+}
+
+button{
+width:100%;
+padding:16px;
+margin:8px 0;
+font-size:18px;
+border:none;
+border-radius:10px;
+background:var(--gold);
+font-weight:bold;
+cursor:pointer;
+min-height:48px;
+}
+
+button:hover{
+background:#ffcc00;
+}
+
+.section{
+padding:40px 20px;
 }
 
 h2{
@@ -53,66 +76,16 @@ color:var(--gold);
 margin-bottom:20px;
 }
 
-.section{
-padding:60px 20px;
-max-width:var(--max-width);
-margin:auto;
-}
-
-.hero{
-padding:90px 20px;
-background:linear-gradient(#000,#1b1b1b);
-}
-
-.hero p{
-margin-bottom:30px;
-}
-
-.button-group{
-display:flex;
-flex-wrap:wrap;
-gap:12px;
-justify-content:center;
-}
-
-button{
-padding:15px 28px;
-background:var(--gold);
-border:none;
-border-radius:10px;
-font-weight:bold;
-cursor:pointer;
-font-size:16px;
-transition:0.2s;
-}
-
-button:hover{
-background:var(--gold-hover);
-transform:translateY(-2px);
-}
-
-.countdown{
-margin-top:25px;
-font-size:20px;
-color:var(--gold);
-}
-
 .duck-grid{
 display:grid;
-grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-gap:25px;
-margin-top:30px;
+grid-template-columns:1fr 1fr;
+gap:12px;
 }
 
 .duck-card{
 background:var(--card);
-padding:15px;
-border-radius:12px;
-transition:0.25s;
-}
-
-.duck-card:hover{
-transform:scale(1.05);
+padding:12px;
+border-radius:10px;
 }
 
 .duck-card img{
@@ -120,16 +93,15 @@ width:100%;
 border-radius:8px;
 }
 
-.roadmap{
-max-width:500px;
-margin:auto;
-text-align:left;
+.countdown{
+margin-top:20px;
+color:var(--gold);
+font-size:18px;
 }
 
 iframe{
 width:100%;
-max-width:650px;
-height:350px;
+height:220px;
 border:none;
 border-radius:10px;
 }
@@ -137,24 +109,35 @@ border-radius:10px;
 a{
 color:var(--gold);
 text-decoration:none;
-font-size:18px;
 }
 
-a:hover{
-text-decoration:underline;
+footer{
+padding:25px;
+background:black;
+border-top:2px solid var(--gold);
+margin-top:40px;
 }
 
-@media(max-width:600px){
-
-.hero{
-padding:70px 20px;
+.race-track{
+position:relative;
+height:80px;
+background:#222;
+border-radius:10px;
+overflow:hidden;
+margin-top:20px;
 }
 
-button{
-width:100%;
-max-width:320px;
+.duck{
+position:absolute;
+top:20px;
+left:0;
+font-size:32px;
+animation:race 6s linear infinite;
 }
 
+@keyframes race{
+0%{left:0;}
+100%{left:90%;}
 }
 
 </style>
@@ -172,12 +155,11 @@ max-width:320px;
 
 <section class="hero">
 
-<h2>Watch Ducks Compete Live</h2>
+<h2>Watch Ducks Compete</h2>
+
 <p>Own NFT ducks, join races and win rewards.</p>
 
-<div class="button-group">
-
-<button id="watchRaceBtn">
+<button id="raceBtn">
 Watch Live Race
 </button>
 
@@ -189,9 +171,11 @@ Connect Wallet
 Follow on X
 </button>
 
-</div>
-
 <div class="countdown" id="countdown"></div>
+
+<div class="race-track">
+<div class="duck">🦆</div>
+</div>
 
 </section>
 
@@ -203,7 +187,7 @@ Follow on X
 1️⃣ Own a Duck NFT<br><br>
 2️⃣ Enter the race<br><br>
 3️⃣ Watch the livestream<br><br>
-4️⃣ Winners earn rewards
+4️⃣ Win rewards
 </p>
 
 </section>
@@ -238,48 +222,14 @@ Follow on X
 
 </section>
 
-<section class="section roadmap">
-
-<h2>Roadmap</h2>
-
-<p>
-
-<strong>Phase 1</strong><br>
-Website Launch<br>
-NFT Ducks<br><br>
-
-<strong>Phase 2</strong><br>
-Live Duck Races<br>
-Community Events<br><br>
-
-<strong>Phase 3</strong><br>
-Tournaments<br>
-Mobile Game
-
-</p>
-
-</section>
-
 <section class="section" id="live">
 
-<h2>Live Duck Race</h2>
-<p>Watch the next race live</p>
+<h2>Live Race</h2>
 
 <iframe
 src="https://www.youtube.com/embed/live_stream?channel="
-allowfullscreen
-title="Duck Race Livestream">
+allowfullscreen>
 </iframe>
-
-</section>
-
-<section class="section">
-
-<h2>Community</h2>
-
-<p>
-<a href="https://twitter.com" target="_blank">Twitter / X</a>
-</p>
 
 </section>
 
@@ -307,30 +257,35 @@ return;
 const days = Math.floor(distance / 86400000);
 const hours = Math.floor((distance % 86400000) / 3600000);
 const minutes = Math.floor((distance % 3600000) / 60000);
-const seconds = Math.floor((distance % 60000) / 1000);
 
 countdown.textContent =
-`Next Race: ${days}d ${hours}h ${minutes}m ${seconds}s`;
+`Next Race: ${days}d ${hours}h ${minutes}m`;
 
 }
 
 setInterval(updateCountdown,1000);
 updateCountdown();
 
-document.getElementById("watchRaceBtn")
+document.getElementById("raceBtn")
 .addEventListener("click",()=>{
+
 document.getElementById("live")
 .scrollIntoView({behavior:"smooth"});
+
 });
 
 document.getElementById("walletBtn")
 .addEventListener("click",()=>{
-alert("Wallet connection coming soon.");
+
+alert("Wallet connection coming soon");
+
 });
 
 document.getElementById("twitterBtn")
 .addEventListener("click",()=>{
+
 window.open("https://twitter.com","_blank");
+
 });
 
 </script>
