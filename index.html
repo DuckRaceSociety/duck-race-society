@@ -3,7 +3,7 @@
 <head>
 
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
 <title>Duck Race Society</title>
 
@@ -27,59 +27,63 @@ margin:0;
 font-family:'Orbitron',sans-serif;
 background:var(--bg);
 color:white;
-max-width:500px;
-margin:auto;
 text-align:center;
+padding:0 10px;
 }
 
 header{
 background:black;
-padding:20px;
+padding:18px;
 border-bottom:2px solid var(--gold);
 }
 
 h1{
 color:var(--gold);
 margin:0;
-font-size:26px;
+font-size:22px;
 }
 
 .section{
-padding:35px 20px;
-}
-
-h2{
-color:var(--gold);
-margin-bottom:15px;
+padding:25px 5px;
 }
 
 button{
 width:100%;
-padding:16px;
-margin:8px 0;
+padding:18px;
+margin:10px 0;
 border:none;
-border-radius:10px;
+border-radius:12px;
 background:var(--gold);
 font-size:18px;
 font-weight:bold;
 cursor:pointer;
 }
 
-button:hover{
-background:#ffcc00;
+button:active{
+transform:scale(0.97);
 }
 
 .race-track{
 background:#222;
 border-radius:10px;
-padding:10px;
-margin-top:20px;
+padding:8px;
+margin-top:15px;
+position:relative;
+}
+
+.finish{
+position:absolute;
+right:5px;
+top:0;
+bottom:0;
+width:4px;
+background:red;
 }
 
 .lane{
 position:relative;
-height:50px;
-margin:10px 0;
+height:45px;
+margin:8px 0;
 background:#333;
 border-radius:8px;
 overflow:hidden;
@@ -89,37 +93,47 @@ overflow:hidden;
 position:absolute;
 left:0;
 top:5px;
-font-size:30px;
+font-size:28px;
+will-change:left;
 }
 
 .leaderboard{
 background:var(--card);
 border-radius:10px;
-padding:15px;
+padding:12px;
 text-align:left;
+font-size:14px;
 }
 
 .leaderboard div{
 display:flex;
 justify-content:space-between;
-margin:6px 0;
+margin:4px 0;
 }
 
 .countdown{
-margin-top:10px;
 color:var(--gold);
+margin-bottom:10px;
+font-size:14px;
+}
+
+.status{
+margin-top:10px;
+color:#aaa;
+font-size:14px;
 }
 
 footer{
-padding:20px;
+padding:15px;
 background:black;
 border-top:2px solid var(--gold);
-margin-top:40px;
+margin-top:30px;
+font-size:12px;
 }
 
 iframe{
 width:100%;
-height:220px;
+height:180px;
 border:none;
 border-radius:10px;
 }
@@ -131,15 +145,13 @@ border-radius:10px;
 <body>
 
 <header>
-
-<h1>Duck Race Society</h1>
+<h1>🦆 Duck Race Society</h1>
 <p>Web3 Duck Racing Game</p>
-
 </header>
 
 <section class="section">
 
-<h2>Connect Wallet</h2>
+<h2>Wallet</h2>
 
 <button id="walletBtn">Connect MetaMask</button>
 
@@ -153,31 +165,25 @@ border-radius:10px;
 
 <div class="countdown" id="countdown"></div>
 
-<button id="startRace">Start Duck Race</button>
+<button id="startRace">Start Race</button>
+<button id="resetRace">Reset Race</button>
+
+<div class="status" id="raceStatus">Waiting...</div>
 
 </section>
 
 <section class="section">
 
-<h2>Duck Race</h2>
+<h2>Race Track</h2>
 
 <div class="race-track">
 
-<div class="lane">
-<div class="duck" id="duck1">🦆</div>
-</div>
+<div class="finish"></div>
 
-<div class="lane">
-<div class="duck" id="duck2">🦆</div>
-</div>
-
-<div class="lane">
-<div class="duck" id="duck3">🦆</div>
-</div>
-
-<div class="lane">
-<div class="duck" id="duck4">🦆</div>
-</div>
+<div class="lane"><div class="duck">🦆</div></div>
+<div class="lane"><div class="duck">🦆</div></div>
+<div class="lane"><div class="duck">🦆</div></div>
+<div class="lane"><div class="duck">🦆</div></div>
 
 </div>
 
@@ -187,22 +193,7 @@ border-radius:10px;
 
 <h2>Leaderboard</h2>
 
-<div class="leaderboard" id="leaderboard">
-
-<div><span>Pirate Duck</span><span>0 Wins</span></div>
-<div><span>Cyber Duck</span><span>0 Wins</span></div>
-<div><span>Golden Duck</span><span>0 Wins</span></div>
-<div><span>Alien Duck</span><span>0 Wins</span></div>
-
-</div>
-
-</section>
-
-<section class="section">
-
-<h2>Live Stream</h2>
-
-<iframe src="https://www.youtube.com/embed/live_stream?channel=" allowfullscreen></iframe>
+<div class="leaderboard" id="leaderboard"></div>
 
 </section>
 
@@ -214,106 +205,137 @@ border-radius:10px;
 
 <script>
 
-let wins=[0,0,0,0]
+const ducks=[...document.querySelectorAll(".duck")]
 
-const ducks=[
-document.getElementById("duck1"),
-document.getElementById("duck2"),
-document.getElementById("duck3"),
-document.getElementById("duck4")
-]
+let wins=JSON.parse(localStorage.getItem("duckWins"))||[0,0,0,0]
 
-function startRace(){
+let running=false
 
-ducks.forEach(d=>{
-d.style.left="0px"
-})
-
-let race=setInterval(()=>{
-
-ducks.forEach(d=>{
-
-let current=parseInt(d.style.left)||0
-let move=Math.random()*20
-
-d.style.left=current+move+"px"
-
-if(current>320){
-
-clearInterval(race)
-
-let winner=ducks.indexOf(d)
-
-wins[winner]++
-
-updateLeaderboard()
-
-alert("Winner: Duck "+(winner+1))
-
-}
-
-})
-
-},100)
-
-}
+const trackWidth=window.innerWidth-80
 
 function updateLeaderboard(){
 
+const names=[
+"Pirate Duck",
+"Cyber Duck",
+"Golden Duck",
+"Alien Duck"
+]
+
 const board=document.getElementById("leaderboard")
 
-board.innerHTML=`
-<div><span>Pirate Duck</span><span>${wins[0]} Wins</span></div>
-<div><span>Cyber Duck</span><span>${wins[1]} Wins</span></div>
-<div><span>Golden Duck</span><span>${wins[2]} Wins</span></div>
-<div><span>Alien Duck</span><span>${wins[3]} Wins</span></div>
-`
+board.innerHTML=names.map((n,i)=>`
+<div>
+<span>${n}</span>
+<span>${wins[i]} Wins</span>
+</div>
+`).join("")
+
+localStorage.setItem("duckWins",JSON.stringify(wins))
+
+}
+
+updateLeaderboard()
+
+function startRace(){
+
+if(running) return
+
+running=true
+
+let pos=[0,0,0,0]
+
+document.getElementById("raceStatus").textContent="Race started!"
+
+function frame(){
+
+if(!running) return
+
+ducks.forEach((d,i)=>{
+
+pos[i]+=Math.random()*3
+
+d.style.left=pos[i]+"px"
+
+if(pos[i]>trackWidth){
+
+running=false
+
+wins[i]++
+
+updateLeaderboard()
+
+document.getElementById("raceStatus").textContent=
+"🏆 Winner Duck "+(i+1)
+
+}
+
+})
+
+requestAnimationFrame(frame)
+
+}
+
+frame()
+
+}
+
+function resetRace(){
+
+running=false
+
+ducks.forEach(d=>d.style.left="0px")
+
+document.getElementById("raceStatus").textContent="Race reset"
 
 }
 
 document.getElementById("startRace").onclick=startRace
+document.getElementById("resetRace").onclick=resetRace
 
 // Countdown
 
 const raceDate = new Date("2026-04-01T20:00:00").getTime()
-const countdown=document.getElementById("countdown")
 
 setInterval(()=>{
 
 const now=Date.now()
-const distance=raceDate-now
+const dist=raceDate-now
 
-const days=Math.floor(distance/86400000)
-const hours=Math.floor((distance%86400000)/3600000)
-const minutes=Math.floor((distance%3600000)/60000)
+const d=Math.floor(dist/86400000)
+const h=Math.floor((dist%86400000)/3600000)
+const m=Math.floor((dist%3600000)/60000)
 
-countdown.textContent=
-`Next Race: ${days}d ${hours}h ${minutes}m`
+document.getElementById("countdown").textContent=
+`Next Race: ${d}d ${h}h ${m}m`
 
 },1000)
 
-// Wallet Connect (basic)
+// Wallet
 
 document.getElementById("walletBtn").onclick=async()=>{
 
-if(window.ethereum){
+if(!window.ethereum){
+
+alert("Install MetaMask")
+
+return
+
+}
 
 try{
 
 const accounts=await ethereum.request({method:"eth_requestAccounts"})
 
+const short=
+accounts[0].slice(0,6)+"..."+accounts[0].slice(-4)
+
 document.getElementById("walletStatus").textContent=
-"Connected: "+accounts[0]
+"Connected: "+short
 
 }catch{
 
 alert("Connection rejected")
-
-}
-
-}else{
-
-alert("MetaMask not installed")
 
 }
 
