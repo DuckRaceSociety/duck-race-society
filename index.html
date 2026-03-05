@@ -1,217 +1,132 @@
 <!DOCTYPE html>
 <html>
 <head>
-
-<title>Duck Race Society TRC</title>
+<title>Duck Race Society</title>
 
 <style>
 
 body{
 font-family:Arial;
-background:#0f172a;
-color:white;
+background:#6ec6ff;
 text-align:center;
-margin:0;
-}
-
-header{
-background:#020617;
-padding:20px;
 }
 
 h1{
-color:#facc15;
-}
-
-nav{
-margin-top:10px;
-}
-
-nav a{
 color:white;
-margin:15px;
-text-decoration:none;
-font-size:18px;
-}
-
-.hero{
-padding:60px;
-}
-
-button{
-padding:15px 30px;
-font-size:18px;
-margin:10px;
-cursor:pointer;
-}
-
-.section{
-padding:60px;
 }
 
 .track{
 width:80%;
-height:300px;
-border:4px solid white;
 margin:auto;
+margin-top:40px;
+}
+
+.lane{
+background:white;
+height:70px;
+margin:20px 0;
+border-radius:40px;
 position:relative;
-background:#1e293b;
 }
 
 .duck{
+font-size:40px;
 position:absolute;
-font-size:30px;
 left:0;
+top:10px;
 }
 
 .finish{
 position:absolute;
-right:0;
-height:100%;
+right:10px;
+top:0;
+bottom:0;
 width:5px;
 background:red;
 }
 
-#winner{
-font-size:24px;
-margin-top:20px;
-color:#22c55e;
+button{
+padding:15px 30px;
+font-size:20px;
+border:none;
+border-radius:10px;
+background:#ffd000;
+cursor:pointer;
 }
 
-footer{
-background:#020617;
-padding:20px;
-margin-top:50px;
+#winner{
+font-size:30px;
+margin-top:30px;
+color:white;
 }
 
 </style>
-
 </head>
 
 <body>
 
-<header>
+<h1>🦆 Duck Race Society</h1>
 
-<h1>Duck Race Society 🦆🔥</h1>
+<button onclick="startRace()">START RACE</button>
 
-<nav>
-<a href="#mint">Mint</a>
-<a href="#race">Duck Race</a>
-<a href="#collection">Collection</a>
-<a href="#stream">Livestream</a>
-</nav>
+<div class="track">
 
-</header>
-
-<div class="hero">
-
-<h2>Mint your Duck. Join the Race. Win SOL.</h2>
-
-<button>Mint TRC NFT</button>
-
-<button onclick="scrollToRace()">Join Duck Race</button>
-
-</div>
-
-<div class="section" id="race">
-
-<h2>Duck Race Arena 🦆</h2>
-
-<input id="wallet" placeholder="Enter Wallet">
-
-<button onclick="addDuck()">Join Race</button>
-
-<div class="track" id="track">
-
+<div class="lane">
+<div class="duck" id="duck1">🦆</div>
 <div class="finish"></div>
-
 </div>
 
-<button onclick="startRace()">Start Race</button>
+<div class="lane">
+<div class="duck" id="duck2">🦆</div>
+<div class="finish"></div>
+</div>
+
+<div class="lane">
+<div class="duck" id="duck3">🦆</div>
+<div class="finish"></div>
+</div>
+
+<div class="lane">
+<div class="duck" id="duck4">🦆</div>
+<div class="finish"></div>
+</div>
+
+</div>
 
 <div id="winner"></div>
 
-</div>
-
-<div class="section" id="collection">
-
-<h2>TRC NFT Collection</h2>
-
-<p>Epic • Rare • Legendary Ducks</p>
-
-</div>
-
-<div class="section" id="stream">
-
-<h2>Live Duck Race Stream</h2>
-
-<p>Watch races live on YouTube or Twitch.</p>
-
-</div>
-
-<footer>
-
-Duck Race Society TRC ©
-
-</footer>
-
 <script>
-
-let ducks=[]
-let track=document.getElementById("track")
-
-function addDuck(){
-
-let wallet=document.getElementById("wallet").value
-
-if(wallet==="") return
-
-let duck=document.createElement("div")
-
-duck.className="duck"
-
-duck.innerHTML="🦆 "+wallet.slice(0,6)
-
-duck.style.top=(ducks.length*35)+"px"
-
-track.appendChild(duck)
-
-ducks.push({element:duck,name:wallet})
-
-document.getElementById("wallet").value=""
-
-}
 
 function startRace(){
 
-let best=0
-let winner=""
+let ducks=[
+document.getElementById("duck1"),
+document.getElementById("duck2"),
+document.getElementById("duck3"),
+document.getElementById("duck4")
+]
 
-ducks.forEach(d=>{
+let positions=[0,0,0,0]
 
-let distance=600+Math.random()*300
+let race=setInterval(function(){
 
-d.element.style.transition="4s linear"
-d.element.style.left=distance+"px"
+for(let i=0;i<ducks.length;i++){
 
-if(distance>best){
-best=distance
-winner=d.name
+positions[i]+=Math.random()*10
+ducks[i].style.left=positions[i]+"px"
+
+if(positions[i]>700){
+
+clearInterval(race)
+
+document.getElementById("winner").innerHTML=
+"🏆 Winner: Duck "+(i+1)
+
 }
 
-})
-
-setTimeout(()=>{
-
-document.getElementById("winner").innerHTML="🏆 Winner: "+winner
-
-},4200)
-
 }
 
-function scrollToRace(){
-
-document.getElementById("race").scrollIntoView()
+},100)
 
 }
 
