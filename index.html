@@ -8,7 +8,6 @@
 
 <title>Duck Race Society</title>
 
-<!-- Telegram WebApp -->
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
 <style>
@@ -46,10 +45,6 @@ margin:auto;
 box-shadow:0 0 20px rgba(0,0,0,0.4);
 }
 
-h2{
-margin-top:0;
-}
-
 ul{
 list-style:none;
 padding:0;
@@ -78,17 +73,9 @@ background:#22c55e;
 color:white;
 }
 
-.join:hover{
-background:#16a34a;
-}
-
 .start{
 background:#3b82f6;
 color:white;
-}
-
-.start:hover{
-background:#2563eb;
 }
 
 </style>
@@ -107,8 +94,7 @@ Spieler wird geladen...
 
 <h2>Players</h2>
 
-<ul id="players">
-</ul>
+<ul id="players"></ul>
 
 <button class="join" onclick="joinRace()">
 🦆 Join Race
@@ -120,9 +106,23 @@ Spieler wird geladen...
 
 </div>
 
-<script>
+<script type="module">
 
-// Telegram WebApp starten
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDjdM2QAPbNwQXlnFbS9pf9Yi9eH1aK42c",
+  authDomain: "duck-race-society.firebaseapp.com",
+  projectId: "duck-race-society",
+  storageBucket: "duck-race-society.firebasestorage.app",
+  messagingSenderId: "249037009909",
+  appId: "1:249037009909:web:d00e0ff240218fb8aaa6bc"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
 const tg = window.Telegram.WebApp;
 
 tg.ready();
@@ -130,31 +130,24 @@ tg.expand();
 
 let playerName = "Gast";
 
-// Telegram User erkennen
 if(tg.initDataUnsafe && tg.initDataUnsafe.user){
 
-const user = tg.initDataUnsafe.user;
-
-playerName = user.first_name;
+playerName = tg.initDataUnsafe.user.first_name;
 
 }
 
-// Spieler anzeigen
 document.getElementById("player").innerHTML =
 "👤 Spieler: " + playerName;
 
-
-// Lobby Spieler Liste
 let players = [];
 
-// Spielerliste aktualisieren
 function updatePlayers(){
 
 const list = document.getElementById("players");
 
 list.innerHTML = "";
 
-players.forEach(function(p){
+players.forEach((p)=>{
 
 const li = document.createElement("li");
 
@@ -166,23 +159,15 @@ list.appendChild(li);
 
 }
 
+window.joinRace = async function(){
 
-// Spieler tritt Lobby bei
-function joinRace(){
-
-if(!players.includes(playerName)){
-
-players.push(playerName);
-
-updatePlayers();
+await addDoc(collection(db,"lobby"),{
+name: playerName
+});
 
 }
 
-}
-
-
-// Race starten
-function startRace(){
+window.startRace = function(){
 
 if(players.length < 2){
 
@@ -196,10 +181,25 @@ alert("🏁 Race startet mit " + players.length + " Spielern");
 
 }
 
+onSnapshot(collection(db,"lobby"),(snapshot)=>{
+
+players = [];
+
+snapshot.forEach((doc)=>{
+
+players.push(doc.data().name);
+
+});
+
+updatePlayers();
+
+});
+
 </script>
 
 </body>
 </html>
+
 
 
 
