@@ -593,6 +593,7 @@ header {
       ONLY THE <span style="color:var(--sand)">HOST</span> CAN START!
     </p>
     <div class="host-info" id="host-info">YOU HAVE NOT JOINED YET.</div>
+    <div style="font-size:0.8rem;color:var(--text-dim);margin-top:0.4rem;font-family:VT323,monospace;" id="bot-info"></div>
     <button class="btn btn-start" id="start-btn" onclick="startRace()" disabled>▶▶ START RACE</button>
     <div id="race-status"></div>
   </div>
@@ -721,6 +722,8 @@ window.joinRace = async function() {
   await addDoc(lobbyRef, { name: playerName, id: playerId, uid: currentUser.uid, joinedAt: Date.now(), isHost: snap.empty });
   isInLobby = true;
   showToast("🦆 JOINED!");
+  const botInfoEl = document.getElementById("bot-info");
+  if (botInfoEl) botInfoEl.textContent = "⏳ WAITING 15s FOR PLAYERS, THEN BOTS JOIN...";
   setTimeout(() => document.querySelector('.race-panel')?.scrollIntoView({ behavior:'smooth', block:'start' }), 300);
   try { window.Telegram?.WebApp?.expand(); } catch(e) {}
 };
@@ -976,7 +979,7 @@ async function announceWinner(winner) {
     document.getElementById("winner-overlay").classList.add("show");
   }, 600);
   await setDoc(raceRef, { running: false, winner: winner.name }, { merge: true });
-  await triggerPayout(winner);
+  await triggerPayoutSafe(winner);
   const snap = await getDocs(lobbyRef);
   for (const d of snap.docs) await deleteDoc(doc(db,"lobby",d.id));
 }
@@ -1024,7 +1027,8 @@ function updatePlayerList() {
     players.forEach((p, i) => {
       const li = document.createElement("li");
       if (p.id === hostId) li.className = "host-tag";
-      li.innerHTML = `<span>${DUCK_CHARS[i % DUCK_CHARS.length]}</span> ${p.name.toUpperCase()}`;
+      const botTag = p.isBot ? ' <span style="font-size:0.7rem;color:#ab9ff2;font-family:VT323,monospace;">[BOT]</span>' : '';
+      li.innerHTML = `<span>${DUCK_CHARS[i % DUCK_CHARS.length]}</span> ${p.name.toUpperCase()}` + botTag;
       list.appendChild(li);
     });
   }
@@ -1307,7 +1311,8 @@ window.closeWinner = async function() {
 </script>
 <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
 </body>
-</html>
+</htm
+
 
 
 
