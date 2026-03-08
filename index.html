@@ -121,23 +121,6 @@ color:#00ff9c;
 font-size:14px;
 }
 
-.live-container{
-position:relative;
-width:100%;
-padding-top:56.25%;
-border-radius:10px;
-overflow:hidden;
-background:black;
-}
-
-.live-container iframe{
-position:absolute;
-top:0;
-left:0;
-width:100%;
-height:100%;
-}
-
 footer{
 padding:15px;
 background:black;
@@ -180,7 +163,7 @@ font-size:12px;
 
 <p class="betStatus" id="betStatus"></p>
 
-<p>Prize Pool: <span id="pool">0</span> SOL</p>
+<p>Prize Pool: <span id="pool">0.00</span> SOL</p>
 
 </section>
 
@@ -216,24 +199,6 @@ font-size:12px;
 
 <section class="section">
 
-<h2>Live Race Stream</h2>
-
-<div class="live-container">
-
-<iframe
-src="https://www.youtube.com/embed/YOUTUBE_VIDEO_ID?autoplay=1&mute=1"
-title="Duck Race Live"
-frameborder="0"
-allow="autoplay; encrypted-media; picture-in-picture"
-allowfullscreen>
-</iframe>
-
-</div>
-
-</section>
-
-<section class="section">
-
 <h2>Leaderboard</h2>
 
 <div class="leaderboard" id="leaderboard"></div>
@@ -248,14 +213,20 @@ allowfullscreen>
 
 <script>
 
+/* Telegram WebApp Support */
+
+if (window.Telegram?.WebApp){
+Telegram.WebApp.expand()
+}
+
+/* Game Setup */
+
 const ducks=[...document.querySelectorAll(".duck")]
 
 let wins=JSON.parse(localStorage.getItem("duckWins"))||[0,0,0,0]
 
 let running=false
-
 let bets=[0,0,0,0]
-
 let prizePool=0
 
 const trackWidth=Math.min(window.innerWidth,500)-90
@@ -266,6 +237,8 @@ let walletAddress
 const connection=new solanaWeb3.Connection(
 "https://api.mainnet-beta.solana.com"
 )
+
+/* Leaderboard */
 
 function updateLeaderboard(){
 
@@ -291,6 +264,8 @@ localStorage.setItem("duckWins",JSON.stringify(wins))
 
 updateLeaderboard()
 
+/* Race Logic */
+
 function startRace(){
 
 if(running)return
@@ -298,7 +273,6 @@ if(running)return
 if(prizePool===0){
 
 alert("No bets placed")
-
 return
 
 }
@@ -319,7 +293,7 @@ pos[i]+=Math.random()*2.2
 
 d.style.left=pos[i]+"px"
 
-if(pos[i]>trackWidth){
+if(pos[i] > trackWidth && running){
 
 running=false
 
@@ -332,7 +306,7 @@ document.getElementById("raceStatus").textContent=
 
 let payout=prizePool*0.9
 
-alert("Winner gets "+payout+" SOL")
+alert("Winner gets "+payout.toFixed(2)+" SOL")
 
 }
 
@@ -346,6 +320,8 @@ frame()
 
 }
 
+/* Reset */
+
 function resetRace(){
 
 running=false
@@ -354,7 +330,7 @@ bets=[0,0,0,0]
 
 prizePool=0
 
-document.getElementById("pool").innerText="0"
+document.getElementById("pool").innerText="0.00"
 
 document.getElementById("betStatus").innerText=""
 
@@ -364,8 +340,12 @@ document.getElementById("raceStatus").textContent="Race reset"
 
 }
 
+/* Buttons */
+
 document.getElementById("startRace").onclick=startRace
 document.getElementById("resetRace").onclick=resetRace
+
+/* Wallet */
 
 async function connectWallet(){
 
@@ -394,12 +374,13 @@ alert("Install Phantom Wallet")
 
 document.getElementById("walletBtn").onclick=connectWallet
 
+/* Betting */
+
 async function betDuck(duck){
 
 if(!provider){
 
 alert("Connect wallet first")
-
 return
 
 }
@@ -408,14 +389,14 @@ bets[duck]++
 
 prizePool+=0.01
 
-document.getElementById("pool").innerText=prizePool
+document.getElementById("pool").innerText=prizePool.toFixed(2)
 
 document.getElementById("betStatus").innerText=
 "Bet placed on Duck "+(duck+1)
 
 }
 
-// Countdown
+/* Countdown */
 
 const raceDate = new Date("2026-04-01T20:00:00").getTime()
 
@@ -437,5 +418,6 @@ document.getElementById("countdown").textContent=
 
 </body>
 </html>
+
 
 
