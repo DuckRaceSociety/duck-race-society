@@ -368,6 +368,142 @@ header {
   pointer-events: none;
   z-index: 5;
 }
+
+/* ── WALLET PANEL ── */
+.wallet-bar {
+  position: relative;
+  z-index: 10;
+  max-width: 900px;
+  margin: 0 auto 0.5rem;
+  padding: 0 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+.wallet-connect-btn {
+  background: #ab9ff2;
+  color: #000;
+  border: 4px solid #000;
+  box-shadow: 4px 4px 0 #000;
+  padding: 0.5rem 1rem;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.55rem;
+  cursor: pointer;
+  transition: transform 0.05s, box-shadow 0.05s;
+  letter-spacing: 1px;
+}
+.wallet-connect-btn:active { transform: translate(4px,4px); box-shadow: none; }
+.wallet-connect-btn.connected { background: #2dc653; }
+.wallet-info {
+  font-family: 'VT323', monospace;
+  font-size: 1.1rem;
+  color: var(--sand);
+  background: #000;
+  border: 2px solid var(--sand);
+  padding: 0.3rem 0.8rem;
+  display: none;
+}
+.wallet-info.show { display: block; }
+
+/* ── POOL DISPLAY ── */
+.pool-bar {
+  position: relative;
+  z-index: 10;
+  max-width: 900px;
+  margin: 0 auto 0.8rem;
+  padding: 0 1rem;
+}
+.pool-display {
+  background: #0d1b2a;
+  border: 4px solid var(--sand);
+  box-shadow: 6px 6px 0 #000;
+  padding: 0.8rem 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+.pool-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.pool-label {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.45rem;
+  color: var(--text-dim);
+  letter-spacing: 1px;
+}
+.pool-value {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.8rem;
+  color: var(--sand);
+  text-shadow: 2px 2px 0 #000;
+}
+.pool-value.green { color: #2dc653; }
+.pool-value.purple { color: #ab9ff2; }
+
+/* ── BET PANEL ── */
+.bet-panel-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.bet-amount-row {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+.bet-preset {
+  background: #0a1628;
+  border: 3px solid #1a3a5c;
+  color: var(--text-dim);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.45rem;
+  padding: 0.4rem 0.6rem;
+  cursor: pointer;
+  transition: all 0.05s;
+}
+.bet-preset:hover, .bet-preset.active {
+  border-color: var(--sand);
+  color: var(--sand);
+  background: #1a1400;
+}
+.btn-bet {
+  background: #ab9ff2;
+  color: #000;
+  border: 4px solid #000;
+  box-shadow: 4px 4px 0 #000;
+  padding: 0.7rem 1rem;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.55rem;
+  cursor: pointer;
+  width: 100%;
+  margin-top: 0.3rem;
+  transition: transform 0.05s, box-shadow 0.05s;
+  letter-spacing: 1px;
+}
+.btn-bet:active { transform: translate(4px,4px); box-shadow: none; }
+.btn-bet:disabled { opacity: 0.35; cursor: not-allowed; }
+.bet-status {
+  font-size: 0.9rem;
+  color: var(--accent2);
+  text-align: center;
+  min-height: 1.2rem;
+}
+
+/* ── TX LINK ── */
+.tx-link {
+  display: none;
+  font-size: 0.85rem;
+  color: var(--accent2);
+  text-align: center;
+  margin-top: 0.5rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.tx-link.show { display: block; }
 </style>
 </head>
 <body>
@@ -376,6 +512,37 @@ header {
   <div class="pixel-title">🦆 DUCK <span>RACE</span></div>
   <div id="player-badge">👤 LOADING...</div>
 </header>
+
+
+<!-- WALLET BAR -->
+<div class="wallet-bar">
+  <button class="wallet-connect-btn" id="wallet-btn" onclick="connectWallet()">
+    ◎ CONNECT PHANTOM
+  </button>
+  <div class="wallet-info" id="wallet-info">◎ <span id="wallet-addr">-</span></div>
+</div>
+
+<!-- POOL DISPLAY -->
+<div class="pool-bar">
+  <div class="pool-display">
+    <div class="pool-item">
+      <div class="pool-label">PRIZE POOL</div>
+      <div class="pool-value green" id="pool-sol">0.000 SOL</div>
+    </div>
+    <div class="pool-item">
+      <div class="pool-label">PLAYERS BET</div>
+      <div class="pool-value purple" id="pool-players">0 / 0</div>
+    </div>
+    <div class="pool-item">
+      <div class="pool-label">ENTRY FEE</div>
+      <div class="pool-value">0.025 SOL</div>
+    </div>
+    <div class="pool-item">
+      <div class="pool-label">YOUR BET</div>
+      <div class="pool-value" id="my-bet-status">NOT PLACED</div>
+    </div>
+  </div>
+</div>
 
 <div class="container">
 
@@ -388,6 +555,26 @@ header {
     <p id="player-count"></p>
     <button class="btn btn-join" onclick="joinRace()">▶ JOIN RACE</button>
     <button class="btn btn-leave" onclick="leaveRace()">◀ LEAVE</button>
+  </div>
+
+  <!-- BET PANEL -->
+  <div class="panel">
+    <h2>◎ PLACE BET</h2>
+    <div class="bet-panel-inner">
+      <p style="font-size:0.9rem;color:var(--text-dim);line-height:1.6;">
+        CONNECT PHANTOM & JOIN THE RACE TO PLACE YOUR BET!
+      </p>
+      <div class="bet-amount-row">
+        <button class="bet-preset active" onclick="selectBet(0.025)">0.025 SOL</button>
+        <button class="bet-preset" onclick="selectBet(0.05)">0.05 SOL</button>
+        <button class="bet-preset" onclick="selectBet(0.1)">0.1 SOL</button>
+      </div>
+      <button class="btn-bet" id="bet-btn" onclick="placeBet()" disabled>
+        ◎ PLACE BET
+      </button>
+      <div class="bet-status" id="bet-status">CONNECT WALLET FIRST</div>
+      <a class="tx-link" id="tx-link" target="_blank">VIEW ON SOLSCAN ↗</a>
+    </div>
   </div>
 
   <!-- RACE CONTROL -->
@@ -430,7 +617,7 @@ header {
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
   getFirestore, collection, addDoc, onSnapshot,
-  deleteDoc, doc, getDocs, setDoc, getDoc
+  deleteDoc, doc, getDocs, setDoc, getDoc, collectionGroup
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import {
   getAuth, signInAnonymously, onAuthStateChanged
@@ -779,6 +966,7 @@ async function announceWinner(winner) {
     document.getElementById("winner-overlay").classList.add("show");
   }, 600);
   await setDoc(raceRef, { running: false, winner: winner.name }, { merge: true });
+  await triggerPayout(winner);
   const snap = await getDocs(lobbyRef);
   for (const d of snap.docs) await deleteDoc(doc(db,"lobby",d.id));
 }
@@ -871,9 +1059,236 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove("show"), 2500);
 }
 window.showToast = showToast;
+
+// ══════════════════════════════════════════════════
+// ◎ SOLANA / PHANTOM WALLET INTEGRATION
+// ══════════════════════════════════════════════════
+
+const TOKEN_MINT = "H4FTTQ5nhGdFFqHa3FPd5TpjcXYLAokN8SYFdBq4yERL";
+const ENTRY_FEE_SOL = 0.025;
+const LAMPORTS_PER_SOL = 1_000_000_000;
+
+let walletConnected = false;
+let walletAddress = null;
+let selectedBet = 0.025;
+let hasBet = false;
+let betPool = {}; // playerId → { wallet, amount }
+
+// ── CONNECT PHANTOM ──
+window.connectWallet = async function() {
+  try {
+    const phantom = window.solana;
+    if (!phantom?.isPhantom) {
+      showToast("⚠ INSTALL PHANTOM WALLET!");
+      window.open("https://phantom.app/", "_blank");
+      return;
+    }
+    const resp = await phantom.connect();
+    walletAddress = resp.publicKey.toString();
+    walletConnected = true;
+
+    document.getElementById("wallet-btn").textContent = "✓ CONNECTED";
+    document.getElementById("wallet-btn").classList.add("connected");
+    document.getElementById("wallet-info").classList.add("show");
+    document.getElementById("wallet-addr").textContent =
+      walletAddress.slice(0,4) + "..." + walletAddress.slice(-4);
+
+    updateBetUI();
+    showToast("✓ WALLET CONNECTED!");
+  } catch(e) {
+    showToast("WALLET ERROR: " + e.message?.slice(0,20));
+  }
+};
+
+// ── SELECT BET AMOUNT ──
+window.selectBet = function(amount) {
+  selectedBet = amount;
+  document.querySelectorAll('.bet-preset').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  updateBetUI();
+};
+
+// ── PLACE BET ──
+window.placeBet = async function() {
+  if (!walletConnected) { showToast("CONNECT WALLET FIRST!"); return; }
+  if (!isInLobby) { showToast("JOIN THE LOBBY FIRST!"); return; }
+  if (hasBet) { showToast("BET ALREADY PLACED!"); return; }
+  if (raceRunning) { showToast("RACE ALREADY RUNNING!"); return; }
+
+  try {
+    document.getElementById("bet-btn").disabled = true;
+    document.getElementById("bet-status").textContent = "⏳ SENDING TRANSACTION...";
+
+    const phantom = window.solana;
+    const connection = new window.solanaWeb3.Connection(
+      "https://api.mainnet-beta.solana.com", "confirmed"
+    );
+
+    // Treasury wallet address (public key only - safe to hardcode)
+    const TREASURY_WALLET = "5sDfMWBNFMne13aJLhiG3k7V8MwULmHfQrkt2eHupSQ1";
+    const treasuryPubkey = new window.solanaWeb3.PublicKey(TREASURY_WALLET);
+    const fromPubkey = new window.solanaWeb3.PublicKey(walletAddress);
+
+    const lamports = Math.floor(selectedBet * LAMPORTS_PER_SOL);
+
+    const tx = new window.solanaWeb3.Transaction().add(
+      window.solanaWeb3.SystemProgram.transfer({
+        fromPubkey,
+        toPubkey: treasuryPubkey,
+        lamports
+      })
+    );
+
+    tx.feePayer = fromPubkey;
+    const { blockhash } = await connection.getLatestBlockhash();
+    tx.recentBlockhash = blockhash;
+
+    const signed = await phantom.signTransaction(tx);
+    const sig = await connection.sendRawTransaction(signed.serialize());
+    await connection.confirmTransaction(sig, "confirmed");
+
+    // Save bet to Firestore
+    await setDoc(doc(db, "bets", playerId), {
+      wallet: walletAddress,
+      amount: selectedBet,
+      playerId,
+      playerName,
+      txSig: sig,
+      placedAt: Date.now()
+    });
+
+    hasBet = true;
+    document.getElementById("bet-status").textContent = "✓ BET PLACED! " + selectedBet + " SOL";
+    document.getElementById("my-bet-status").textContent = selectedBet + " SOL ✓";
+    document.getElementById("my-bet-status").style.color = "#2dc653";
+
+    const txLink = document.getElementById("tx-link");
+    txLink.href = "https://solscan.io/tx/" + sig;
+    txLink.classList.add("show");
+
+    showToast("✓ BET PLACED!");
+    updatePoolDisplay();
+
+  } catch(e) {
+    console.error(e);
+    document.getElementById("bet-status").textContent = "✗ ERROR: " + (e.message?.slice(0,30) || "Unknown");
+    document.getElementById("bet-btn").disabled = false;
+    showToast("BET FAILED!");
+  }
+};
+
+// ── UPDATE POOL DISPLAY ──
+async function updatePoolDisplay() {
+  try {
+    const betsSnap = await getDocs(collection(db, "bets"));
+    let totalSOL = 0;
+    let betCount = 0;
+    betsSnap.forEach(d => {
+      totalSOL += d.data().amount || 0;
+      betCount++;
+    });
+    document.getElementById("pool-sol").textContent = totalSOL.toFixed(3) + " SOL";
+    document.getElementById("pool-players").textContent = betCount + " / " + players.length;
+  } catch(e) {}
+}
+
+// Live bets listener
+onSnapshot(collection(db, "bets"), snap => {
+  let totalSOL = 0, betCount = 0;
+  snap.forEach(d => { totalSOL += d.data().amount || 0; betCount++; });
+  document.getElementById("pool-sol").textContent = totalSOL.toFixed(3) + " SOL";
+  document.getElementById("pool-players").textContent = betCount + " / " + players.length;
+});
+
+// ── UPDATE BET UI ──
+function updateBetUI() {
+  const btn = document.getElementById("bet-btn");
+  const status = document.getElementById("bet-status");
+  if (!walletConnected) {
+    btn.disabled = true;
+    status.textContent = "CONNECT WALLET FIRST";
+  } else if (!isInLobby) {
+    btn.disabled = true;
+    status.textContent = "JOIN THE LOBBY FIRST";
+  } else if (hasBet) {
+    btn.disabled = true;
+    status.textContent = "✓ BET PLACED!";
+  } else if (raceRunning) {
+    btn.disabled = true;
+    status.textContent = "RACE IN PROGRESS";
+  } else {
+    btn.disabled = false;
+    status.textContent = "READY TO BET " + selectedBet + " SOL";
+  }
+}
+
+// ── PAYOUT AFTER RACE ──
+async function triggerPayout(winner) {
+  try {
+    // Get winner wallet from bets
+    const betDoc = await getDoc(doc(db, "bets", winner.id));
+    if (!betDoc.exists()) {
+      showToast("⚠ WINNER HAS NO BET - NO PAYOUT");
+      return;
+    }
+    const winnerWallet = betDoc.data().wallet;
+
+    // Count players
+    const betsSnap = await getDocs(collection(db, "bets"));
+    const playerCount = betsSnap.size;
+
+    showToast("⏳ SENDING PRIZE...");
+
+    const resp = await fetch("/api/payout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        winnerWallet,
+        raceId: Date.now().toString(),
+        playerCount
+      })
+    });
+
+    const data = await resp.json();
+    if (data.success) {
+      showToast("🏆 PRIZE SENT! " + data.amount + " TOKENS!");
+      // Save payout tx
+      await setDoc(doc(db, "payouts", winner.id + "_" + Date.now()), {
+        winner: winner.name,
+        wallet: winnerWallet,
+        amount: data.amount,
+        txSig: data.signature,
+        paidAt: Date.now()
+      });
+      // Clear bets
+      const bSnap = await getDocs(collection(db, "bets"));
+      for (const d of bSnap.docs) await deleteDoc(doc(db, "bets", d.id));
+    } else {
+      showToast("PAYOUT ERROR: " + data.error?.slice(0,20));
+    }
+  } catch(e) {
+    console.error("Payout error:", e);
+    showToast("PAYOUT FAILED!");
+  }
+}
+
+// Reset bet state on new game
+const _origCloseWinner = window.closeWinner;
+window.closeWinner = async function() {
+  hasBet = false;
+  document.getElementById("my-bet-status").textContent = "NOT PLACED";
+  document.getElementById("my-bet-status").style.color = "";
+  document.getElementById("bet-status").textContent = walletConnected ? "READY TO BET" : "CONNECT WALLET FIRST";
+  document.getElementById("bet-btn").disabled = !walletConnected || !isInLobby;
+  document.getElementById("tx-link").classList.remove("show");
+  await _origCloseWinner();
+};
+
 </script>
+<script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
 </body>
 </html>
+
 
 
 
