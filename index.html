@@ -504,6 +504,123 @@ header {
   cursor: pointer;
 }
 .tx-link.show { display: block; }
+
+/* ── POWER-UP PANEL ── */
+.powerup-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+.powerup-card {
+  background: #0a1628;
+  border: 3px solid #1a3a5c;
+  padding: 0.6rem 0.4rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.1s;
+  position: relative;
+}
+.powerup-card:hover { border-color: var(--sand); }
+.powerup-card.selected {
+  border-color: var(--accent);
+  background: #1a0020;
+  box-shadow: 0 0 10px rgba(247,37,133,0.4);
+}
+.powerup-card.purchased {
+  border-color: #2dc653;
+  background: #001a0a;
+}
+.powerup-card.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.powerup-icon { font-size: 1.6rem; display: block; }
+.powerup-name {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.4rem;
+  color: var(--sand);
+  margin-top: 0.3rem;
+  display: block;
+}
+.powerup-desc {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  margin-top: 0.2rem;
+  display: block;
+  line-height: 1.3;
+}
+.powerup-price {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.4rem;
+  color: #4CC9F0;
+  margin-top: 0.3rem;
+  display: block;
+}
+.btn-buy-powerup {
+  width: 100%;
+  background: #4361ee;
+  color: #fff;
+  border: 4px solid #000;
+  box-shadow: 4px 4px 0 #000;
+  padding: 0.6rem;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.5rem;
+  cursor: pointer;
+  margin-top: 0.6rem;
+  transition: transform 0.05s, box-shadow 0.05s;
+  letter-spacing: 1px;
+}
+.btn-buy-powerup:active { transform: translate(4px,4px); box-shadow: none; }
+.btn-buy-powerup:disabled { opacity: 0.35; cursor: not-allowed; }
+.powerup-status {
+  font-size: 0.9rem;
+  color: var(--accent2);
+  text-align: center;
+  margin-top: 0.4rem;
+  min-height: 1.2rem;
+}
+
+/* ── POWER-UP ACTIVATION BUTTON ── */
+#powerup-activate-bar {
+  display: none;
+  position: fixed;
+  bottom: 5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+}
+#powerup-activate-bar.show { display: block; }
+.btn-activate {
+  background: var(--accent);
+  color: #fff;
+  border: 4px solid #000;
+  box-shadow: 4px 4px 0 #000;
+  padding: 0.7rem 1.5rem;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.6rem;
+  cursor: pointer;
+  animation: activatePulse 0.8s steps(2) infinite;
+  letter-spacing: 1px;
+}
+@keyframes activatePulse {
+  from { background: var(--accent); }
+  to { background: #ff85c1; }
+}
+.btn-activate:active { transform: translate(4px,4px); box-shadow: none; }
+
+/* ── POWER-UP EFFECT OVERLAY ── */
+.powerup-effect {
+  position: absolute;
+  pointer-events: none;
+  z-index: 20;
+  font-size: 2rem;
+  animation: effectFloat 1s ease-out forwards;
+}
+@keyframes effectFloat {
+  from { transform: translateY(0) scale(1); opacity: 1; }
+  to { transform: translateY(-60px) scale(1.5); opacity: 0; }
+}
 </style>
 </head>
 <body>
@@ -598,6 +715,39 @@ header {
     <div id="race-status"></div>
   </div>
 
+
+  <!-- POWER-UP PANEL -->
+  <div class="panel" style="grid-column: 1 / -1;">
+    <h2>⚡ POWER-UPS</h2>
+    <p style="font-size:0.9rem;color:var(--text-dim);margin-bottom:0.6rem;">
+      BUY 1 POWER-UP BEFORE THE RACE STARTS! USE IT DURING THE RACE.
+    </p>
+    <div class="powerup-grid">
+      <div class="powerup-card disabled" id="pu-boost" onclick="selectPowerUp('boost')">
+        <span class="powerup-icon">⚡</span>
+        <span class="powerup-name">BOOST</span>
+        <span class="powerup-desc">Your duck sprints for 3 seconds!</span>
+        <span class="powerup-price">0.005 SOL</span>
+      </div>
+      <div class="powerup-card disabled" id="pu-freeze" onclick="selectPowerUp('freeze')">
+        <span class="powerup-icon">❄️</span>
+        <span class="powerup-name">FREEZE</span>
+        <span class="powerup-desc">Freeze all other ducks for 2 seconds!</span>
+        <span class="powerup-price">0.005 SOL</span>
+      </div>
+      <div class="powerup-card disabled" id="pu-tornado" onclick="selectPowerUp('tornado')">
+        <span class="powerup-icon">🌪️</span>
+        <span class="powerup-name">TORNADO</span>
+        <span class="powerup-desc">Send a random duck back 30%!</span>
+        <span class="powerup-price">0.005 SOL</span>
+      </div>
+    </div>
+    <button class="btn-buy-powerup" id="buy-pu-btn" onclick="buyPowerUp()" disabled>
+      ◎ BUY SELECTED POWER-UP (0.005 SOL)
+    </button>
+    <div class="powerup-status" id="powerup-status">JOIN LOBBY & CONNECT WALLET FIRST</div>
+  </div>
+
   <!-- RACE TRACK -->
   <div class="panel race-panel">
     <h2>🌊 RACE TRACK</h2>
@@ -607,6 +757,13 @@ header {
     </div>
   </div>
 
+</div>
+
+<!-- POWER-UP ACTIVATE -->
+<div id="powerup-activate-bar">
+  <button class="btn-activate" id="activate-btn" onclick="activatePowerUp()">
+    ⚡ USE POWER-UP NOW!
+  </button>
 </div>
 
 <!-- WINNER -->
@@ -909,6 +1066,7 @@ function startLocalRace(racePlayers) {
   raceRunning = true;
   document.getElementById("start-btn").disabled = true;
   document.getElementById("race-status").textContent = "▶ RACE IN PROGRESS...";
+  setTimeout(showPowerUpActivate, 500);
 
   initCanvas(racePlayers);
 
@@ -922,6 +1080,8 @@ function startLocalRace(racePlayers) {
   raceInterval = setInterval(() => {
     let winner = null;
     racePlayers.forEach(p => {
+      // Skip movement if frozen (unless it's the player who used boost)
+      if (window.getFreezeAware && window.getFreezeAware() && !p._boosting) return;
       const boost = Math.random() < 0.08 ? 4 : 1;
       duckPositions[p.id] = (duckPositions[p.id] || 0) + (Math.random() * 4 + 0.5) * boost;
       if (duckPositions[p.id] >= trackWidth - 40 && !winner) winner = p;
@@ -1036,6 +1196,7 @@ function updatePlayerList() {
     players.length > 0 ? players.length + " PLAYER(S) IN LOBBY" : "";
 
   if (players.length > 0 && !raceRunning) previewTrack(players);
+  updatePowerUpUI();
   else if (players.length === 0 && !raceRunning) {
     if (canvas) { canvas.style.display = "none"; }
     document.getElementById("race-placeholder").style.display = "block";
@@ -1073,6 +1234,247 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove("show"), 2500);
 }
 window.showToast = showToast;
+
+// ══════════════════════════════════════════════════
+// ⚡ POWER-UP SYSTEM
+// ══════════════════════════════════════════════════
+
+const POWERUP_PRICE_SOL = 0.005;
+const POWERUPS = {
+  boost:   { name: "⚡ BOOST",   icon: "⚡", duration: 3000, multiplier: 4.5 },
+  freeze:  { name: "❄️ FREEZE",  icon: "❄️", duration: 2000 },
+  tornado: { name: "🌪️ TORNADO", icon: "🌪️" }
+};
+
+let selectedPowerUp = null;
+let purchasedPowerUp = null;
+let powerUpUsed = false;
+let freezeActive = false;
+let freezeTimer = null;
+
+// ── SELECT ──
+window.selectPowerUp = function(type) {
+  if (!isInLobby || !walletConnected || raceRunning || purchasedPowerUp) return;
+  selectedPowerUp = type;
+  document.querySelectorAll('.powerup-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('pu-' + type).classList.add('selected');
+  document.getElementById('buy-pu-btn').disabled = false;
+  document.getElementById('powerup-status').textContent =
+    POWERUPS[type].name + " SELECTED - CLICK BUY!";
+};
+
+// ── BUY ──
+window.buyPowerUp = async function() {
+  if (!selectedPowerUp || !walletConnected || !isInLobby) return;
+  if (purchasedPowerUp) { showToast("ALREADY HAVE A POWER-UP!"); return; }
+
+  try {
+    document.getElementById('buy-pu-btn').disabled = true;
+    document.getElementById('powerup-status').textContent = "⏳ BUYING...";
+
+    const phantom = window.solana;
+    const connection = new window.solanaWeb3.Connection("https://api.mainnet-beta.solana.com", "confirmed");
+    const TREASURY = "5sDfMWBNFMne13aJLhiG3k7V8MwULmHfQrkt2eHupSQ1";
+    const fromPubkey = new window.solanaWeb3.PublicKey(walletAddress);
+    const toPubkey = new window.solanaWeb3.PublicKey(TREASURY);
+    const lamports = Math.floor(POWERUP_PRICE_SOL * 1_000_000_000);
+
+    const tx = new window.solanaWeb3.Transaction().add(
+      window.solanaWeb3.SystemProgram.transfer({ fromPubkey, toPubkey, lamports })
+    );
+    tx.feePayer = fromPubkey;
+    const { blockhash } = await connection.getLatestBlockhash();
+    tx.recentBlockhash = blockhash;
+    const signed = await phantom.signTransaction(tx);
+    const sig = await connection.sendRawTransaction(signed.serialize());
+    await connection.confirmTransaction(sig, "confirmed");
+
+    // Save to Firestore
+    purchasedPowerUp = selectedPowerUp;
+    await setDoc(doc(db, "powerups", playerId), {
+      type: selectedPowerUp,
+      playerId,
+      playerName,
+      used: false,
+      txSig: sig,
+      boughtAt: Date.now()
+    });
+
+    // Update UI
+    document.querySelectorAll('.powerup-card').forEach(c => c.classList.add('disabled'));
+    document.getElementById('pu-' + selectedPowerUp).classList.remove('disabled');
+    document.getElementById('pu-' + selectedPowerUp).classList.add('purchased');
+    document.getElementById('powerup-status').textContent =
+      "✓ " + POWERUPS[selectedPowerUp].name + " READY! USE DURING RACE!";
+
+    showToast("⚡ POWER-UP BOUGHT!");
+
+  } catch(e) {
+    document.getElementById('buy-pu-btn').disabled = false;
+    document.getElementById('powerup-status').textContent = "✗ PURCHASE FAILED";
+    showToast("PURCHASE FAILED!");
+    console.error(e);
+  }
+};
+
+// ── SHOW ACTIVATE BUTTON WHEN RACE STARTS ──
+function showPowerUpActivate() {
+  if (purchasedPowerUp && !powerUpUsed) {
+    document.getElementById('powerup-activate-bar').classList.add('show');
+    document.getElementById('activate-btn').textContent =
+      POWERUPS[purchasedPowerUp].icon + " USE " + POWERUPS[purchasedPowerUp].name + "!";
+  }
+}
+
+// ── ACTIVATE POWER-UP ──
+window.activatePowerUp = async function() {
+  if (!purchasedPowerUp || powerUpUsed || !raceRunning) return;
+  powerUpUsed = true;
+  document.getElementById('powerup-activate-bar').classList.remove('show');
+
+  // Save activation to Firestore so all clients see it
+  await setDoc(doc(db, "powerups", playerId), {
+    type: purchasedPowerUp,
+    playerId,
+    playerName,
+    used: true,
+    activatedAt: Date.now()
+  }, { merge: true });
+
+  showToast(POWERUPS[purchasedPowerUp].icon + " " + POWERUPS[purchasedPowerUp].name + " ACTIVATED!");
+  applyPowerUpEffect(purchasedPowerUp, playerId);
+};
+
+// ── APPLY EFFECT ──
+function applyPowerUpEffect(type, fromPlayerId) {
+  showPowerUpEffectOnTrack(type, fromPlayerId);
+
+  if (type === 'boost') {
+    // Boost own duck
+    const originalMax = 8.5;
+    const boostEnd = Date.now() + POWERUPS.boost.duration;
+    const boostInterval = setInterval(() => {
+      if (Date.now() > boostEnd || !raceRunning) { clearInterval(boostInterval); return; }
+      duckPositions[fromPlayerId] = (duckPositions[fromPlayerId] || 0) + POWERUPS.boost.multiplier;
+    }, 80);
+
+  } else if (type === 'freeze') {
+    // Freeze all other ducks
+    freezeActive = true;
+    showToast("❄️ ALL DUCKS FROZEN!");
+    if (freezeTimer) clearTimeout(freezeTimer);
+    freezeTimer = setTimeout(() => {
+      freezeActive = false;
+      showToast("❄️ FREEZE OVER!");
+    }, POWERUPS.freeze.duration);
+
+  } else if (type === 'tornado') {
+    // Push random other duck back
+    const others = players.filter(p => p.id !== fromPlayerId && !p.isBot);
+    const bots = players.filter(p => p.isBot);
+    const targets = [...others, ...bots];
+    if (targets.length > 0) {
+      const target = targets[Math.floor(Math.random() * targets.length)];
+      const currentPos = duckPositions[target.id] || 0;
+      duckPositions[target.id] = Math.max(0, currentPos * 0.7);
+      showToast("🌪️ " + target.name + " BLOWN BACK!");
+    }
+  }
+}
+
+// ── VISUAL EFFECT ON TRACK ──
+function showPowerUpEffectOnTrack(type, fromPlayerId) {
+  if (!canvas || !ctx) return;
+  const raceIdx = (canvas._racePlayers || []).findIndex(p => p.id === fromPlayerId);
+  if (raceIdx < 0) return;
+  const y = raceIdx * LANE_H + LANE_H / 2;
+  const x = 70 + (duckPositions[fromPlayerId] || 0);
+
+  const el = document.createElement('div');
+  el.className = 'powerup-effect';
+  el.textContent = POWERUPS[type]?.icon || '⚡';
+  el.style.cssText = `left:${x}px;top:${y + canvas.getBoundingClientRect().top - 40}px;position:fixed;`;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1000);
+}
+
+// ── LISTEN FOR OTHER PLAYERS' POWER-UPS ──
+onSnapshot(collection(db, "powerups"), snap => {
+  snap.docChanges().forEach(change => {
+    const data = change.doc.data();
+    if (data.used && data.playerId !== playerId && data.activatedAt > Date.now() - 3000) {
+      showToast(data.playerName + " USED " + POWERUPS[data.type]?.name + "!");
+      if (raceRunning) applyPowerUpEffect(data.type, data.playerId);
+    }
+  });
+});
+
+// ── PATCH startLocalRace TO APPLY FREEZE & SHOW ACTIVATE ──
+const _origStartLocalRace = startLocalRace;
+function startLocalRaceWithPowerUps(racePlayers) {
+  canvas._racePlayers = racePlayers;
+
+  // Show activate button if player has power-up
+  setTimeout(showPowerUpActivate, 500);
+
+  // Patch race interval to respect freeze
+  _origStartLocalRace(racePlayers);
+}
+
+// Override raceInterval tick to check freeze
+const _origSetInterval = window.setInterval;
+// Patch duck movement inside race loop to respect freeze
+// We do this by overriding duckPositions setter behavior in the loop
+const _origRaceLoop = null;
+
+// Patch freeze into existing race interval
+function patchFreezeIntoRace(racePlayers) {
+  const originalTick = () => {
+    if (freezeActive) return; // Skip movement when frozen
+  };
+  // Freeze is checked inside applyPowerUpEffect directly on positions
+}
+
+// ── RESET ON CLOSE ──
+const _origClose3 = window.closeWinner;
+window.closeWinner = async function() {
+  selectedPowerUp = null;
+  purchasedPowerUp = null;
+  powerUpUsed = false;
+  freezeActive = false;
+  if (freezeTimer) { clearTimeout(freezeTimer); freezeTimer = null; }
+  document.getElementById('powerup-activate-bar').classList.remove('show');
+  document.querySelectorAll('.powerup-card').forEach(c => {
+    c.classList.remove('selected','purchased');
+  });
+  document.getElementById('buy-pu-btn').disabled = true;
+  document.getElementById('powerup-status').textContent = "JOIN LOBBY & CONNECT WALLET FIRST";
+  // Clear powerups collection
+  try {
+    const snap = await getDocs(collection(db, "powerups"));
+    for (const d of snap.docs) await deleteDoc(doc(db, "powerups", d.id));
+  } catch(e) {}
+  await _origClose3();
+};
+
+// ── UPDATE POWERUP UI ON LOBBY/WALLET CHANGE ──
+function updatePowerUpUI() {
+  const cards = document.querySelectorAll('.powerup-card');
+  if (isInLobby && walletConnected && !raceRunning && !purchasedPowerUp) {
+    cards.forEach(c => { c.classList.remove('disabled'); });
+    document.getElementById('powerup-status').textContent = "SELECT A POWER-UP!";
+  } else if (!isInLobby || !walletConnected) {
+    cards.forEach(c => { c.classList.add('disabled'); c.classList.remove('selected'); });
+    document.getElementById('buy-pu-btn').disabled = true;
+  }
+}
+
+// Patch freeze into race movement
+// Override the race interval tick for freeze support
+const _origRaceInterval = null;
+function getFreezeAware() { return freezeActive; }
+window.getFreezeAware = getFreezeAware;
+
 
 // ══════════════════════════════════════════════════
 // ◎ SOLANA / PHANTOM WALLET INTEGRATION
@@ -1311,7 +1713,8 @@ window.closeWinner = async function() {
 </script>
 <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
 </body>
-</htm
+</html>
+
 
 
 
