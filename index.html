@@ -546,6 +546,22 @@ onAuthStateChanged(auth, async (user) => {
     playerId = telegramId || user.uid;
     document.getElementById("player-badge").innerHTML = "👤 " + playerName;
     updateHostInfo();
+
+    // Clean up stale race state on load
+    try {
+      const raceSnap = await getDoc(raceRef);
+      if (raceSnap.exists() && raceSnap.data().running === false) {
+        // Clear any leftover lobby entries older than 10 minutes
+        const now = Date.now();
+        const lobbySnap = await getDocs(lobbyRef);
+        for (const d of lobbySnap.docs) {
+          const joinedAt = d.data().joinedAt || 0;
+          if (now - joinedAt > 10 * 60 * 1000) {
+            await deleteDoc(doc(db, "lobby", d.id));
+          }
+        }
+      }
+    } catch(e) { console.log("Cleanup error:", e); }
   }
 });
 
@@ -716,12 +732,20 @@ async function announceWinner(winner) {
   }
 }
 
-window.closeWinner = function () {
+window.closeWinner = async function () {
   document.getElementById("winner-overlay").classList.remove("show");
   document.getElementById("race-status").textContent = "";
   raceRunning = false;
   isInLobby = false;
+  duckPositions = {};
+  if (raceInterval) { clearInterval(raceInterval); raceInterval = null; }
+  // Reset race doc so next race can start
+  try { await setDoc(raceRef, { running: false, winner: null, players: [] }); } catch(e) {}
   updateStartButton();
+  updateHostInfo();
+  // Reset track
+  document.getElementById("race-track").innerHTML =
+    '<div id="race-placeholder">Let players join, then the race will start here!</div>';
 };
 
 // ─── LIVE LOBBY ───────────────────────────────────────────────────────────────
@@ -796,17 +820,23 @@ function updateHostInfo() {
   const info = document.getElementById("host-info");
   if (!isInLobby) {
     info.textContent = "You have not joined the lobby yet.";
+    info.style.borderColor = "var(--accent)";
+    info.style.background = "rgba(255,107,53,0.08)";
   } else if (isHost()) {
     info.textContent = "👑 You are the Host – you can start the race!";
     info.style.borderColor = "var(--sand)";
     info.style.background = "rgba(245,200,66,0.07)";
   } else {
-    info.textContent = "🦆 You are a player – wait for the host.";
+    info.textContent = "🦆 You are a player – wait for the host. (Host ID: " + hostId?.slice(0,6) + ")";
+    info.style.borderColor = "var(--accent)";
+    info.style.background = "rgba(255,107,53,0.08)";
   }
 }
 
 function isHost() {
-  return playerId && hostId && playerId === hostId;
+  if (!playerId || !hostId) return false;
+  const result = String(playerId) === String(hostId);
+  return result;
 }
 
 // ─── TOAST ────────────────────────────────────────────────────────────────────
@@ -821,6 +851,8 @@ window.showToast = showToast;
 </script>
 </body>
 </html>
+
+
 
 
 
