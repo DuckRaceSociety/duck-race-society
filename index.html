@@ -497,6 +497,9 @@ function parseTelegramData() {
 
     tg.ready();
     tg.expand();
+    // Force fullscreen on newer Telegram versions
+    if (tg.requestFullscreen) tg.requestFullscreen();
+    if (tg.enableClosingConfirmation) tg.enableClosingConfirmation();
 
     // Method 1: initDataUnsafe (older versions)
     const user = tg.initDataUnsafe?.user;
@@ -573,6 +576,18 @@ window.joinRace = async function () {
 
   isInLobby = true;
   showToast("🦆 You joined the lobby!");
+
+  // Scroll to race track automatically
+  setTimeout(() => {
+    document.querySelector('.race-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 400);
+
+  // Keep Telegram WebApp open and fullscreen
+  const tg = window.Telegram?.WebApp;
+  if (tg) {
+    tg.expand();
+    if (tg.requestFullscreen) tg.requestFullscreen();
+  }
 };
 
 // ─── LEAVE ────────────────────────────────────────────────────────────────────
@@ -806,6 +821,8 @@ window.showToast = showToast;
 </script>
 </body>
 </html>
+
+
 
 
 
