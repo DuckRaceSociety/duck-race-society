@@ -496,38 +496,44 @@ function parseTelegramData() {
     if (!tg) return;
 
     tg.ready();
-    tg.expand();
-    // Force fullscreen on newer Telegram versions
-    if (tg.requestFullscreen) tg.requestFullscreen();
-    if (tg.enableClosingConfirmation) tg.enableClosingConfirmation();
 
     // Method 1: initDataUnsafe (older versions)
     const user = tg.initDataUnsafe?.user;
     if (user?.first_name) {
       playerName = user.first_name;
       telegramId = String(user.id);
-      return;
     }
 
-    // Method 2: parse initData string manually
-    if (tg.initData && tg.initData.length > 0) {
-      const params = new URLSearchParams(tg.initData);
-      const userStr = params.get("user");
-      if (userStr) {
-        const userObj = JSON.parse(decodeURIComponent(userStr));
-        if (userObj?.first_name) {
-          playerName = userObj.first_name;
-          telegramId = String(userObj.id);
-          return;
+    // Method 2: parse initData string manually (fallback)
+    if (!telegramId && tg.initData && tg.initData.length > 0) {
+      try {
+        const params = new URLSearchParams(tg.initData);
+        const userStr = params.get("user");
+        if (userStr) {
+          const userObj = JSON.parse(decodeURIComponent(userStr));
+          if (userObj?.first_name) {
+            playerName = userObj.first_name;
+            telegramId = String(userObj.id);
+          }
         }
-      }
+      } catch(e2) { console.log("initData parse error:", e2); }
     }
+
   } catch(e) {
     console.log("Telegram parse error:", e);
   }
 }
 
 parseTelegramData();
+
+// Expand AFTER parsing user data - separately so errors don't affect name reading
+try {
+  const tg = window.Telegram?.WebApp;
+  if (tg) {
+    tg.expand();
+    try { if (tg.enableClosingConfirmation) tg.enableClosingConfirmation(); } catch(e) {}
+  }
+} catch(e) {}
 
 // ─── STATE ───────────────────────────────────────────────────────────────────
 let currentUser = null;
@@ -851,6 +857,8 @@ window.showToast = showToast;
 </script>
 </body>
 </html>
+
+
 
 
 
