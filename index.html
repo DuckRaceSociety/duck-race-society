@@ -538,6 +538,14 @@ header {
       <div class="pool-value">0.025 SOL</div>
     </div>
     <div class="pool-item">
+      <div class="pool-label">TRC BONUS</div>
+      <div class="pool-value purple">500 TRC</div>
+    </div>
+    <div class="pool-item">
+      <div class="pool-label">WINNER GETS</div>
+      <div class="pool-value green">80% SOL + 500 TRC</div>
+    </div>
+    <div class="pool-item">
       <div class="pool-label">YOUR BET</div>
       <div class="pool-value" id="my-bet-status">NOT PLACED</div>
     </div>
@@ -607,6 +615,8 @@ header {
     <span class="winner-duck-big">🦆</span>
     <h2>WINNER!</h2>
     <div class="winner-name" id="winner-name">-</div>
+    <div style="font-family:'VT323',monospace;font-size:1.1rem;color:#2dc653;margin-bottom:0.3rem;" id="winner-sol-payout"></div>
+    <div style="font-family:'VT323',monospace;font-size:1.1rem;color:#ab9ff2;margin-bottom:1rem;" id="winner-token-payout"></div>
     <button class="btn-close-winner" onclick="closeWinner()">▶ PLAY AGAIN</button>
   </div>
 </div>
@@ -1239,25 +1249,35 @@ async function triggerPayout(winner) {
 
     showToast("⏳ SENDING PRIZE...");
 
+    // Calculate total pool
+    const betsSnap2 = await getDocs(collection(db, "bets"));
+    let totalPoolSOL = 0;
+    betsSnap2.forEach(d => { totalPoolSOL += d.data().amount || 0; });
+
     const resp = await fetch("/api/payout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         winnerWallet,
         raceId: Date.now().toString(),
-        playerCount
+        playerCount,
+        totalPoolSOL
       })
     });
 
     const data = await resp.json();
     if (data.success) {
-      showToast("🏆 PRIZE SENT! " + data.amount + " TOKENS!");
+      showToast("🏆 " + data.solPayout.toFixed(3) + " SOL + 500 TRC SENT!");
+      document.getElementById("winner-sol-payout").textContent = "◎ " + data.solPayout.toFixed(3) + " SOL SENT!";
+      document.getElementById("winner-token-payout").textContent = "🪙 500 TRC SENT!";
       // Save payout tx
       await setDoc(doc(db, "payouts", winner.id + "_" + Date.now()), {
         winner: winner.name,
         wallet: winnerWallet,
-        amount: data.amount,
-        txSig: data.signature,
+        solPayout: data.solPayout,
+        tokenBonus: 500,
+        solTx: data.solSignature,
+        tokenTx: data.tokenSignature,
         paidAt: Date.now()
       });
       // Clear bets
@@ -1288,6 +1308,8 @@ window.closeWinner = async function() {
 <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
 </body>
 </html>
+
+
 
 
 
