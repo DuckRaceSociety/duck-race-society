@@ -1,151 +1,785 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🦆 Duck Race</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --water: #1a6fb5;
+    --water-light: #2589d4;
+    --water-dark: #0d4a80;
+    --sand: #f5c842;
+    --sand-dark: #d4a800;
+    --duck-yellow: #FFD700;
+    --accent: #ff6b35;
+    --accent2: #7bc67e;
+    --bg: #0a2a4a;
+    --panel: rgba(255,255,255,0.07);
+    --panel-border: rgba(255,255,255,0.13);
+    --text: #e8f4fd;
+    --text-dim: #7fb3d3;
+    --winner-gold: #FFD700;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Nunito', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    background-image:
+      radial-gradient(ellipse at 20% 20%, rgba(21,101,192,0.18) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 80%, rgba(13,74,128,0.25) 0%, transparent 60%);
+  }
+
+  /* HEADER */
+  header {
+    text-align: center;
+    padding: 2rem 1rem 1rem;
+    position: relative;
+  }
+  header h1 {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(2.4rem, 6vw, 4rem);
+    color: var(--sand);
+    text-shadow: 0 4px 24px rgba(245,200,66,0.35), 0 2px 0 var(--sand-dark);
+    letter-spacing: 2px;
+  }
+  header h1 span { color: var(--duck-yellow); }
+  #player-badge {
+    display: inline-block;
+    margin-top: 0.5rem;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 999px;
+    padding: 0.3rem 1.1rem;
+    font-size: 0.95rem;
+    color: var(--text-dim);
+    backdrop-filter: blur(6px);
+  }
+
+  /* MAIN LAYOUT */
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 1rem 1.2rem 3rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.2rem;
+  }
+  @media(max-width:640px){ .container { grid-template-columns: 1fr; } }
+
+  /* PANELS */
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 18px;
+    padding: 1.4rem 1.3rem;
+    backdrop-filter: blur(10px);
+  }
+  .panel h2 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.25rem;
+    color: var(--sand);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  /* PLAYER LIST */
+  #players {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-height: 60px;
+  }
+  #players li {
+    background: rgba(255,255,255,0.06);
+    border-radius: 10px;
+    padding: 0.5rem 0.9rem;
+    font-weight: 700;
+    font-size: 0.97rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    animation: slideIn 0.3s ease;
+  }
+  #players li .duck-icon { font-size: 1.2rem; }
+  #players li.host-tag::after {
+    content: "HOST";
+    margin-left: auto;
+    background: var(--accent);
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 800;
+    border-radius: 999px;
+    padding: 0.1rem 0.5rem;
+    letter-spacing: 1px;
+  }
+  #player-count {
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    margin-top: 0.7rem;
+  }
+
+  /* BUTTONS */
+  .btn {
+    width: 100%;
+    padding: 0.85rem 1rem;
+    border: none;
+    border-radius: 13px;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: transform 0.13s, box-shadow 0.13s, opacity 0.13s;
+    margin-top: 0.7rem;
+    letter-spacing: 0.5px;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-join {
+    background: linear-gradient(135deg, #2589d4, #1a6fb5);
+    color: #fff;
+    box-shadow: 0 4px 18px rgba(37,137,212,0.35);
+  }
+  .btn-join:hover { box-shadow: 0 6px 24px rgba(37,137,212,0.5); transform: translateY(-1px); }
+  .btn-start {
+    background: linear-gradient(135deg, var(--accent), #e04500);
+    color: #fff;
+    box-shadow: 0 4px 18px rgba(255,107,53,0.35);
+  }
+  .btn-start:hover:not(:disabled) { box-shadow: 0 6px 24px rgba(255,107,53,0.5); transform: translateY(-1px); }
+  .btn-start:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; }
+  .btn-leave {
+    background: rgba(255,255,255,0.07);
+    color: var(--text-dim);
+    border: 1px solid var(--panel-border);
+    font-family: 'Nunito', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    margin-top: 0.4rem;
+  }
+  .btn-leave:hover { background: rgba(255,80,80,0.13); color: #ff8080; }
+
+  /* RACE TRACK */
+  .race-panel {
+    grid-column: 1 / -1;
+  }
+  #race-track {
+    position: relative;
+    background: linear-gradient(180deg, #1565c0 0%, #1a6fb5 40%, #1565c0 100%);
+    border-radius: 14px;
+    overflow: hidden;
+    min-height: 60px;
+    border: 2px solid rgba(255,255,255,0.1);
+  }
+  /* Water animation */
+  #race-track::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      90deg,
+      transparent 0px,
+      transparent 18px,
+      rgba(255,255,255,0.04) 18px,
+      rgba(255,255,255,0.04) 36px
+    );
+    animation: waterFlow 3s linear infinite;
+    pointer-events: none;
+  }
+  @keyframes waterFlow {
+    from { background-position: 0 0; }
+    to { background-position: 36px 0; }
+  }
+
+  /* Finish line */
+  .finish-line {
+    position: absolute;
+    right: 48px;
+    top: 0; bottom: 0;
+    width: 6px;
+    background: repeating-linear-gradient(
+      180deg,
+      #fff 0px, #fff 10px,
+      #222 10px, #222 20px
+    );
+    opacity: 0.7;
+    z-index: 5;
+  }
+  .finish-label {
+    position: absolute;
+    right: 54px;
+    top: 4px;
+    font-size: 0.65rem;
+    font-weight: 800;
+    color: #fff;
+    opacity: 0.7;
+    letter-spacing: 1px;
+    writing-mode: vertical-rl;
+  }
+
+  .duck-lane {
+    display: flex;
+    align-items: center;
+    padding: 0.45rem 0.6rem;
+    position: relative;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    min-height: 52px;
+  }
+  .duck-lane:last-child { border-bottom: none; }
+
+  .duck-name {
+    position: absolute;
+    left: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: rgba(255,255,255,0.6);
+    white-space: nowrap;
+    max-width: 60px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    z-index: 2;
+  }
+
+  .duck {
+    position: absolute;
+    left: 70px;
+    font-size: 1.7rem;
+    transition: left 0.22s cubic-bezier(.4,2,.6,1);
+    z-index: 3;
+    filter: drop-shadow(0 2px 6px rgba(0,0,0,0.3));
+    user-select: none;
+  }
+  .duck.bobbing {
+    animation: bob 0.6s ease-in-out infinite alternate;
+  }
+  @keyframes bob {
+    from { transform: translateY(0) rotate(-5deg); }
+    to { transform: translateY(-4px) rotate(5deg); }
+  }
+  .duck.winner-duck {
+    animation: winnerBounce 0.4s ease infinite alternate;
+    filter: drop-shadow(0 0 12px gold);
+  }
+  @keyframes winnerBounce {
+    from { transform: translateY(0) scale(1); }
+    to { transform: translateY(-6px) scale(1.15); }
+  }
+
+  #race-placeholder {
+    text-align: center;
+    padding: 1.5rem;
+    color: var(--text-dim);
+    font-size: 0.95rem;
+  }
+
+  /* STATUS */
+  #race-status {
+    text-align: center;
+    margin-top: 0.8rem;
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--text-dim);
+    min-height: 1.5rem;
+  }
+
+  /* WINNER OVERLAY */
+  #winner-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(10,42,74,0.88);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(6px);
+  }
+  #winner-overlay.show { display: flex; }
+  .winner-card {
+    background: linear-gradient(135deg, #1a3a5c, #0d4a80);
+    border: 2px solid rgba(255,215,0,0.4);
+    border-radius: 24px;
+    padding: 2.5rem 3rem;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 40px rgba(255,215,0,0.1);
+    animation: popIn 0.5s cubic-bezier(.4,2,.6,1);
+    max-width: 340px;
+    width: 90%;
+  }
+  @keyframes popIn {
+    from { transform: scale(0.5); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+  .winner-duck-big { font-size: 4rem; margin-bottom: 0.5rem; animation: winnerBig 0.5s ease infinite alternate; }
+  @keyframes winnerBig {
+    from { transform: scale(1) rotate(-8deg); }
+    to { transform: scale(1.1) rotate(8deg); }
+  }
+  .winner-card h2 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.2rem;
+    color: var(--text-dim);
+    margin-bottom: 0.3rem;
+  }
+  .winner-name {
+    font-family: 'Fredoka One', cursive;
+    font-size: 2.2rem;
+    color: var(--winner-gold);
+    text-shadow: 0 2px 16px rgba(255,215,0,0.4);
+    margin-bottom: 1.2rem;
+  }
+  .confetti { font-size: 1.5rem; margin-bottom: 0.5rem; }
+  .btn-close-winner {
+    background: linear-gradient(135deg, var(--sand), var(--sand-dark));
+    color: #1a3a5c;
+    border: none;
+    border-radius: 12px;
+    padding: 0.7rem 2rem;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: transform 0.13s;
+  }
+  .btn-close-winner:hover { transform: scale(1.04); }
+
+  /* TOAST */
+  #toast {
+    position: fixed;
+    bottom: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: rgba(20,50,80,0.97);
+    border: 1px solid var(--panel-border);
+    border-radius: 12px;
+    padding: 0.7rem 1.5rem;
+    font-weight: 700;
+    color: var(--text);
+    z-index: 200;
+    transition: transform 0.3s cubic-bezier(.4,2,.6,1);
+    pointer-events: none;
+    backdrop-filter: blur(8px);
+    white-space: nowrap;
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* HOST INFO */
+  .host-info {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    margin-top: 0.5rem;
+    padding: 0.5rem 0.8rem;
+    background: rgba(255,107,53,0.08);
+    border-radius: 8px;
+    border-left: 3px solid var(--accent);
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-10px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  /* Ripples on water */
+  .ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.08);
+    animation: rippleAnim 2s linear infinite;
+    pointer-events: none;
+  }
+  @keyframes rippleAnim {
+    from { transform: scale(0); opacity: 0.5; }
+    to { transform: scale(3); opacity: 0; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🦆 Duck <span>Race</span></h1>
+  <div id="player-badge">👤 Wird geladen...</div>
+</header>
+
+<div class="container">
+
+  <!-- LOBBY PANEL -->
+  <div class="panel">
+    <h2>🏊 Lobby</h2>
+    <ul id="players">
+      <li style="color:var(--text-dim);font-weight:400;font-size:0.9rem;">Noch keine Spieler...</li>
+    </ul>
+    <p id="player-count"></p>
+    <button class="btn btn-join" onclick="joinRace()">🦆 Beitreten</button>
+    <button class="btn btn-leave" onclick="leaveRace()">Verlassen</button>
+  </div>
+
+  <!-- START PANEL -->
+  <div class="panel">
+    <h2>🏁 Rennen</h2>
+    <p style="font-size:0.9rem;color:var(--text-dim);line-height:1.6;">
+      Sammle Spieler in der Lobby und starte dann das Rennen!
+      Nur der <strong style="color:var(--sand)">Host</strong> (Erster in der Lobby) kann starten.
+    </p>
+    <div class="host-info" id="host-info">Du bist noch nicht in der Lobby.</div>
+    <button class="btn btn-start" id="start-btn" onclick="startRace()" disabled>🏁 Rennen starten</button>
+    <div id="race-status"></div>
+  </div>
+
+  <!-- RACE TRACK -->
+  <div class="panel race-panel">
+    <h2>🌊 Rennbahn</h2>
+    <div id="race-track">
+      <div id="race-placeholder">Spieler beitreten lassen, dann startet das Rennen hier!</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- WINNER OVERLAY -->
+<div id="winner-overlay">
+  <div class="winner-card">
+    <div class="confetti">🎉🎊🎉</div>
+    <div class="winner-duck-big">🦆</div>
+    <h2>Gewinner!</h2>
+    <div class="winner-name" id="winner-name">-</div>
+    <button class="btn-close-winner" onclick="closeWinner()">Nochmal spielen!</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
 <script type="module">
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { 
-getFirestore, 
-collection, 
-addDoc, 
-onSnapshot, 
-deleteDoc, 
-doc,
-getDocs 
+import {
+  getFirestore, collection, addDoc, onSnapshot,
+  deleteDoc, doc, getDocs, updateDoc, setDoc, getDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {
+  getAuth, signInAnonymously, onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
+// ─── FIREBASE CONFIG ────────────────────────────────────────────────────────
+// ⚠️ Ersetze DEIN_API_KEY durch deinen echten Key
+// Tipp: Schränke den Key in der Firebase Console auf deine Domain ein!
 const firebaseConfig = {
-apiKey: "APIKEY",
-authDomain: "duck-race-society.firebaseapp.com",
-projectId: "duck-race-society",
-storageBucket: "duck-race-society.firebasestorage.app",
-messagingSenderId: "",
-appId: ""
+  apiKey: "DEIN_API_KEY",
+  authDomain: "duck-race-society.firebaseapp.com",
+  projectId: "duck-race-society",
+  storageBucket: "duck-race-society.firebasestorage.app",
+  messagingSenderId: "249037009909",
+  appId: "1:249037009909:web:d00e0ff240218fb8aaa6bc"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
+const lobbyRef = collection(db, "lobby");
+const raceRef = doc(db, "race", "current");
 
-const lobbyRef = collection(db,"lobby");
+// ─── TELEGRAM / GUEST ────────────────────────────────────────────────────────
+let playerName = "Gast_" + Math.random().toString(36).slice(2, 6);
+let telegramId = null;
 
-
-// TELEGRAM
-let playerName = "Gast";
-let playerId = "guest_"+Math.random().toString(36);
-
-if(window.Telegram){
-
-const tg = window.Telegram.WebApp;
-
-tg.ready();
-tg.expand();
-
-if(tg.initDataUnsafe?.user){
-
-playerName = tg.initDataUnsafe.user.first_name;
-playerId = tg.initDataUnsafe.user.id;
-
+if (window.Telegram?.WebApp) {
+  const tg = window.Telegram.WebApp;
+  tg.ready(); tg.expand();
+  const user = tg.initDataUnsafe?.user;
+  if (user) {
+    playerName = user.first_name;
+    telegramId = String(user.id);
+  }
 }
 
-}
-
-document.getElementById("player").innerHTML =
-"👤 Spieler: "+playerName;
-
-
-// LOBBY STATE
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let currentUser = null;
+let playerId = null;
 let players = [];
+let isInLobby = false;
+let raceRunning = false;
+let hostId = null;
+let duckPositions = {};
+let raceInterval = null;
 
-function updatePlayers(){
-
-const list = document.getElementById("players");
-list.innerHTML = "";
-
-players.forEach(p=>{
-
-const li = document.createElement("li");
-li.innerText = p.name;
-
-list.appendChild(li);
-
+// ─── AUTH ────────────────────────────────────────────────────────────────────
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    currentUser = user;
+    playerId = telegramId || user.uid;
+    document.getElementById("player-badge").innerHTML = "👤 " + playerName;
+    updateHostInfo();
+  }
 });
 
-}
-
-
-// JOIN RACE
-window.joinRace = async function(){
-
-// prüfen ob Spieler schon existiert
-const snapshot = await getDocs(lobbyRef);
-
-let exists = false;
-
-snapshot.forEach(doc=>{
-if(doc.data().id == playerId){
-exists = true;
-}
+signInAnonymously(auth).catch(e => {
+  showToast("⚠️ Auth-Fehler: " + e.message);
 });
 
-if(exists){
-alert("Du bist bereits im Rennen");
-return;
+// ─── JOIN ─────────────────────────────────────────────────────────────────────
+window.joinRace = async function () {
+  if (!currentUser) { showToast("⚠️ Bitte warte kurz..."); return; }
+  if (raceRunning) { showToast("⚠️ Rennen läuft bereits!"); return; }
+  if (isInLobby) { showToast("Du bist bereits in der Lobby!"); return; }
+
+  const snapshot = await getDocs(lobbyRef);
+  let exists = false;
+  snapshot.forEach(d => { if (d.data().id === playerId) exists = true; });
+  if (exists) { showToast("Du bist bereits im Rennen 🦆"); return; }
+
+  const isFirstPlayer = snapshot.empty;
+
+  await addDoc(lobbyRef, {
+    name: playerName,
+    id: playerId,
+    uid: currentUser.uid,
+    joinedAt: Date.now(),
+    isHost: isFirstPlayer
+  });
+
+  isInLobby = true;
+  showToast("🦆 Du bist der Lobby beigetreten!");
+};
+
+// ─── LEAVE ────────────────────────────────────────────────────────────────────
+window.leaveRace = async function () {
+  if (!isInLobby) { showToast("Du bist nicht in der Lobby."); return; }
+  const snapshot = await getDocs(lobbyRef);
+  for (const d of snapshot.docs) {
+    if (d.data().id === playerId) {
+      await deleteDoc(doc(db, "lobby", d.id));
+      break;
+    }
+  }
+  isInLobby = false;
+  showToast("Du hast die Lobby verlassen.");
+};
+
+// ─── START RACE ───────────────────────────────────────────────────────────────
+window.startRace = async function () {
+  if (!isHost()) { showToast("⛔ Nur der Host kann starten!"); return; }
+  if (players.length < 2) { showToast("⚠️ Mindestens 2 Spieler benötigt!"); return; }
+  if (raceRunning) return;
+
+  // Rennen-State in Firestore speichern
+  await setDoc(raceRef, {
+    running: true,
+    startedAt: Date.now(),
+    players: players.map(p => ({ id: p.id, name: p.name })),
+    winner: null
+  });
+};
+
+// ─── RACE LOGIC (lokal animiert) ─────────────────────────────────────────────
+function startLocalRace(racePlayers) {
+  raceRunning = true;
+  document.getElementById("start-btn").disabled = true;
+  document.getElementById("race-status").textContent = "🏁 Rennen läuft...";
+
+  // Track aufbauen
+  buildTrack(racePlayers);
+
+  // Positionen initialisieren
+  racePlayers.forEach(p => { duckPositions[p.id] = 0; });
+
+  const trackEl = document.getElementById("race-track");
+  const trackWidth = trackEl.clientWidth - 120; // px bis Ziellinie
+
+  raceInterval = setInterval(() => {
+    let winner = null;
+
+    racePlayers.forEach(p => {
+      // Zufällige Beschleunigung mit gelegentlichen Boosts
+      const boost = Math.random() < 0.08 ? 3.5 : 1;
+      duckPositions[p.id] += (Math.random() * 4 + 1) * boost;
+
+      const duckEl = document.getElementById("duck-" + p.id);
+      if (duckEl) {
+        const pos = Math.min(duckPositions[p.id], trackWidth);
+        duckEl.style.left = (70 + pos) + "px";
+      }
+
+      if (duckPositions[p.id] >= trackWidth && !winner) {
+        winner = p;
+      }
+    });
+
+    if (winner) {
+      clearInterval(raceInterval);
+      raceInterval = null;
+      announceWinner(winner);
+    }
+  }, 80);
 }
 
-await addDoc(lobbyRef,{
-name: playerName,
-id: playerId
+// ─── BUILD TRACK ─────────────────────────────────────────────────────────────
+const DUCK_EMOJIS = ["🦆","🐤","🐣","🐥","🦉","🐧","🦚","🦜"];
+
+function buildTrack(racePlayers) {
+  const track = document.getElementById("race-track");
+  track.innerHTML = "";
+
+  // Finish line
+  const fl = document.createElement("div"); fl.className = "finish-line"; track.appendChild(fl);
+  const flLabel = document.createElement("div"); flLabel.className = "finish-label"; flLabel.textContent = "ZIEL"; track.appendChild(flLabel);
+
+  racePlayers.forEach((p, i) => {
+    const lane = document.createElement("div");
+    lane.className = "duck-lane";
+
+    const nameEl = document.createElement("div");
+    nameEl.className = "duck-name";
+    nameEl.textContent = p.name;
+
+    const duckEl = document.createElement("div");
+    duckEl.className = "duck bobbing";
+    duckEl.id = "duck-" + p.id;
+    duckEl.textContent = DUCK_EMOJIS[i % DUCK_EMOJIS.length];
+
+    lane.appendChild(nameEl);
+    lane.appendChild(duckEl);
+    track.appendChild(lane);
+  });
+}
+
+// ─── WINNER ───────────────────────────────────────────────────────────────────
+async function announceWinner(winner) {
+  // Winner-Duck animieren
+  const duckEl = document.getElementById("duck-" + winner.id);
+  if (duckEl) {
+    duckEl.classList.remove("bobbing");
+    duckEl.classList.add("winner-duck");
+  }
+
+  document.getElementById("race-status").textContent = "🏆 " + winner.name + " gewinnt!";
+
+  setTimeout(() => {
+    document.getElementById("winner-name").textContent = winner.name;
+    document.getElementById("winner-overlay").classList.add("show");
+  }, 600);
+
+  // In Firestore speichern & Lobby leeren
+  await setDoc(raceRef, { running: false, winner: winner.name }, { merge: true });
+
+  const snapshot = await getDocs(lobbyRef);
+  for (const d of snapshot.docs) {
+    await deleteDoc(doc(db, "lobby", d.id));
+  }
+}
+
+window.closeWinner = function () {
+  document.getElementById("winner-overlay").classList.remove("show");
+  document.getElementById("race-status").textContent = "";
+  raceRunning = false;
+  isInLobby = false;
+  updateStartButton();
+};
+
+// ─── LIVE LOBBY ───────────────────────────────────────────────────────────────
+onSnapshot(lobbyRef, (snapshot) => {
+  players = [];
+  hostId = null;
+  let earliestJoin = Infinity;
+
+  snapshot.forEach(d => {
+    const data = d.data();
+    players.push(data);
+    if ((data.joinedAt || 0) < earliestJoin) {
+      earliestJoin = data.joinedAt || 0;
+      hostId = data.id;
+    }
+  });
+
+  updatePlayerList();
+  updateStartButton();
+  updateHostInfo();
 });
 
-}
+// ─── RACE STATE LISTENER ──────────────────────────────────────────────────────
+onSnapshot(raceRef, (snap) => {
+  if (!snap.exists()) return;
+  const data = snap.data();
 
-
-// START RACE
-window.startRace = function(){
-
-if(players.length < 2){
-
-alert("⚠️ Mindestens 2 Spieler benötigt");
-return;
-
-}
-
-alert("🏁 Rennen startet!");
-
-setTimeout(endRace,5000);
-
-}
-
-
-// END RACE
-async function endRace(){
-
-alert("🏆 Rennen beendet!");
-
-const snapshot = await getDocs(lobbyRef);
-
-snapshot.forEach(async (d)=>{
-
-await deleteDoc(doc(db,"lobby",d.id));
-
+  if (data.running && !raceRunning) {
+    raceRunning = true;
+    startLocalRace(data.players);
+  }
 });
 
+// ─── UI HELPERS ───────────────────────────────────────────────────────────────
+function updatePlayerList() {
+  const list = document.getElementById("players");
+  list.innerHTML = "";
+
+  if (players.length === 0) {
+    const li = document.createElement("li");
+    li.style.cssText = "color:var(--text-dim);font-weight:400;font-size:0.9rem;";
+    li.textContent = "Noch keine Spieler...";
+    list.appendChild(li);
+  } else {
+    players.forEach((p, i) => {
+      const li = document.createElement("li");
+      if (p.id === hostId) li.className = "host-tag";
+      const DUCK_EMOJIS = ["🦆","🐤","🐣","🐥","🦉","🐧","🦚","🦜"];
+      li.innerHTML = `<span class="duck-icon">${DUCK_EMOJIS[i % DUCK_EMOJIS.length]}</span> ${p.name}`;
+      list.appendChild(li);
+    });
+  }
+
+  document.getElementById("player-count").textContent =
+    players.length > 0 ? `${players.length} Spieler in der Lobby` : "";
+
+  // Track preview wenn Spieler da
+  if (players.length > 0 && !raceRunning) {
+    buildTrack(players);
+  } else if (players.length === 0 && !raceRunning) {
+    document.getElementById("race-track").innerHTML =
+      '<div id="race-placeholder">Spieler beitreten lassen, dann startet das Rennen hier!</div>';
+  }
 }
 
+function updateStartButton() {
+  const btn = document.getElementById("start-btn");
+  btn.disabled = !isHost() || players.length < 2 || raceRunning;
+}
 
-// LIVE LOBBY
-onSnapshot(lobbyRef,(snapshot)=>{
+function updateHostInfo() {
+  const info = document.getElementById("host-info");
+  if (!isInLobby) {
+    info.textContent = "Du bist noch nicht in der Lobby.";
+  } else if (isHost()) {
+    info.textContent = "👑 Du bist der Host – du kannst das Rennen starten!";
+    info.style.borderColor = "var(--sand)";
+    info.style.background = "rgba(245,200,66,0.07)";
+  } else {
+    info.textContent = "🦆 Du bist Spieler – warte auf den Host.";
+  }
+}
 
-players = [];
+function isHost() {
+  return playerId && hostId && playerId === hostId;
+}
 
-snapshot.forEach(doc=>{
+// ─── TOAST ────────────────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2800);
+}
 
-players.push(doc.data());
-
-});
-
-updatePlayers();
-
-});
-
+window.showToast = showToast;
 </script>
+</body>
+</html>
+
+
 
 
 
