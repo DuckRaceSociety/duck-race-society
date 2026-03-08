@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -404,7 +404,7 @@
 
 <header>
   <h1>🦆 Duck <span>Race</span></h1>
-  <div id="player-badge">👤 Wird geladen...</div>
+  <div id="player-badge">👤 Loading...</div>
 </header>
 
 <div class="container">
@@ -413,30 +413,30 @@
   <div class="panel">
     <h2>🏊 Lobby</h2>
     <ul id="players">
-      <li style="color:var(--text-dim);font-weight:400;font-size:0.9rem;">Noch keine Spieler...</li>
+      <li style="color:var(--text-dim);font-weight:400;font-size:0.9rem;">No players yet...</li>
     </ul>
     <p id="player-count"></p>
-    <button class="btn btn-join" onclick="joinRace()">🦆 Beitreten</button>
-    <button class="btn btn-leave" onclick="leaveRace()">Verlassen</button>
+    <button class="btn btn-join" onclick="joinRace()">🦆 Join Race</button>
+    <button class="btn btn-leave" onclick="leaveRace()">Leave</button>
   </div>
 
   <!-- START PANEL -->
   <div class="panel">
-    <h2>🏁 Rennen</h2>
+    <h2>🏁 Race</h2>
     <p style="font-size:0.9rem;color:var(--text-dim);line-height:1.6;">
-      Sammle Spieler in der Lobby und starte dann das Rennen!
-      Nur der <strong style="color:var(--sand)">Host</strong> (Erster in der Lobby) kann starten.
+      Gather players in the lobby and then start the race!
+      Only the <strong style="color:var(--sand)">Host</strong> (first in lobby) can start.
     </p>
-    <div class="host-info" id="host-info">Du bist noch nicht in der Lobby.</div>
-    <button class="btn btn-start" id="start-btn" onclick="startRace()" disabled>🏁 Rennen starten</button>
+    <div class="host-info" id="host-info">You have not joined the lobby yet.</div>
+    <button class="btn btn-start" id="start-btn" onclick="startRace()" disabled>🏁 Start Race</button>
     <div id="race-status"></div>
   </div>
 
   <!-- RACE TRACK -->
   <div class="panel race-panel">
-    <h2>🌊 Rennbahn</h2>
+    <h2>🌊 Race Track</h2>
     <div id="race-track">
-      <div id="race-placeholder">Spieler beitreten lassen, dann startet das Rennen hier!</div>
+      <div id="race-placeholder">Let players join, then the race will start here!</div>
     </div>
   </div>
 
@@ -447,9 +447,9 @@
   <div class="winner-card">
     <div class="confetti">🎉🎊🎉</div>
     <div class="winner-duck-big">🦆</div>
-    <h2>Gewinner!</h2>
+    <h2>Winner!</h2>
     <div class="winner-name" id="winner-name">-</div>
-    <button class="btn-close-winner" onclick="closeWinner()">Nochmal spielen!</button>
+    <button class="btn-close-winner" onclick="closeWinner()">Play Again!</button>
   </div>
 </div>
 
@@ -486,7 +486,7 @@ const lobbyRef = collection(db, "lobby");
 const raceRef = doc(db, "race", "current");
 
 // ─── TELEGRAM / GUEST ────────────────────────────────────────────────────────
-let playerName = "Gast_" + Math.random().toString(36).slice(2, 6);
+let playerName = "Guest_" + Math.random().toString(36).slice(2, 6);
 let telegramId = null;
 
 if (window.Telegram?.WebApp) {
@@ -520,19 +520,19 @@ onAuthStateChanged(auth, async (user) => {
 });
 
 signInAnonymously(auth).catch(e => {
-  showToast("⚠️ Auth-Fehler: " + e.message);
+  showToast("⚠️ Auth error: " + e.message);
 });
 
 // ─── JOIN ─────────────────────────────────────────────────────────────────────
 window.joinRace = async function () {
-  if (!currentUser) { showToast("⚠️ Bitte warte kurz..."); return; }
-  if (raceRunning) { showToast("⚠️ Rennen läuft bereits!"); return; }
-  if (isInLobby) { showToast("Du bist bereits in der Lobby!"); return; }
+  if (!currentUser) { showToast("⚠️ Please wait a moment..."); return; }
+  if (raceRunning) { showToast("⚠️ Race already running!"); return; }
+  if (isInLobby) { showToast("You are already in the lobby!"); return; }
 
   const snapshot = await getDocs(lobbyRef);
   let exists = false;
   snapshot.forEach(d => { if (d.data().id === playerId) exists = true; });
-  if (exists) { showToast("Du bist bereits im Rennen 🦆"); return; }
+  if (exists) { showToast("You are already in the race 🦆"); return; }
 
   const isFirstPlayer = snapshot.empty;
 
@@ -545,12 +545,12 @@ window.joinRace = async function () {
   });
 
   isInLobby = true;
-  showToast("🦆 Du bist der Lobby beigetreten!");
+  showToast("🦆 You joined the lobby!");
 };
 
 // ─── LEAVE ────────────────────────────────────────────────────────────────────
 window.leaveRace = async function () {
-  if (!isInLobby) { showToast("Du bist nicht in der Lobby."); return; }
+  if (!isInLobby) { showToast("You are not in the lobby."); return; }
   const snapshot = await getDocs(lobbyRef);
   for (const d of snapshot.docs) {
     if (d.data().id === playerId) {
@@ -559,13 +559,13 @@ window.leaveRace = async function () {
     }
   }
   isInLobby = false;
-  showToast("Du hast die Lobby verlassen.");
+  showToast("You left the lobby.");
 };
 
 // ─── START RACE ───────────────────────────────────────────────────────────────
 window.startRace = async function () {
-  if (!isHost()) { showToast("⛔ Nur der Host kann starten!"); return; }
-  if (players.length < 2) { showToast("⚠️ Mindestens 2 Spieler benötigt!"); return; }
+  if (!isHost()) { showToast("⛔ Only the host can start!"); return; }
+  if (players.length < 2) { showToast("⚠️ At least 2 players needed!"); return; }
   if (raceRunning) return;
 
   // Rennen-State in Firestore speichern
@@ -581,7 +581,7 @@ window.startRace = async function () {
 function startLocalRace(racePlayers) {
   raceRunning = true;
   document.getElementById("start-btn").disabled = true;
-  document.getElementById("race-status").textContent = "🏁 Rennen läuft...";
+  document.getElementById("race-status").textContent = "🏁 Race in progress...";
 
   // Track aufbauen
   buildTrack(racePlayers);
@@ -628,7 +628,7 @@ function buildTrack(racePlayers) {
 
   // Finish line
   const fl = document.createElement("div"); fl.className = "finish-line"; track.appendChild(fl);
-  const flLabel = document.createElement("div"); flLabel.className = "finish-label"; flLabel.textContent = "ZIEL"; track.appendChild(flLabel);
+  const flLabel = document.createElement("div"); flLabel.className = "finish-label"; flLabel.textContent = "FINISH"; track.appendChild(flLabel);
 
   racePlayers.forEach((p, i) => {
     const lane = document.createElement("div");
@@ -658,7 +658,7 @@ async function announceWinner(winner) {
     duckEl.classList.add("winner-duck");
   }
 
-  document.getElementById("race-status").textContent = "🏆 " + winner.name + " gewinnt!";
+  document.getElementById("race-status").textContent = "🏆 " + winner.name + " wins!";
 
   setTimeout(() => {
     document.getElementById("winner-name").textContent = winner.name;
@@ -721,7 +721,7 @@ function updatePlayerList() {
   if (players.length === 0) {
     const li = document.createElement("li");
     li.style.cssText = "color:var(--text-dim);font-weight:400;font-size:0.9rem;";
-    li.textContent = "Noch keine Spieler...";
+    li.textContent = "No players yet...";
     list.appendChild(li);
   } else {
     players.forEach((p, i) => {
@@ -734,14 +734,14 @@ function updatePlayerList() {
   }
 
   document.getElementById("player-count").textContent =
-    players.length > 0 ? `${players.length} Spieler in der Lobby` : "";
+    players.length > 0 ? `${players.length} player(s) in the lobby` : "";
 
   // Track preview wenn Spieler da
   if (players.length > 0 && !raceRunning) {
     buildTrack(players);
   } else if (players.length === 0 && !raceRunning) {
     document.getElementById("race-track").innerHTML =
-      '<div id="race-placeholder">Spieler beitreten lassen, dann startet das Rennen hier!</div>';
+      '<div id="race-placeholder">Let players join, then the race will start here!</div>';
   }
 }
 
@@ -753,13 +753,13 @@ function updateStartButton() {
 function updateHostInfo() {
   const info = document.getElementById("host-info");
   if (!isInLobby) {
-    info.textContent = "Du bist noch nicht in der Lobby.";
+    info.textContent = "You have not joined the lobby yet.";
   } else if (isHost()) {
-    info.textContent = "👑 Du bist der Host – du kannst das Rennen starten!";
+    info.textContent = "👑 You are the Host – you can start the race!";
     info.style.borderColor = "var(--sand)";
     info.style.background = "rgba(245,200,66,0.07)";
   } else {
-    info.textContent = "🦆 Du bist Spieler – warte auf den Host.";
+    info.textContent = "🦆 You are a player – wait for the host.";
   }
 }
 
@@ -779,6 +779,8 @@ window.showToast = showToast;
 </script>
 </body>
 </html>
+
+
 
 
 
