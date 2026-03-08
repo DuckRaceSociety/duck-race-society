@@ -5,471 +5,437 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>🦆 Duck Race</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --water: #1a6fb5;
-    --water-light: #2589d4;
-    --water-dark: #0d4a80;
-    --sand: #f5c842;
-    --sand-dark: #d4a800;
-    --duck-yellow: #FFD700;
-    --accent: #ff6b35;
-    --accent2: #7bc67e;
-    --bg: #0a2a4a;
-    --panel: rgba(255,255,255,0.07);
-    --panel-border: rgba(255,255,255,0.13);
-    --text: #e8f4fd;
-    --text-dim: #7fb3d3;
-    --winner-gold: #FFD700;
-  }
+:root {
+  --pixel: 4px;
+  --sky1: #1a1a2e;
+  --sky2: #16213e;
+  --water1: #0077b6;
+  --water2: #023e8a;
+  --water3: #48cae4;
+  --grass: #2d6a4f;
+  --grass2: #40916c;
+  --sand: #f4d35e;
+  --sand2: #ee9b00;
+  --pixel-border: #000;
+  --panel-bg: #0d1b2a;
+  --panel-border: #f4d35e;
+  --text: #e8f4fd;
+  --text-dim: #7fb3d3;
+  --accent: #f72585;
+  --accent2: #4cc9f0;
+  --btn-green: #2dc653;
+  --btn-red: #e63946;
+  --btn-blue: #4361ee;
+}
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+* { box-sizing: border-box; margin: 0; padding: 0; image-rendering: pixelated; }
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Nunito', sans-serif;
-    min-height: 100vh;
-    overflow-x: hidden;
-    background-image:
-      radial-gradient(ellipse at 20% 20%, rgba(21,101,192,0.18) 0%, transparent 60%),
-      radial-gradient(ellipse at 80% 80%, rgba(13,74,128,0.25) 0%, transparent 60%);
-  }
+body {
+  background: var(--sky1);
+  color: var(--text);
+  font-family: 'VT323', monospace;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
 
-  /* HEADER */
-  header {
-    text-align: center;
-    padding: 2rem 1rem 1rem;
-    position: relative;
-  }
-  header h1 {
-    font-family: 'Fredoka One', cursive;
-    font-size: clamp(2.4rem, 6vw, 4rem);
-    color: var(--sand);
-    text-shadow: 0 4px 24px rgba(245,200,66,0.35), 0 2px 0 var(--sand-dark);
-    letter-spacing: 2px;
-  }
-  header h1 span { color: var(--duck-yellow); }
-  #player-badge {
-    display: inline-block;
-    margin-top: 0.5rem;
-    background: var(--panel);
-    border: 1px solid var(--panel-border);
-    border-radius: 999px;
-    padding: 0.3rem 1.1rem;
-    font-size: 0.95rem;
-    color: var(--text-dim);
-    backdrop-filter: blur(6px);
-  }
+/* ── PIXEL STAR BACKGROUND ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    radial-gradient(1px 1px at 10% 15%, #fff 0%, transparent 100%),
+    radial-gradient(1px 1px at 25% 40%, #fff 0%, transparent 100%),
+    radial-gradient(1px 1px at 50% 10%, #fff 0%, transparent 100%),
+    radial-gradient(1px 1px at 70% 25%, #fff 0%, transparent 100%),
+    radial-gradient(1px 1px at 85% 5%, #fff 0%, transparent 100%),
+    radial-gradient(1px 1px at 40% 30%, #fff 0%, transparent 100%),
+    radial-gradient(1px 1px at 60% 20%, #fff 0%, transparent 100%),
+    radial-gradient(1px 1px at 90% 35%, #fff 0%, transparent 100%),
+    radial-gradient(2px 2px at 15% 8%, #ffe 0%, transparent 100%),
+    radial-gradient(2px 2px at 80% 12%, #ffe 0%, transparent 100%);
+  pointer-events: none;
+  z-index: 0;
+  animation: twinkle 4s ease-in-out infinite alternate;
+}
+@keyframes twinkle {
+  from { opacity: 0.6; }
+  to { opacity: 1; }
+}
 
-  /* MAIN LAYOUT */
-  .container {
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 1rem 1.2rem 3rem;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.2rem;
-  }
-  @media(max-width:640px){ .container { grid-template-columns: 1fr; } }
+/* ── HEADER ── */
+header {
+  position: relative;
+  z-index: 10;
+  text-align: center;
+  padding: 1.5rem 1rem 0.5rem;
+}
 
-  /* PANELS */
-  .panel {
-    background: var(--panel);
-    border: 1px solid var(--panel-border);
-    border-radius: 18px;
-    padding: 1.4rem 1.3rem;
-    backdrop-filter: blur(10px);
-  }
-  .panel h2 {
-    font-family: 'Fredoka One', cursive;
-    font-size: 1.25rem;
-    color: var(--sand);
-    margin-bottom: 1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
+.pixel-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(1.2rem, 4vw, 2rem);
+  color: var(--sand);
+  text-shadow:
+    4px 4px 0 #000,
+    -1px -1px 0 #000,
+    1px -1px 0 #000,
+    -1px 1px 0 #000,
+    0 0 20px rgba(244,211,94,0.5);
+  letter-spacing: 2px;
+  animation: titlePulse 2s ease-in-out infinite alternate;
+}
+@keyframes titlePulse {
+  from { text-shadow: 4px 4px 0 #000, 0 0 10px rgba(244,211,94,0.3); }
+  to { text-shadow: 4px 4px 0 #000, 0 0 30px rgba(244,211,94,0.8); }
+}
 
-  /* PLAYER LIST */
-  #players {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    min-height: 60px;
-  }
-  #players li {
-    background: rgba(255,255,255,0.06);
-    border-radius: 10px;
-    padding: 0.5rem 0.9rem;
-    font-weight: 700;
-    font-size: 0.97rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    animation: slideIn 0.3s ease;
-  }
-  #players li .duck-icon { font-size: 1.2rem; }
-  #players li.host-tag::after {
-    content: "HOST";
-    margin-left: auto;
-    background: var(--accent);
-    color: #fff;
-    font-size: 0.65rem;
-    font-weight: 800;
-    border-radius: 999px;
-    padding: 0.1rem 0.5rem;
-    letter-spacing: 1px;
-  }
-  #player-count {
-    font-size: 0.82rem;
-    color: var(--text-dim);
-    margin-top: 0.7rem;
-  }
+.pixel-title span { color: var(--accent2); }
 
-  /* BUTTONS */
-  .btn {
-    width: 100%;
-    padding: 0.85rem 1rem;
-    border: none;
-    border-radius: 13px;
-    font-family: 'Fredoka One', cursive;
-    font-size: 1.1rem;
-    cursor: pointer;
-    transition: transform 0.13s, box-shadow 0.13s, opacity 0.13s;
-    margin-top: 0.7rem;
-    letter-spacing: 0.5px;
-  }
-  .btn:active { transform: scale(0.97); }
-  .btn-join {
-    background: linear-gradient(135deg, #2589d4, #1a6fb5);
-    color: #fff;
-    box-shadow: 0 4px 18px rgba(37,137,212,0.35);
-  }
-  .btn-join:hover { box-shadow: 0 6px 24px rgba(37,137,212,0.5); transform: translateY(-1px); }
-  .btn-start {
-    background: linear-gradient(135deg, var(--accent), #e04500);
-    color: #fff;
-    box-shadow: 0 4px 18px rgba(255,107,53,0.35);
-  }
-  .btn-start:hover:not(:disabled) { box-shadow: 0 6px 24px rgba(255,107,53,0.5); transform: translateY(-1px); }
-  .btn-start:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; }
-  .btn-leave {
-    background: rgba(255,255,255,0.07);
-    color: var(--text-dim);
-    border: 1px solid var(--panel-border);
-    font-family: 'Nunito', sans-serif;
-    font-weight: 700;
-    font-size: 0.9rem;
-    margin-top: 0.4rem;
-  }
-  .btn-leave:hover { background: rgba(255,80,80,0.13); color: #ff8080; }
+#player-badge {
+  display: inline-block;
+  margin-top: 0.6rem;
+  background: #000;
+  border: 3px solid var(--sand);
+  padding: 0.3rem 1rem;
+  font-family: 'VT323', monospace;
+  font-size: 1.2rem;
+  color: var(--sand);
+  image-rendering: pixelated;
+  box-shadow: 3px 3px 0 var(--sand2);
+}
 
-  /* RACE TRACK */
-  .race-panel {
-    grid-column: 1 / -1;
-  }
-  #race-track {
-    position: relative;
-    background: linear-gradient(180deg, #1565c0 0%, #1a6fb5 40%, #1565c0 100%);
-    border-radius: 14px;
-    overflow: hidden;
-    min-height: 60px;
-    border: 2px solid rgba(255,255,255,0.1);
-  }
-  /* Water animation */
-  #race-track::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: repeating-linear-gradient(
-      90deg,
-      transparent 0px,
-      transparent 18px,
-      rgba(255,255,255,0.04) 18px,
-      rgba(255,255,255,0.04) 36px
-    );
-    animation: waterFlow 3s linear infinite;
-    pointer-events: none;
-  }
-  @keyframes waterFlow {
-    from { background-position: 0 0; }
-    to { background-position: 36px 0; }
-  }
+/* ── LAYOUT ── */
+.container {
+  position: relative;
+  z-index: 10;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 1rem 1rem 2rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+@media(max-width:640px){ .container { grid-template-columns: 1fr; } }
 
-  /* Finish line */
-  .finish-line {
-    position: absolute;
-    right: 48px;
-    top: 0; bottom: 0;
-    width: 6px;
-    background: repeating-linear-gradient(
-      180deg,
-      #fff 0px, #fff 10px,
-      #222 10px, #222 20px
-    );
-    opacity: 0.7;
-    z-index: 5;
-  }
-  .finish-label {
-    position: absolute;
-    right: 54px;
-    top: 4px;
-    font-size: 0.65rem;
-    font-weight: 800;
-    color: #fff;
-    opacity: 0.7;
-    letter-spacing: 1px;
-    writing-mode: vertical-rl;
-  }
+/* ── PIXEL PANELS ── */
+.panel {
+  background: var(--panel-bg);
+  border: 4px solid var(--panel-border);
+  box-shadow: 6px 6px 0 #000;
+  padding: 1.2rem;
+  position: relative;
+}
+.panel::before {
+  content: '';
+  position: absolute;
+  top: -4px; left: -4px; right: -4px; bottom: -4px;
+  border: 2px solid rgba(244,211,94,0.15);
+  pointer-events: none;
+}
+.panel h2 {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.7rem;
+  color: var(--sand);
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--sand2);
+  letter-spacing: 1px;
+}
 
-  .duck-lane {
-    display: flex;
-    align-items: center;
-    padding: 0.45rem 0.6rem;
-    position: relative;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
-    min-height: 52px;
-  }
-  .duck-lane:last-child { border-bottom: none; }
+/* ── PLAYER LIST ── */
+#players {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-height: 60px;
+}
+#players li {
+  background: #0a1628;
+  border: 2px solid #1a3a5c;
+  padding: 0.4rem 0.7rem;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  animation: pixelIn 0.2s steps(4) forwards;
+}
+@keyframes pixelIn {
+  from { transform: translateX(-8px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+#players li.host-tag {
+  border-color: var(--sand);
+  background: #1a1400;
+}
+#players li.host-tag::after {
+  content: "HOST";
+  margin-left: auto;
+  background: var(--sand);
+  color: #000;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.45rem;
+  padding: 0.2rem 0.4rem;
+  border: 2px solid #000;
+}
+#player-count {
+  font-size: 0.95rem;
+  color: var(--text-dim);
+  margin-top: 0.5rem;
+}
 
-  .duck-name {
-    position: absolute;
-    left: 8px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: rgba(255,255,255,0.6);
-    white-space: nowrap;
-    max-width: 60px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    z-index: 2;
-  }
+/* ── PIXEL BUTTONS ── */
+.btn {
+  width: 100%;
+  padding: 0.7rem 1rem;
+  border: 4px solid #000;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.6rem;
+  cursor: pointer;
+  margin-top: 0.6rem;
+  letter-spacing: 1px;
+  transition: transform 0.05s, box-shadow 0.05s;
+  box-shadow: 4px 4px 0 #000;
+  text-transform: uppercase;
+}
+.btn:active {
+  transform: translate(4px, 4px);
+  box-shadow: 0 0 0 #000;
+}
+.btn-join {
+  background: var(--btn-green);
+  color: #000;
+}
+.btn-join:hover { background: #3dda63; }
+.btn-start {
+  background: var(--accent);
+  color: #fff;
+}
+.btn-start:hover:not(:disabled) { background: #ff4da6; }
+.btn-start:disabled { opacity: 0.35; cursor: not-allowed; }
+.btn-leave {
+  background: #1a1a2e;
+  color: var(--text-dim);
+  border-color: #333;
+  font-family: 'VT323', monospace;
+  font-size: 0.9rem;
+  box-shadow: 3px 3px 0 #000;
+  margin-top: 0.3rem;
+}
 
-  .duck {
-    position: absolute;
-    left: 70px;
-    font-size: 1.7rem;
-    transition: left 0.22s cubic-bezier(.4,2,.6,1);
-    z-index: 3;
-    filter: drop-shadow(0 2px 6px rgba(0,0,0,0.3));
-    user-select: none;
-  }
-  .duck.bobbing {
-    animation: bob 0.6s ease-in-out infinite alternate;
-  }
-  @keyframes bob {
-    from { transform: translateY(0) rotate(-5deg); }
-    to { transform: translateY(-4px) rotate(5deg); }
-  }
-  .duck.winner-duck {
-    animation: winnerBounce 0.4s ease infinite alternate;
-    filter: drop-shadow(0 0 12px gold);
-  }
-  @keyframes winnerBounce {
-    from { transform: translateY(0) scale(1); }
-    to { transform: translateY(-6px) scale(1.15); }
-  }
+.host-info {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  margin-top: 0.6rem;
+  padding: 0.5rem 0.7rem;
+  border: 2px solid #1a3a5c;
+  background: #060d18;
+  line-height: 1.5;
+}
 
-  #race-placeholder {
-    text-align: center;
-    padding: 1.5rem;
-    color: var(--text-dim);
-    font-size: 0.95rem;
-  }
+#race-status {
+  text-align: center;
+  margin-top: 0.7rem;
+  font-size: 1.1rem;
+  color: var(--accent2);
+  min-height: 1.5rem;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.6rem;
+  animation: blink 1s steps(1) infinite;
+}
+@keyframes blink { 50% { opacity: 0.5; } }
 
-  /* STATUS */
-  #race-status {
-    text-align: center;
-    margin-top: 0.8rem;
-    font-weight: 700;
-    font-size: 1rem;
-    color: var(--text-dim);
-    min-height: 1.5rem;
-  }
+/* ── RACE TRACK PANEL ── */
+.race-panel { grid-column: 1 / -1; }
 
-  /* WINNER OVERLAY */
-  #winner-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(10,42,74,0.88);
-    z-index: 100;
-    align-items: center;
-    justify-content: center;
-    backdrop-filter: blur(6px);
-  }
-  #winner-overlay.show { display: flex; }
-  .winner-card {
-    background: linear-gradient(135deg, #1a3a5c, #0d4a80);
-    border: 2px solid rgba(255,215,0,0.4);
-    border-radius: 24px;
-    padding: 2.5rem 3rem;
-    text-align: center;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 40px rgba(255,215,0,0.1);
-    animation: popIn 0.5s cubic-bezier(.4,2,.6,1);
-    max-width: 340px;
-    width: 90%;
-  }
-  @keyframes popIn {
-    from { transform: scale(0.5); opacity: 0; }
-    to { transform: scale(1); opacity: 1; }
-  }
-  .winner-duck-big { font-size: 4rem; margin-bottom: 0.5rem; animation: winnerBig 0.5s ease infinite alternate; }
-  @keyframes winnerBig {
-    from { transform: scale(1) rotate(-8deg); }
-    to { transform: scale(1.1) rotate(8deg); }
-  }
-  .winner-card h2 {
-    font-family: 'Fredoka One', cursive;
-    font-size: 1.2rem;
-    color: var(--text-dim);
-    margin-bottom: 0.3rem;
-  }
-  .winner-name {
-    font-family: 'Fredoka One', cursive;
-    font-size: 2.2rem;
-    color: var(--winner-gold);
-    text-shadow: 0 2px 16px rgba(255,215,0,0.4);
-    margin-bottom: 1.2rem;
-  }
-  .confetti { font-size: 1.5rem; margin-bottom: 0.5rem; }
-  .btn-close-winner {
-    background: linear-gradient(135deg, var(--sand), var(--sand-dark));
-    color: #1a3a5c;
-    border: none;
-    border-radius: 12px;
-    padding: 0.7rem 2rem;
-    font-family: 'Fredoka One', cursive;
-    font-size: 1.1rem;
-    cursor: pointer;
-    transition: transform 0.13s;
-  }
-  .btn-close-winner:hover { transform: scale(1.04); }
+/* ── CANVAS TRACK ── */
+#race-canvas-wrap {
+  position: relative;
+  border: 4px solid var(--sand);
+  box-shadow: 6px 6px 0 #000, inset 0 0 30px rgba(0,119,182,0.3);
+  overflow: hidden;
+  background: #023e8a;
+}
+#race-canvas {
+  display: block;
+  width: 100%;
+}
+#race-placeholder {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--text-dim);
+  font-size: 1rem;
+}
 
-  /* TOAST */
-  #toast {
-    position: fixed;
-    bottom: 1.5rem;
-    left: 50%;
-    transform: translateX(-50%) translateY(80px);
-    background: rgba(20,50,80,0.97);
-    border: 1px solid var(--panel-border);
-    border-radius: 12px;
-    padding: 0.7rem 1.5rem;
-    font-weight: 700;
-    color: var(--text);
-    z-index: 200;
-    transition: transform 0.3s cubic-bezier(.4,2,.6,1);
-    pointer-events: none;
-    backdrop-filter: blur(8px);
-    white-space: nowrap;
-  }
-  #toast.show { transform: translateX(-50%) translateY(0); }
+/* ── WINNER OVERLAY ── */
+#winner-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+}
+#winner-overlay.show { display: flex; }
 
-  /* HOST INFO */
-  .host-info {
-    font-size: 0.8rem;
-    color: var(--text-dim);
-    margin-top: 0.5rem;
-    padding: 0.5rem 0.8rem;
-    background: rgba(255,107,53,0.08);
-    border-radius: 8px;
-    border-left: 3px solid var(--accent);
-  }
+.winner-card {
+  background: #0d1b2a;
+  border: 6px solid var(--sand);
+  box-shadow: 8px 8px 0 #000, 0 0 40px rgba(244,211,94,0.3);
+  padding: 2rem 2.5rem;
+  text-align: center;
+  animation: pixelPop 0.3s steps(6) forwards;
+  max-width: 340px;
+  width: 90%;
+}
+@keyframes pixelPop {
+  from { transform: scale(0); }
+  to { transform: scale(1); }
+}
+.winner-duck-big {
+  font-size: 4rem;
+  animation: duckWin 0.3s steps(3) infinite alternate;
+  display: block;
+  margin: 0.5rem 0;
+}
+@keyframes duckWin {
+  from { transform: rotate(-15deg) scale(0.95); }
+  to { transform: rotate(15deg) scale(1.05); }
+}
+.winner-card h2 {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  margin-bottom: 0.5rem;
+  letter-spacing: 2px;
+}
+.winner-name {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 1rem;
+  color: var(--sand);
+  margin-bottom: 1.2rem;
+  text-shadow: 3px 3px 0 #000;
+  word-break: break-all;
+}
+.confetti-row { font-size: 1.5rem; margin-bottom: 0.5rem; }
+.btn-close-winner {
+  background: var(--btn-green);
+  color: #000;
+  border: 4px solid #000;
+  box-shadow: 4px 4px 0 #000;
+  padding: 0.6rem 1.5rem;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.6rem;
+  cursor: pointer;
+  transition: transform 0.05s, box-shadow 0.05s;
+}
+.btn-close-winner:active { transform: translate(4px,4px); box-shadow: none; }
 
-  @keyframes slideIn {
-    from { opacity: 0; transform: translateX(-10px); }
-    to { opacity: 1; transform: translateX(0); }
-  }
+/* ── TOAST ── */
+#toast {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: #000;
+  border: 3px solid var(--sand);
+  box-shadow: 4px 4px 0 var(--sand2);
+  padding: 0.6rem 1.3rem;
+  font-size: 1rem;
+  color: var(--sand);
+  z-index: 200;
+  transition: transform 0.2s steps(4);
+  pointer-events: none;
+  white-space: nowrap;
+}
+#toast.show { transform: translateX(-50%) translateY(0); }
 
-  /* Ripples on water */
-  .ripple {
-    position: absolute;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.08);
-    animation: rippleAnim 2s linear infinite;
-    pointer-events: none;
-  }
-  @keyframes rippleAnim {
-    from { transform: scale(0); opacity: 0.5; }
-    to { transform: scale(3); opacity: 0; }
-  }
+/* ── SCANLINE EFFECT ── */
+.race-panel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.03) 2px,
+    rgba(0,0,0,0.03) 4px
+  );
+  pointer-events: none;
+  z-index: 5;
+}
 </style>
 </head>
 <body>
 
 <header>
-  <h1>🦆 Duck <span>Race</span></h1>
-  <div id="player-badge">👤 Loading...</div>
+  <div class="pixel-title">🦆 DUCK <span>RACE</span></div>
+  <div id="player-badge">👤 LOADING...</div>
 </header>
 
 <div class="container">
 
-  <!-- LOBBY PANEL -->
+  <!-- LOBBY -->
   <div class="panel">
-    <h2>🏊 Lobby</h2>
+    <h2>🏊 LOBBY</h2>
     <ul id="players">
-      <li style="color:var(--text-dim);font-weight:400;font-size:0.9rem;">No players yet...</li>
+      <li style="color:var(--text-dim);font-size:1rem;border:none;background:none;">NO PLAYERS YET...</li>
     </ul>
     <p id="player-count"></p>
-    <button class="btn btn-join" onclick="joinRace()">🦆 Join Race</button>
-    <button class="btn btn-leave" onclick="leaveRace()">Leave</button>
+    <button class="btn btn-join" onclick="joinRace()">▶ JOIN RACE</button>
+    <button class="btn btn-leave" onclick="leaveRace()">◀ LEAVE</button>
   </div>
 
-  <!-- START PANEL -->
+  <!-- RACE CONTROL -->
   <div class="panel">
-    <h2>🏁 Race</h2>
-    <p style="font-size:0.9rem;color:var(--text-dim);line-height:1.6;">
-      Gather players in the lobby and then start the race!
-      Only the <strong style="color:var(--sand)">Host</strong> (first in lobby) can start.
+    <h2>🏁 RACE</h2>
+    <p style="font-size:1rem;color:var(--text-dim);line-height:1.6;">
+      GATHER PLAYERS IN THE LOBBY.<br>
+      ONLY THE <span style="color:var(--sand)">HOST</span> CAN START!
     </p>
-    <div class="host-info" id="host-info">You have not joined the lobby yet.</div>
-    <button class="btn btn-start" id="start-btn" onclick="startRace()" disabled>🏁 Start Race</button>
+    <div class="host-info" id="host-info">YOU HAVE NOT JOINED YET.</div>
+    <button class="btn btn-start" id="start-btn" onclick="startRace()" disabled>▶▶ START RACE</button>
     <div id="race-status"></div>
   </div>
 
   <!-- RACE TRACK -->
   <div class="panel race-panel">
-    <h2>🌊 Race Track</h2>
-    <div id="race-track">
-      <div id="race-placeholder">Let players join, then the race will start here!</div>
+    <h2>🌊 RACE TRACK</h2>
+    <div id="race-canvas-wrap">
+      <div id="race-placeholder">JOIN THE LOBBY TO SEE THE TRACK!</div>
+      <canvas id="race-canvas" style="display:none;"></canvas>
     </div>
   </div>
 
 </div>
 
-<!-- WINNER OVERLAY -->
+<!-- WINNER -->
 <div id="winner-overlay">
   <div class="winner-card">
-    <div class="confetti">🎉🎊🎉</div>
-    <div class="winner-duck-big">🦆</div>
-    <h2>Winner!</h2>
+    <div class="confetti-row">★ ★ ★</div>
+    <span class="winner-duck-big">🦆</span>
+    <h2>WINNER!</h2>
     <div class="winner-name" id="winner-name">-</div>
-    <button class="btn-close-winner" onclick="closeWinner()">Play Again!</button>
+    <button class="btn-close-winner" onclick="closeWinner()">▶ PLAY AGAIN</button>
   </div>
 </div>
 
-<!-- TOAST -->
 <div id="toast"></div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
   getFirestore, collection, addDoc, onSnapshot,
-  deleteDoc, doc, getDocs, updateDoc, setDoc, getDoc
+  deleteDoc, doc, getDocs, setDoc, getDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import {
   getAuth, signInAnonymously, onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-// ─── FIREBASE CONFIG ────────────────────────────────────────────────────────
-// ⚠️ Ersetze DEIN_API_KEY durch deinen echten Key
-// Tipp: Schränke den Key in der Firebase Console auf deine Domain ein!
 const firebaseConfig = {
   apiKey: "AIzaSyDjdM2QAPbNwQXlnFbS9pf9Yi9eH1aK42c",
   authDomain: "duck-race-society.firebaseapp.com",
@@ -486,7 +452,7 @@ const auth = getAuth(app);
 const lobbyRef = collection(db, "lobby");
 const raceRef = doc(db, "race", "current");
 
-// ─── TELEGRAM / GUEST ────────────────────────────────────────────────────────
+// ── TELEGRAM ──
 let playerName = "Guest_" + Math.random().toString(36).slice(2, 6);
 let telegramId = null;
 
@@ -494,369 +460,422 @@ function parseTelegramData() {
   try {
     const tg = window.Telegram?.WebApp;
     if (!tg) return;
-
     tg.ready();
-
-    // Method 1: initDataUnsafe (older versions)
     const user = tg.initDataUnsafe?.user;
-    if (user?.first_name) {
-      playerName = user.first_name;
-      telegramId = String(user.id);
-    }
-
-    // Method 2: parse initData string manually (fallback)
-    if (!telegramId && tg.initData && tg.initData.length > 0) {
+    if (user?.first_name) { playerName = user.first_name; telegramId = String(user.id); }
+    if (!telegramId && tg.initData?.length > 0) {
       try {
         const params = new URLSearchParams(tg.initData);
         const userStr = params.get("user");
         if (userStr) {
-          const userObj = JSON.parse(decodeURIComponent(userStr));
-          if (userObj?.first_name) {
-            playerName = userObj.first_name;
-            telegramId = String(userObj.id);
-          }
+          const u = JSON.parse(decodeURIComponent(userStr));
+          if (u?.first_name) { playerName = u.first_name; telegramId = String(u.id); }
         }
-      } catch(e2) { console.log("initData parse error:", e2); }
+      } catch(e) {}
     }
-
-  } catch(e) {
-    console.log("Telegram parse error:", e);
-  }
+  } catch(e) {}
 }
-
 parseTelegramData();
+try { const tg = window.Telegram?.WebApp; if (tg) { tg.expand(); try { tg.enableClosingConfirmation?.(); } catch(e){} } } catch(e) {}
 
-// Expand AFTER parsing user data - separately so errors don't affect name reading
-try {
-  const tg = window.Telegram?.WebApp;
-  if (tg) {
-    tg.expand();
-    try { if (tg.enableClosingConfirmation) tg.enableClosingConfirmation(); } catch(e) {}
-  }
-} catch(e) {}
+// ── STATE ──
+let currentUser = null, playerId = null, players = [], isInLobby = false;
+let raceRunning = false, hostId = null, raceInterval = null;
 
-// ─── STATE ───────────────────────────────────────────────────────────────────
-let currentUser = null;
-let playerId = null;
-let players = [];
-let isInLobby = false;
-let raceRunning = false;
-let hostId = null;
-let duckPositions = {};
-let raceInterval = null;
+// ── CANVAS STATE ──
+let canvas, ctx, duckPositions = {}, trackWidth = 0;
+const LANE_H = 72;
+const DUCK_COLORS = ['#FFD700','#FF6B6B','#4CC9F0','#7BC67E','#F72585','#FF9F1C','#A8DADC','#E9C46A'];
+const DUCK_CHARS  = ['🦆','🐤','🐣','🐥','🦉','🐧','🦚','🦜'];
+let waveOffset = 0;
+let spectators = [];
+let particles = [];
 
-// ─── AUTH ────────────────────────────────────────────────────────────────────
+// ── AUTH ──
 onAuthStateChanged(auth, async (user) => {
   if (user) {
     currentUser = user;
     playerId = telegramId || user.uid;
-    document.getElementById("player-badge").innerHTML = "👤 " + playerName;
+    document.getElementById("player-badge").innerHTML = "👤 " + playerName.toUpperCase();
     updateHostInfo();
-
-    // Clean up stale race state on load
     try {
-      const raceSnap = await getDoc(raceRef);
-      if (raceSnap.exists() && raceSnap.data().running === false) {
-        // Clear any leftover lobby entries older than 10 minutes
+      const snap = await getDoc(raceRef);
+      if (snap.exists() && !snap.data().running) {
         const now = Date.now();
-        const lobbySnap = await getDocs(lobbyRef);
-        for (const d of lobbySnap.docs) {
-          const joinedAt = d.data().joinedAt || 0;
-          if (now - joinedAt > 10 * 60 * 1000) {
-            await deleteDoc(doc(db, "lobby", d.id));
-          }
+        const ls = await getDocs(lobbyRef);
+        for (const d of ls.docs) {
+          if (now - (d.data().joinedAt||0) > 10*60*1000) await deleteDoc(doc(db,"lobby",d.id));
         }
       }
-    } catch(e) { console.log("Cleanup error:", e); }
+    } catch(e) {}
   }
 });
+signInAnonymously(auth).catch(e => showToast("AUTH ERROR"));
 
-signInAnonymously(auth).catch(e => {
-  showToast("⚠️ Auth error: " + e.message);
-});
-
-// ─── JOIN ─────────────────────────────────────────────────────────────────────
-window.joinRace = async function () {
-  if (!currentUser) { showToast("⚠️ Please wait a moment..."); return; }
-  if (raceRunning) { showToast("⚠️ Race already running!"); return; }
-  if (isInLobby) { showToast("You are already in the lobby!"); return; }
-
-  const snapshot = await getDocs(lobbyRef);
+// ── JOIN ──
+window.joinRace = async function() {
+  if (!currentUser) { showToast("⚠ PLEASE WAIT..."); return; }
+  if (raceRunning) { showToast("⚠ RACE RUNNING!"); return; }
+  if (isInLobby) { showToast("ALREADY IN LOBBY!"); return; }
+  const snap = await getDocs(lobbyRef);
   let exists = false;
-  snapshot.forEach(d => { if (d.data().id === playerId) exists = true; });
-  if (exists) { showToast("You are already in the race 🦆"); return; }
-
-  const isFirstPlayer = snapshot.empty;
-
-  await addDoc(lobbyRef, {
-    name: playerName,
-    id: playerId,
-    uid: currentUser.uid,
-    joinedAt: Date.now(),
-    isHost: isFirstPlayer
-  });
-
+  snap.forEach(d => { if (d.data().id === playerId) exists = true; });
+  if (exists) { showToast("ALREADY IN RACE 🦆"); return; }
+  await addDoc(lobbyRef, { name: playerName, id: playerId, uid: currentUser.uid, joinedAt: Date.now(), isHost: snap.empty });
   isInLobby = true;
-  showToast("🦆 You joined the lobby!");
-
-  // Scroll to race track automatically
-  setTimeout(() => {
-    document.querySelector('.race-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, 400);
-
-  // Keep Telegram WebApp open and fullscreen
-  const tg = window.Telegram?.WebApp;
-  if (tg) {
-    tg.expand();
-    if (tg.requestFullscreen) tg.requestFullscreen();
-  }
+  showToast("🦆 JOINED!");
+  setTimeout(() => document.querySelector('.race-panel')?.scrollIntoView({ behavior:'smooth', block:'start' }), 300);
+  try { window.Telegram?.WebApp?.expand(); } catch(e) {}
 };
 
-// ─── LEAVE ────────────────────────────────────────────────────────────────────
-window.leaveRace = async function () {
-  if (!isInLobby) { showToast("You are not in the lobby."); return; }
-  const snapshot = await getDocs(lobbyRef);
-  for (const d of snapshot.docs) {
-    if (d.data().id === playerId) {
-      await deleteDoc(doc(db, "lobby", d.id));
-      break;
-    }
+// ── LEAVE ──
+window.leaveRace = async function() {
+  if (!isInLobby) { showToast("NOT IN LOBBY"); return; }
+  const snap = await getDocs(lobbyRef);
+  for (const d of snap.docs) {
+    if (d.data().id === playerId) { await deleteDoc(doc(db,"lobby",d.id)); break; }
   }
   isInLobby = false;
-  showToast("You left the lobby.");
+  showToast("LEFT LOBBY");
 };
 
-// ─── START RACE ───────────────────────────────────────────────────────────────
-window.startRace = async function () {
-  if (!isHost()) { showToast("⛔ Only the host can start!"); return; }
-  if (players.length < 2) { showToast("⚠️ At least 2 players needed!"); return; }
+// ── START ──
+window.startRace = async function() {
+  if (!isHost()) { showToast("⛔ HOST ONLY!"); return; }
+  if (players.length < 2) { showToast("⚠ NEED 2+ PLAYERS!"); return; }
   if (raceRunning) return;
-
-  // Rennen-State in Firestore speichern
-  await setDoc(raceRef, {
-    running: true,
-    startedAt: Date.now(),
-    players: players.map(p => ({ id: p.id, name: p.name })),
-    winner: null
-  });
+  await setDoc(raceRef, { running: true, startedAt: Date.now(), players: players.map(p=>({id:p.id,name:p.name})), winner: null });
 };
 
-// ─── RACE LOGIC (lokal animiert) ─────────────────────────────────────────────
+// ── CANVAS RACE ──
+function initCanvas(racePlayers) {
+  const wrap = document.getElementById("race-canvas-wrap");
+  document.getElementById("race-placeholder").style.display = "none";
+  canvas = document.getElementById("race-canvas");
+  canvas.style.display = "block";
+  canvas.width = wrap.clientWidth;
+  canvas.height = LANE_H * racePlayers.length + 60; // +60 for spectator strip
+  wrap.style.height = canvas.height + "px";
+  ctx = canvas.getContext("2d");
+  trackWidth = canvas.width - 110;
+
+  // Init positions
+  racePlayers.forEach(p => { duckPositions[p.id] = 0; });
+
+  // Generate spectators
+  spectators = [];
+  for (let i = 0; i < 18; i++) {
+    spectators.push({
+      x: 20 + i * (canvas.width / 18),
+      y: canvas.height - 14,
+      emoji: ['👤','🧑','👩','🧒','👴','👵','🐸'][Math.floor(Math.random()*7)],
+      wave: Math.random() * Math.PI * 2,
+      speed: 0.05 + Math.random() * 0.05
+    });
+  }
+
+  particles = [];
+}
+
+function drawFrame(racePlayers) {
+  if (!ctx) return;
+  const W = canvas.width, H = canvas.height;
+
+  // ── SKY / BG ──
+  const skyGrad = ctx.createLinearGradient(0, 0, 0, H * 0.15);
+  skyGrad.addColorStop(0, '#0a0a1a');
+  skyGrad.addColorStop(1, '#0d1b2a');
+  ctx.fillStyle = skyGrad;
+  ctx.fillRect(0, 0, W, H * 0.15);
+
+  // ── LANES (WATER) ──
+  racePlayers.forEach((p, i) => {
+    const y = i * LANE_H;
+    const laneGrad = ctx.createLinearGradient(0, y, 0, y + LANE_H);
+    laneGrad.addColorStop(0, i % 2 === 0 ? '#005f99' : '#004f88');
+    laneGrad.addColorStop(1, i % 2 === 0 ? '#003d6b' : '#002d55');
+    ctx.fillStyle = laneGrad;
+    ctx.fillRect(0, y, W, LANE_H);
+
+    // Lane border pixel
+    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+    ctx.fillRect(0, y + LANE_H - 3, W, 3);
+
+    // ── PIXEL WAVES ──
+    ctx.save();
+    ctx.globalAlpha = 0.25;
+    for (let wx = 0; wx < W; wx += 16) {
+      const waveY = y + LANE_H * 0.5 + Math.sin((wx + waveOffset) * 0.05) * 5;
+      ctx.fillStyle = '#48cae4';
+      ctx.fillRect(wx, waveY, 8, 3);
+    }
+    for (let wx = 8; wx < W; wx += 16) {
+      const waveY = y + LANE_H * 0.65 + Math.sin((wx + waveOffset * 1.3) * 0.06) * 4;
+      ctx.fillStyle = '#90e0ef';
+      ctx.fillRect(wx, waveY, 6, 2);
+    }
+    ctx.restore();
+
+    // ── LANE LABEL ──
+    ctx.fillStyle = 'rgba(255,255,255,0.25)';
+    ctx.font = '11px "Press Start 2P"';
+    ctx.fillText(p.name.slice(0,8).toUpperCase(), 6, y + 14);
+
+    // ── DUCK ──
+    const pos = Math.min(duckPositions[p.id] || 0, trackWidth - 40);
+    const duckX = 70 + pos;
+    const duckY = y + LANE_H * 0.5 - 16;
+    const bob = Math.sin(Date.now() * 0.005 + i) * 3;
+
+    // Duck shadow
+    ctx.save();
+    ctx.globalAlpha = 0.3;
+    ctx.fillStyle = '#000';
+    ctx.ellipse(duckX + 16, y + LANE_H - 10, 14, 5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // Duck emoji pixel style
+    ctx.font = '32px serif';
+    ctx.fillText(DUCK_CHARS[i % DUCK_CHARS.length], duckX, duckY + bob);
+
+    // Speed trail
+    if (raceRunning && duckPositions[p.id] > 5) {
+      for (let t = 1; t <= 3; t++) {
+        ctx.save();
+        ctx.globalAlpha = 0.15 / t;
+        ctx.font = `${32 - t*4}px serif`;
+        ctx.fillText(DUCK_CHARS[i % DUCK_CHARS.length], duckX - t*10, duckY + bob);
+        ctx.restore();
+      }
+    }
+  });
+
+  // ── FINISH LINE ──
+  const flX = 70 + trackWidth - 40;
+  for (let fy = 0; fy < H - 50; fy += 8) {
+    ctx.fillStyle = fy % 16 === 0 ? '#fff' : '#222';
+    ctx.fillRect(flX, fy, 8, 8);
+  }
+  ctx.fillStyle = '#fff';
+  ctx.font = '9px "Press Start 2P"';
+  ctx.save();
+  ctx.translate(flX + 14, 40);
+  ctx.rotate(Math.PI / 2);
+  ctx.fillText('FINISH', 0, 0);
+  ctx.restore();
+
+  // ── SPECTATOR STRIP ──
+  ctx.fillStyle = '#1a0a00';
+  ctx.fillRect(0, H - 50, W, 50);
+  ctx.fillStyle = '#2d1500';
+  ctx.fillRect(0, H - 50, W, 4);
+
+  spectators.forEach(s => {
+    s.wave += s.speed;
+    const sy = s.y - 10 + Math.sin(s.wave) * (raceRunning ? 6 : 2);
+    ctx.font = '18px serif';
+    ctx.fillText(s.emoji, s.x, sy);
+  });
+
+  // ── PARTICLES ──
+  particles = particles.filter(p => p.life > 0);
+  particles.forEach(p => {
+    ctx.save();
+    ctx.globalAlpha = p.life / 30;
+    ctx.fillStyle = p.color;
+    ctx.fillRect(p.x, p.y, 4, 4);
+    p.x += p.vx; p.y += p.vy; p.vy += 0.3; p.life--;
+    ctx.restore();
+  });
+
+  waveOffset += 2;
+}
+
+function spawnParticles(x, y) {
+  const colors = ['#FFD700','#FF6B6B','#4CC9F0','#7BC67E','#F72585'];
+  for (let i = 0; i < 20; i++) {
+    particles.push({
+      x, y,
+      vx: (Math.random() - 0.5) * 8,
+      vy: (Math.random() - 0.5) * 8 - 3,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      life: 25 + Math.floor(Math.random() * 15)
+    });
+  }
+}
+
 function startLocalRace(racePlayers) {
   raceRunning = true;
   document.getElementById("start-btn").disabled = true;
-  document.getElementById("race-status").textContent = "🏁 Race in progress...";
+  document.getElementById("race-status").textContent = "▶ RACE IN PROGRESS...";
 
-  // Track aufbauen
-  buildTrack(racePlayers);
+  initCanvas(racePlayers);
 
-  // Positionen initialisieren
-  racePlayers.forEach(p => { duckPositions[p.id] = 0; });
-
-  const trackEl = document.getElementById("race-track");
-  const trackWidth = trackEl.clientWidth - 120; // px bis Ziellinie
+  let animFrame;
+  function loop() {
+    drawFrame(racePlayers);
+    animFrame = requestAnimationFrame(loop);
+  }
+  loop();
 
   raceInterval = setInterval(() => {
     let winner = null;
-
     racePlayers.forEach(p => {
-      // Zufällige Beschleunigung mit gelegentlichen Boosts
-      const boost = Math.random() < 0.08 ? 3.5 : 1;
-      duckPositions[p.id] += (Math.random() * 4 + 1) * boost;
-
-      const duckEl = document.getElementById("duck-" + p.id);
-      if (duckEl) {
-        const pos = Math.min(duckPositions[p.id], trackWidth);
-        duckEl.style.left = (70 + pos) + "px";
-      }
-
-      if (duckPositions[p.id] >= trackWidth && !winner) {
-        winner = p;
-      }
+      const boost = Math.random() < 0.08 ? 4 : 1;
+      duckPositions[p.id] = (duckPositions[p.id] || 0) + (Math.random() * 4 + 0.5) * boost;
+      if (duckPositions[p.id] >= trackWidth - 40 && !winner) winner = p;
     });
-
     if (winner) {
       clearInterval(raceInterval);
       raceInterval = null;
-      announceWinner(winner);
+      // Winner particles
+      const flX = 70 + trackWidth - 40;
+      const wi = racePlayers.findIndex(p => p.id === winner.id);
+      spawnParticles(flX, wi * LANE_H + LANE_H / 2);
+      setTimeout(() => {
+        cancelAnimationFrame(animFrame);
+        announceWinner(winner);
+      }, 800);
     }
   }, 80);
 }
 
-// ─── BUILD TRACK ─────────────────────────────────────────────────────────────
-const DUCK_EMOJIS = ["🦆","🐤","🐣","🐥","🦉","🐧","🦚","🦜"];
-
-function buildTrack(racePlayers) {
-  const track = document.getElementById("race-track");
-  track.innerHTML = "";
-
-  // Finish line
-  const fl = document.createElement("div"); fl.className = "finish-line"; track.appendChild(fl);
-  const flLabel = document.createElement("div"); flLabel.className = "finish-label"; flLabel.textContent = "FINISH"; track.appendChild(flLabel);
-
-  racePlayers.forEach((p, i) => {
-    const lane = document.createElement("div");
-    lane.className = "duck-lane";
-
-    const nameEl = document.createElement("div");
-    nameEl.className = "duck-name";
-    nameEl.textContent = p.name;
-
-    const duckEl = document.createElement("div");
-    duckEl.className = "duck bobbing";
-    duckEl.id = "duck-" + p.id;
-    duckEl.textContent = DUCK_EMOJIS[i % DUCK_EMOJIS.length];
-
-    lane.appendChild(nameEl);
-    lane.appendChild(duckEl);
-    track.appendChild(lane);
-  });
+// Preview track (lobby, not racing)
+function previewTrack(racePlayers) {
+  const wrap = document.getElementById("race-canvas-wrap");
+  document.getElementById("race-placeholder").style.display = "none";
+  canvas = document.getElementById("race-canvas");
+  canvas.style.display = "block";
+  canvas.width = wrap.clientWidth;
+  canvas.height = LANE_H * racePlayers.length + 60;
+  wrap.style.height = canvas.height + "px";
+  ctx = canvas.getContext("2d");
+  trackWidth = canvas.width - 110;
+  racePlayers.forEach(p => { duckPositions[p.id] = 0; });
+  spectators = [];
+  for (let i = 0; i < 18; i++) {
+    spectators.push({
+      x: 20 + i * (canvas.width / 18),
+      y: canvas.height - 14,
+      emoji: ['👤','🧑','👩','🧒','👴','👵','🐸'][Math.floor(Math.random()*7)],
+      wave: Math.random() * Math.PI * 2,
+      speed: 0.03
+    });
+  }
+  function previewLoop() {
+    if (raceRunning) return;
+    drawFrame(racePlayers);
+    requestAnimationFrame(previewLoop);
+  }
+  previewLoop();
 }
 
-// ─── WINNER ───────────────────────────────────────────────────────────────────
+// ── WINNER ──
 async function announceWinner(winner) {
-  // Winner-Duck animieren
-  const duckEl = document.getElementById("duck-" + winner.id);
-  if (duckEl) {
-    duckEl.classList.remove("bobbing");
-    duckEl.classList.add("winner-duck");
-  }
-
-  document.getElementById("race-status").textContent = "🏆 " + winner.name + " wins!";
-
+  document.getElementById("race-status").textContent = "★ " + winner.name.toUpperCase() + " WINS!";
   setTimeout(() => {
-    document.getElementById("winner-name").textContent = winner.name;
+    document.getElementById("winner-name").textContent = winner.name.toUpperCase();
     document.getElementById("winner-overlay").classList.add("show");
   }, 600);
-
-  // In Firestore speichern & Lobby leeren
   await setDoc(raceRef, { running: false, winner: winner.name }, { merge: true });
-
-  const snapshot = await getDocs(lobbyRef);
-  for (const d of snapshot.docs) {
-    await deleteDoc(doc(db, "lobby", d.id));
-  }
+  const snap = await getDocs(lobbyRef);
+  for (const d of snap.docs) await deleteDoc(doc(db,"lobby",d.id));
 }
 
-window.closeWinner = async function () {
+window.closeWinner = async function() {
   document.getElementById("winner-overlay").classList.remove("show");
   document.getElementById("race-status").textContent = "";
-  raceRunning = false;
-  isInLobby = false;
-  duckPositions = {};
+  raceRunning = false; isInLobby = false; duckPositions = {};
   if (raceInterval) { clearInterval(raceInterval); raceInterval = null; }
-  // Reset race doc so next race can start
   try { await setDoc(raceRef, { running: false, winner: null, players: [] }); } catch(e) {}
-  updateStartButton();
-  updateHostInfo();
-  // Reset track
-  document.getElementById("race-track").innerHTML =
-    '<div id="race-placeholder">Let players join, then the race will start here!</div>';
+  canvas = null; ctx = null;
+  document.getElementById("race-canvas").style.display = "none";
+  document.getElementById("race-placeholder").style.display = "block";
+  document.getElementById("race-placeholder").textContent = "JOIN THE LOBBY TO SEE THE TRACK!";
+  updateStartButton(); updateHostInfo();
 };
 
-// ─── LIVE LOBBY ───────────────────────────────────────────────────────────────
-onSnapshot(lobbyRef, (snapshot) => {
-  players = [];
-  hostId = null;
-  let earliestJoin = Infinity;
-
-  snapshot.forEach(d => {
-    const data = d.data();
-    players.push(data);
-    if ((data.joinedAt || 0) < earliestJoin) {
-      earliestJoin = data.joinedAt || 0;
-      hostId = data.id;
-    }
+// ── LIVE LOBBY ──
+onSnapshot(lobbyRef, snap => {
+  players = []; hostId = null; let earliest = Infinity;
+  snap.forEach(d => {
+    const data = d.data(); players.push(data);
+    if ((data.joinedAt||0) < earliest) { earliest = data.joinedAt||0; hostId = data.id; }
   });
-
-  updatePlayerList();
-  updateStartButton();
-  updateHostInfo();
+  updatePlayerList(); updateStartButton(); updateHostInfo();
 });
 
-// ─── RACE STATE LISTENER ──────────────────────────────────────────────────────
-onSnapshot(raceRef, (snap) => {
+// ── RACE LISTENER ──
+onSnapshot(raceRef, snap => {
   if (!snap.exists()) return;
   const data = snap.data();
-
-  if (data.running && !raceRunning) {
-    raceRunning = true;
-    startLocalRace(data.players);
-  }
+  if (data.running && !raceRunning) { raceRunning = true; startLocalRace(data.players); }
 });
 
-// ─── UI HELPERS ───────────────────────────────────────────────────────────────
+// ── UI ──
 function updatePlayerList() {
   const list = document.getElementById("players");
   list.innerHTML = "";
-
   if (players.length === 0) {
     const li = document.createElement("li");
-    li.style.cssText = "color:var(--text-dim);font-weight:400;font-size:0.9rem;";
-    li.textContent = "No players yet...";
+    li.style.cssText = "color:var(--text-dim);font-size:1rem;border:none;background:none;";
+    li.textContent = "NO PLAYERS YET...";
     list.appendChild(li);
   } else {
     players.forEach((p, i) => {
       const li = document.createElement("li");
       if (p.id === hostId) li.className = "host-tag";
-      const DUCK_EMOJIS = ["🦆","🐤","🐣","🐥","🦉","🐧","🦚","🦜"];
-      li.innerHTML = `<span class="duck-icon">${DUCK_EMOJIS[i % DUCK_EMOJIS.length]}</span> ${p.name}`;
+      li.innerHTML = `<span>${DUCK_CHARS[i % DUCK_CHARS.length]}</span> ${p.name.toUpperCase()}`;
       list.appendChild(li);
     });
   }
-
   document.getElementById("player-count").textContent =
-    players.length > 0 ? `${players.length} player(s) in the lobby` : "";
+    players.length > 0 ? players.length + " PLAYER(S) IN LOBBY" : "";
 
-  // Track preview wenn Spieler da
-  if (players.length > 0 && !raceRunning) {
-    buildTrack(players);
-  } else if (players.length === 0 && !raceRunning) {
-    document.getElementById("race-track").innerHTML =
-      '<div id="race-placeholder">Let players join, then the race will start here!</div>';
+  if (players.length > 0 && !raceRunning) previewTrack(players);
+  else if (players.length === 0 && !raceRunning) {
+    if (canvas) { canvas.style.display = "none"; }
+    document.getElementById("race-placeholder").style.display = "block";
   }
 }
 
 function updateStartButton() {
-  const btn = document.getElementById("start-btn");
-  btn.disabled = !isHost() || players.length < 2 || raceRunning;
+  document.getElementById("start-btn").disabled = !isHost() || players.length < 2 || raceRunning;
 }
 
 function updateHostInfo() {
   const info = document.getElementById("host-info");
   if (!isInLobby) {
-    info.textContent = "You have not joined the lobby yet.";
-    info.style.borderColor = "var(--accent)";
-    info.style.background = "rgba(255,107,53,0.08)";
+    info.textContent = "YOU HAVE NOT JOINED YET.";
+    info.style.borderColor = "#333";
   } else if (isHost()) {
-    info.textContent = "👑 You are the Host – you can start the race!";
+    info.textContent = "★ YOU ARE THE HOST - START THE RACE!";
     info.style.borderColor = "var(--sand)";
-    info.style.background = "rgba(245,200,66,0.07)";
+    info.style.color = "var(--sand)";
   } else {
-    info.textContent = "🦆 You are a player – wait for the host. (Host ID: " + hostId?.slice(0,6) + ")";
-    info.style.borderColor = "var(--accent)";
-    info.style.background = "rgba(255,107,53,0.08)";
+    info.textContent = "🦆 YOU ARE A PLAYER - WAIT FOR HOST.";
+    info.style.borderColor = "#1a3a5c";
+    info.style.color = "var(--text-dim)";
   }
 }
 
 function isHost() {
-  if (!playerId || !hostId) return false;
-  const result = String(playerId) === String(hostId);
-  return result;
+  return !!(playerId && hostId && String(playerId) === String(hostId));
 }
 
-// ─── TOAST ────────────────────────────────────────────────────────────────────
 function showToast(msg) {
   const t = document.getElementById("toast");
   t.textContent = msg;
   t.classList.add("show");
-  setTimeout(() => t.classList.remove("show"), 2800);
+  setTimeout(() => t.classList.remove("show"), 2500);
 }
-
 window.showToast = showToast;
 </script>
 </body>
 </html>
+
+
 
 
 
