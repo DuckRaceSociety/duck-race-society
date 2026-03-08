@@ -12,9 +12,7 @@
 
 <style>
 
-*{
-box-sizing:border-box;
-}
+*{box-sizing:border-box;}
 
 body{
 margin:0;
@@ -68,15 +66,8 @@ border-radius:10px;
 cursor:pointer;
 }
 
-.join{
-background:#22c55e;
-color:white;
-}
-
-.start{
-background:#3b82f6;
-color:white;
-}
+.join{background:#22c55e;color:white;}
+.start{background:#3b82f6;color:white;}
 
 </style>
 
@@ -112,45 +103,53 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDjdM2QAPbNwQXlnFbS9pf9Yi9eH1aK42c",
-  authDomain: "duck-race-society.firebaseapp.com",
-  projectId: "duck-race-society",
-  storageBucket: "duck-race-society.firebasestorage.app",
-  messagingSenderId: "249037009909",
-  appId: "1:249037009909:web:d00e0ff240218fb8aaa6bc"
+apiKey: "AIzaSyDjdM2QAPbNwQXlnFbS9pf9Yi9eH1aK42c",
+authDomain: "duck-race-society.firebaseapp.com",
+projectId: "duck-race-society",
+storageBucket: "duck-race-society.firebasestorage.app",
+messagingSenderId: "249037009909",
+appId: "1:249037009909:web:d00e0ff240218fb8aaa6bc"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+
+
+// Telegram Setup
+let playerName = "Gast";
+let playerId = "guest_" + Math.random().toString(36).substring(7);
+
+if(window.Telegram){
 
 const tg = window.Telegram.WebApp;
 
 tg.ready();
 tg.expand();
 
-let playerName = "Gast";
-
 if(tg.initDataUnsafe && tg.initDataUnsafe.user){
 
 playerName = tg.initDataUnsafe.user.first_name;
+playerId = tg.initDataUnsafe.user.id;
+
+}
 
 }
 
 document.getElementById("player").innerHTML =
 "👤 Spieler: " + playerName;
 
+
+// Lobby State
 let players = [];
 
 function updatePlayers(){
 
 const list = document.getElementById("players");
-
 list.innerHTML = "";
 
 players.forEach((p)=>{
 
 const li = document.createElement("li");
-
 li.innerText = p;
 
 list.appendChild(li);
@@ -159,20 +158,31 @@ list.appendChild(li);
 
 }
 
+
+// Join Race
 window.joinRace = async function(){
 
+if(players.includes(playerName)){
+
+alert("Du bist bereits im Rennen");
+return;
+
+}
+
 await addDoc(collection(db,"lobby"),{
-name: playerName
+name: playerName,
+id: playerId
 });
 
 }
 
+
+// Start Race
 window.startRace = function(){
 
 if(players.length < 2){
 
 alert("⚠️ Mindestens 2 Spieler benötigt");
-
 return;
 
 }
@@ -181,6 +191,8 @@ alert("🏁 Race startet mit " + players.length + " Spielern");
 
 }
 
+
+// Live Lobby
 onSnapshot(collection(db,"lobby"),(snapshot)=>{
 
 players = [];
@@ -199,6 +211,7 @@ updatePlayers();
 
 </body>
 </html>
+
 
 
 
