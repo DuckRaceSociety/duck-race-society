@@ -2787,7 +2787,14 @@ let activeWalletProvider = null;
 
 // ── OPEN WALLET MODAL ──
 window.connectWallet = function() {
-  buildWalletModal();
+  const isInTelegram = !!window.Telegram?.WebApp?.initData;
+  const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
+
+  if (isInTelegram && isMobile) {
+    buildMobileWalletModal();
+  } else {
+    buildWalletModal();
+  }
   document.getElementById("wa-modal").classList.add("show");
 };
 
@@ -2825,21 +2832,46 @@ function buildMobileWalletModal() {
       name: "Phantom",
       icon: "👻",
       tag: "POPULAR",
-      action: () => {
-        closeWalletModal();
-        showToast("📱 USE /join IN THE BOT TO JOIN WITH PHANTOM!");
+      action: async () => {
+        const provider = window.phantom?.solana || window.solana;
+        if (provider?.isPhantom) {
+          closeWalletModal();
+          try {
+            const resp = await provider.connect();
+            walletAddress = resp.publicKey.toString();
+            walletConnected = true;
+            activeWalletProvider = provider;
+            onWalletConnected("Phantom");
+          } catch(e) { showToast("PHANTOM CONNECTION FAILED!"); }
+        } else {
+          closeWalletModal();
+          showToast("📱 PHANTOM NOT DETECTED! USE /join IN BOT!");
+        }
       }
     },
     {
       name: "Solflare",
       icon: "🔥",
       tag: "POPULAR",
-      action: () => {
-        closeWalletModal();
-        // Solflare deep link
-        const url = `https://solflare.com/ul/v1/browse/${encodeURIComponent(APP_URL)}?ref=${encodeURIComponent(APP_URL)}`;
-        window.open(url, "_blank");
-        showToast("OPENING SOLFLARE...");
+      action: async () => {
+        // Try direct connect first
+        const provider = window.solflare;
+        if (provider?.isSolflare) {
+          closeWalletModal();
+          try {
+            await provider.connect();
+            walletAddress = provider.publicKey.toString();
+            walletConnected = true;
+            activeWalletProvider = provider;
+            onWalletConnected("Solflare");
+          } catch(e) { showToast("SOLFLARE CONNECTION FAILED!"); }
+        } else {
+          // Deep link
+          closeWalletModal();
+          const url = `https://solflare.com/ul/v1/browse/${encodeURIComponent(APP_URL)}?ref=${encodeURIComponent(APP_URL)}`;
+          window.open(url, "_blank");
+          showToast("OPENING SOLFLARE APP...");
+        }
       }
     },
     {
@@ -3260,6 +3292,8 @@ window.closeWinner = async function() {
 
 </body>
 </html>
+
+
 
 
 
