@@ -1836,7 +1836,28 @@ window.joinRace = async function() {
   showToast("🦆 JOINED!");
   setTimeout(() => switchTab('bet'), 800);
   const botInfoEl = document.getElementById("bot-info");
-  if (botInfoEl) botInfoEl.textContent = "⏳ WAITING 15s FOR PLAYERS, THEN BOTS JOIN...";
+  if (botInfoEl) botInfoEl.textContent = "⏳ WAITING 15s FOR OTHER PLAYERS...";
+
+  // Add bots after 15 seconds if still only 1 real player
+  setTimeout(async () => {
+    try {
+      const currentSnap = await getDocs(lobbyRef);
+      const realPlayers = [];
+      currentSnap.forEach(d => { if (!d.data().isBot) realPlayers.push(d.data()); });
+      if (realPlayers.length < 2) {
+        const botNames = ["🤖 RoboDuck", "🌼 DaisyDuck", "💰 MoneyDuck", "🔪 KillBill"];
+        const shuffled = botNames.sort(() => Math.random() - 0.5).slice(0, 2);
+        for (const name of shuffled) {
+          await addDoc(lobbyRef, {
+            name, id: "bot_" + Math.random().toString(36).slice(2),
+            uid: "bot", joinedAt: Date.now(), isBot: true, isHost: false
+          });
+        }
+        if (botInfoEl) botInfoEl.textContent = "🤖 BOTS JOINED! START THE RACE!";
+        showToast("🤖 2 BOTS JOINED!");
+      }
+    } catch(e) { console.error("Bot add error:", e); }
+  }, 15000);
   setTimeout(() => document.querySelector('.race-panel')?.scrollIntoView({ behavior:'smooth', block:'start' }), 300);
   try { window.Telegram?.WebApp?.expand(); } catch(e) {}
 };
@@ -1941,7 +1962,7 @@ async function cleanupBeforeRace() {
 }
 
 window.startRace = async function() {
-  if (!isHost()) { showToast("⛔ HOST ONLY!"); return; }
+  if (!isInLobby) { showToast("⛔ JOIN LOBBY FIRST!"); return; }
   if (players.length < 2) { showToast("⚠ NEED 2+ PLAYERS!"); return; }
   if (raceRunning) return;
 
@@ -2356,7 +2377,20 @@ function updatePlayerList() {
 }
 
 function updateStartButton() {
-  document.getElementById("start-btn").disabled = !isHost() || players.length < 2 || raceRunning;
+  const canStart = isInLobby && players.length >= 2 && !raceRunning;
+  const btn = document.getElementById("start-btn");
+  btn.disabled = !canStart;
+  // Show start button only to host, hide to others
+  if (isHost()) {
+    btn.style.display = "block";
+    btn.textContent = "▶▶ START RACE (" + players.length + " PLAYERS)";
+  } else if (isInLobby && players.length >= 2) {
+    btn.style.display = "block";
+    btn.disabled = true;
+    btn.textContent = "⏳ WAITING FOR HOST TO START...";
+  } else {
+    btn.textContent = "▶▶ START RACE";
+  }
 }
 
 function updateHostInfo() {
@@ -4222,6 +4256,8 @@ window.closeWinner = async function() {
 
 </body>
 </html>
+
+
 
 
 
