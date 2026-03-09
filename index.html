@@ -2597,9 +2597,10 @@ window.connectWallet = function() {
   const isInTelegram = !!window.Telegram?.WebApp?.initData;
   const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
 
-  // On Telegram mobile - show Phantom Browser guide
   if (isInTelegram && isMobile) {
-    document.getElementById("phantom-guide-modal").classList.add("show");
+    // Show mobile choice: which wallet
+    buildMobileWalletModal();
+    document.getElementById("wa-modal").classList.add("show");
     return;
   }
 
@@ -2630,6 +2631,79 @@ window.copyGameUrl = function() {
 window.closeWalletModal = function() {
   document.getElementById("wa-modal").classList.remove("show");
 };
+
+function buildMobileWalletModal() {
+  const list = document.getElementById("wa-wallet-list");
+  list.innerHTML = "";
+  const APP_URL = "https://duck-race-society.vercel.app";
+
+  const mobileWallets = [
+    {
+      name: "Phantom",
+      icon: "👻",
+      tag: "POPULAR",
+      action: () => {
+        closeWalletModal();
+        document.getElementById("phantom-guide-modal").classList.add("show");
+      }
+    },
+    {
+      name: "Solflare",
+      icon: "🔥",
+      tag: "POPULAR",
+      action: () => {
+        closeWalletModal();
+        // Solflare deep link
+        const url = `https://solflare.com/ul/v1/browse/${encodeURIComponent(APP_URL)}?ref=${encodeURIComponent(APP_URL)}`;
+        window.open(url, "_blank");
+        showToast("OPENING SOLFLARE...");
+      }
+    },
+    {
+      name: "Trust Wallet",
+      icon: "🛡️",
+      tag: "MOBILE",
+      action: () => {
+        closeWalletModal();
+        const url = `https://link.trustwallet.com/open_url?coin_id=501&url=${encodeURIComponent(APP_URL)}`;
+        window.open(url, "_blank");
+        showToast("OPENING TRUST WALLET...");
+      }
+    },
+    {
+      name: "Other Browser Wallet",
+      icon: "🌐",
+      tag: "",
+      action: () => {
+        closeWalletModal();
+        // Try direct connect
+        const provider = window.solana || window.phantom?.solana;
+        if (provider?.isPhantom || provider) {
+          provider.connect().then(resp => {
+            walletAddress = resp.publicKey.toString();
+            walletConnected = true;
+            activeWalletProvider = provider;
+            onWalletConnected("Wallet");
+          }).catch(e => showToast("CONNECTION FAILED!"));
+        } else {
+          showToast("NO WALLET DETECTED!");
+        }
+      }
+    }
+  ];
+
+  mobileWallets.forEach(w => {
+    const btn = document.createElement("button");
+    btn.className = "wa-wallet-btn";
+    btn.innerHTML = `
+      <span style="font-size:1.6rem;">${w.icon}</span>
+      <span class="wa-wallet-name">${w.name}</span>
+      ${w.tag ? `<span class="wa-wallet-tag">${w.tag}</span>` : ""}
+    `;
+    btn.onclick = w.action;
+    list.appendChild(btn);
+  });
+}
 
 function buildWalletModal() {
   const list = document.getElementById("wa-wallet-list");
@@ -3003,6 +3077,8 @@ window.closeWinner = async function() {
 
 </body>
 </html>
+
+
 
 
 
