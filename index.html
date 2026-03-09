@@ -1825,6 +1825,12 @@ window.joinRace = async function() {
   let exists = false;
   snap.forEach(d => { if (d.data().id === playerId) exists = true; });
   if (exists) { showToast("ALREADY IN RACE 🦆"); return; }
+  // Delete any existing entry for this player first
+  for (const d of snap.docs) {
+    if (d.data().uid === currentUser.uid || d.data().id === playerId) {
+      await deleteDoc(doc(db, "lobby", d.id));
+    }
+  }
   await addDoc(lobbyRef, { name: playerName, id: playerId, uid: currentUser.uid, joinedAt: Date.now(), isHost: snap.empty });
   isInLobby = true;
   showToast("🦆 JOINED!");
@@ -1848,17 +1854,23 @@ window.leaveRace = async function() {
 
 // ── AUTO CLEANUP ON PAGE LEAVE ──
 async function removePlayerFromLobby() {
-  if (!isInLobby || !playerId) return;
+  if (!playerId) return;
   try {
     const snap = await getDocs(lobbyRef);
     for (const d of snap.docs) {
-      if (d.data().id === playerId) {
+      if (d.data().id === playerId || d.data().uid === currentUser?.uid) {
         await deleteDoc(doc(db, "lobby", d.id));
-        break;
       }
     }
+    isInLobby = false;
   } catch(e) {}
 }
+
+// Manual cleanup button for stuck entries
+window.forceCleanMyLobby = async function() {
+  await removePlayerFromLobby();
+  showToast("✓ LOBBY CLEANED!");
+};
 
 // Telegram WebApp close event
 window.Telegram?.WebApp?.onEvent('viewportChanged', async () => {
@@ -1878,6 +1890,23 @@ document.addEventListener('visibilitychange', async () => {
     await removePlayerFromLobby();
   }
 });
+
+// Auto cleanup stale lobby entries (older than 10 min)
+async function cleanStaleEntries() {
+  try {
+    const snap = await getDocs(lobbyRef);
+    const tenMinAgo = Date.now() - 10 * 60 * 1000;
+    for (const d of snap.docs) {
+      const data = d.data();
+      if (data.joinedAt && data.joinedAt < tenMinAgo && !data.fromBot) {
+        await deleteDoc(doc(db, "lobby", d.id));
+        console.log("Removed stale entry:", data.name);
+      }
+    }
+  } catch(e) {}
+}
+setInterval(cleanStaleEntries, 60000); // Every 60 seconds
+cleanStaleEntries(); // Run on load
 
 // Periodic stale player cleanup (removes players inactive > 2 min)
 setInterval(async () => {
@@ -4170,6 +4199,8 @@ window.closeWinner = async function() {
 
 </body>
 </html>
+
+
 
 
 
