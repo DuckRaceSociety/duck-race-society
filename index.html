@@ -4004,20 +4004,40 @@ window.placeBet = async function() {
   if (hasBet) { showToast("BET ALREADY PLACED!"); return; }
   if (raceRunning) { showToast("RACE ALREADY RUNNING!"); return; }
 
+  // No wallet provider = manual address = use bot flow
+  if (!activeWalletProvider) {
+    document.getElementById("bet-status").textContent = "USE /join IN BOT TO PAY!";
+    showToast("📱 USE /join IN TELEGRAM BOT TO BET!");
+    // Mark as bet placed (bot already verified payment)
+    hasBet = true;
+    document.getElementById("bet-status").textContent = "✓ JOINED VIA BOT!";
+    document.getElementById("my-bet-status").textContent = selectedBet + " SOL ✓";
+    document.getElementById("my-bet-status").style.color = "#2dc653";
+    await setDoc(doc(db, "bets", playerId), {
+      wallet: walletAddress,
+      amount: selectedBet,
+      playerId,
+      playerName,
+      txSig: "bot_payment",
+      placedAt: Date.now()
+    });
+    showToast("✓ BET CONFIRMED VIA BOT!");
+    updatePoolDisplay();
+    return;
+  }
+
   try {
     document.getElementById("bet-btn").disabled = true;
-    document.getElementById("bet-status").textContent = "⏳ SENDING TRANSACTION...";
+    document.getElementById("bet-status").textContent = "⏳ CONFIRM IN WALLET...";
 
-    const phantom = activeWalletProvider || window.solana;
+    const provider = activeWalletProvider;
     const connection = new window.solanaWeb3.Connection(
       "https://api.mainnet-beta.solana.com", "confirmed"
     );
 
-    // Treasury wallet address (public key only - safe to hardcode)
     const TREASURY_WALLET = "5sDfMWBNFMne13aJLhiG3k7V8MwULmHfQrkt2eHupSQ1";
     const treasuryPubkey = new window.solanaWeb3.PublicKey(TREASURY_WALLET);
     const fromPubkey = new window.solanaWeb3.PublicKey(walletAddress);
-
     const lamports = Math.floor(selectedBet * LAMPORTS_PER_SOL);
 
     const tx = new window.solanaWeb3.Transaction().add(
@@ -4032,8 +4052,11 @@ window.placeBet = async function() {
     const { blockhash } = await connection.getLatestBlockhash();
     tx.recentBlockhash = blockhash;
 
-    const signed = await phantom.signTransaction(tx);
+    document.getElementById("bet-status").textContent = "⏳ WAITING FOR SIGNATURE...";
+    const signed = await provider.signTransaction(tx);
+    document.getElementById("bet-status").textContent = "⏳ SENDING TO BLOCKCHAIN...";
     const sig = await connection.sendRawTransaction(signed.serialize());
+    document.getElementById("bet-status").textContent = "⏳ CONFIRMING...";
     await connection.confirmTransaction(sig, "confirmed");
 
     // Save bet to Firestore
@@ -4199,6 +4222,8 @@ window.closeWinner = async function() {
 
 </body>
 </html>
+
+
 
 
 
