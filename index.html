@@ -772,6 +772,89 @@ header {
   vertical-align: middle;
 }
 @keyframes cursorBlink { 50% { opacity: 0; } }
+
+/* ── LIVE WETT-QUOTEN ── */
+.odds-panel {
+  grid-column: 1 / -1;
+}
+.odds-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+.odds-card {
+  background: #0a1628;
+  border: 3px solid #1a3a5c;
+  padding: 0.7rem 0.5rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.odds-card.leader { border-color: var(--sand); }
+.odds-duck { font-size: 1.6rem; display: block; }
+.odds-name {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.38rem;
+  color: var(--sand);
+  margin: 0.3rem 0;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.odds-value {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.7rem;
+  color: #2dc653;
+  display: block;
+  margin: 0.2rem 0;
+}
+.odds-value.high { color: #f72585; }
+.odds-value.mid { color: #f4d35e; }
+.odds-pool {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  display: block;
+}
+.odds-payout {
+  font-size: 0.75rem;
+  color: #4CC9F0;
+  display: block;
+  margin-top: 0.2rem;
+}
+.odds-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: var(--accent);
+  transition: width 0.5s ease;
+}
+.odds-empty {
+  font-size: 0.9rem;
+  color: var(--text-dim);
+  text-align: center;
+  padding: 0.5rem;
+}
+.odds-total {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.45rem;
+  color: var(--sand2);
+  text-align: right;
+  margin-top: 0.5rem;
+}
+.odds-live-badge {
+  display: inline-block;
+  background: var(--accent);
+  color: #fff;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.35rem;
+  padding: 0.15rem 0.4rem;
+  margin-left: 0.5rem;
+  animation: livePulse 1s steps(2) infinite;
+}
+@keyframes livePulse { 50% { opacity: 0.4; } }
 </style>
 </head>
 <body>
@@ -897,6 +980,16 @@ header {
       ◎ BUY SELECTED POWER-UP (0.005 SOL)
     </button>
     <div class="powerup-status" id="powerup-status">JOIN LOBBY & CONNECT WALLET FIRST</div>
+  </div>
+
+
+  <!-- LIVE WETT-QUOTEN -->
+  <div class="panel odds-panel">
+    <h2>📊 LIVE ODDS <span class="odds-live-badge">LIVE</span></h2>
+    <div class="odds-grid" id="odds-grid">
+      <div class="odds-empty">JOIN LOBBY TO SEE LIVE ODDS</div>
+    </div>
+    <div class="odds-total" id="odds-total"></div>
   </div>
 
   <!-- RACE TRACK -->
@@ -1537,6 +1630,132 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove("show"), 2500);
 }
 window.showToast = showToast;
+
+// ══════════════════════════════════════════════════
+// 📊 LIVE WETT-QUOTEN SYSTEM
+// ══════════════════════════════════════════════════
+
+let oddsData = {}; // playerId -> { name, betSOL }
+let oddsUnsubscribe = null;
+
+function calculateOdds(betsMap) {
+  const total = Object.values(betsMap).reduce((s, b) => s + (b.betSOL || 0), 0);
+  const result = {};
+  for (const [id, data] of Object.entries(betsMap)) {
+    const share = data.betSOL || 0;
+    if (total === 0 || share === 0) {
+      result[id] = { ...data, odds: 0, payout: 0, percent: 0, totalPool: 0 };
+    } else {
+      const odds = total / share;
+      const payout = (share / total) * total * 0.8; // 80% goes to winner
+      result[id] = {
+        ...data,
+        odds: Math.round(odds * 100) / 100,
+        payout: Math.round(payout * 1000) / 1000,
+        percent: Math.round((share / total) * 100),
+        totalPool: Math.round(total * 1000) / 1000
+      };
+    }
+  }
+  return result;
+}
+
+function renderOdds(betsMap) {
+  const grid = document.getElementById("odds-grid");
+  const totalEl = document.getElementById("odds-total");
+  if (!grid) return;
+
+  const entries = Object.entries(betsMap);
+  if (entries.length === 0) {
+    grid.innerHTML = '<div class="odds-empty">NO BETS YET - BE THE FIRST!</div>';
+    totalEl.textContent = "";
+    return;
+  }
+
+  const odds = calculateOdds(betsMap);
+  const sorted = entries.sort((a, b) => (b[1].betSOL || 0) - (a[1].betSOL || 0));
+  const totalPool = Object.values(betsMap).reduce((s, b) => s + (b.betSOL || 0), 0);
+  const leader = sorted[0]?.[0];
+
+  grid.innerHTML = sorted.map(([id, data], i) => {
+    const o = odds[id];
+    const oddsClass = o.odds >= 3 ? 'high' : o.odds >= 1.5 ? 'mid' : '';
+    const duckChar = ['🦆','🐥','🐤','🐣'][i % 4];
+    return `
+      <div class="odds-card ${id === leader ? 'leader' : ''}">
+        <span class="odds-duck">${duckChar}</span>
+        <span class="odds-name">${data.name?.toUpperCase() || 'DUCK'}</span>
+        <span class="odds-value ${oddsClass}">${o.odds > 0 ? o.odds.toFixed(2) + 'x' : 'N/A'}</span>
+        <span class="odds-pool">◎ ${(data.betSOL || 0).toFixed(3)} SOL</span>
+        <span class="odds-payout">WIN: ◎ ${o.payout.toFixed(3)}</span>
+        <div class="odds-bar" style="width:${o.percent}%"></div>
+      </div>`;
+  }).join('');
+
+  totalEl.textContent = "TOTAL POOL: ◎ " + totalPool.toFixed(3) + " SOL | WINNER GETS 80%";
+
+  // Send to Telegram if odds changed significantly
+  sendOddsToTelegram(odds, totalPool);
+}
+
+// ── LISTEN TO BETS IN REALTIME ──
+function startOddsListener() {
+  if (oddsUnsubscribe) oddsUnsubscribe();
+  const betsMap = {};
+
+  oddsUnsubscribe = onSnapshot(collection(db, "bets"), snap => {
+    snap.docChanges().forEach(change => {
+      if (change.type === 'removed') {
+        delete betsMap[change.doc.data().playerId];
+      } else {
+        const d = change.doc.data();
+        betsMap[d.playerId] = { name: d.playerName, betSOL: d.amount };
+      }
+    });
+    renderOdds(betsMap);
+  });
+}
+
+// Also listen to lobby to show players without bets
+function startLobbyOddsListener() {
+  onSnapshot(lobbyRef, snap => {
+    const lobbyPlayers = {};
+    snap.forEach(d => {
+      const data = d.data();
+      if (!data.isBot) {
+        lobbyPlayers[data.id] = { name: data.name, betSOL: 0 };
+      }
+    });
+    // Merge with existing bets in oddsData
+    // Just trigger a re-render via bets listener
+  });
+}
+
+// ── TELEGRAM ODDS UPDATE ──
+let lastOddsSent = 0;
+async function sendOddsToTelegram(odds, totalPool) {
+  if (Date.now() - lastOddsSent < 30000) return; // Max once per 30s
+  if (totalPool === 0) return;
+  lastOddsSent = Date.now();
+
+  const lines = Object.values(odds)
+    .sort((a, b) => (a.odds || 99) - (b.odds || 99))
+    .map(o => `🦆 ${o.name}: ${o.odds.toFixed(2)}x (◎${(o.betSOL||0).toFixed(3)} bet)`)
+    .join("\n");
+
+  await sendTelegramNotification("odds_update", {
+    lines,
+    totalPool: totalPool.toFixed(3)
+  });
+}
+
+// Start listener when auth ready
+const _origOnAuth = null;
+// Patch into existing auth flow - start odds after auth
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(startOddsListener, 2000);
+});
+
 
 // ══════════════════════════════════════════════════
 // 📱 TELEGRAM LIVE NOTIFICATIONS
@@ -2438,6 +2657,8 @@ window.closeWinner = async function() {
 
 </body>
 </html>
+
+
 
 
 
