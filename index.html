@@ -1011,19 +1011,21 @@ header {
   </div>
 </div>
 
-<div class="container">
-
-  <!-- WALLET INFO BANNER -->
-  <div id="wallet-info-banner">
-    <div class="wib-icon">💡</div>
-    <div class="wib-text">
-      <b>HOW TO CONNECT YOUR WALLET:</b><br>
-      📱 <b>Phantom:</b> Use /join in the bot → send SOL → verify<br>
-      🔥 <b>Solflare/Other:</b> Press "Connect Wallet" above<br>
-      💻 <b>Desktop:</b> Connect wallet directly in browser
+<!-- WALLET INFO BANNER -->
+<div id="wallet-info-banner" style="max-width:900px;margin:0 auto 0.8rem;padding:0 1rem;">
+  <div style="background:#0a1628;border:3px solid #4361ee;padding:0.8rem 1rem;display:flex;gap:0.8rem;align-items:flex-start;">
+    <div style="font-size:1.5rem;flex-shrink:0;">💡</div>
+    <div style="font-family:'VT323',monospace;font-size:1.05rem;color:#fff;line-height:1.5;">
+      <b style="color:#f4d35e;">HOW TO CONNECT YOUR WALLET:</b><br>
+      📱 <b style="color:#f4d35e;">Phantom Mobile:</b> Use /join in the bot → send SOL → verify<br>
+      🔥 <b style="color:#f4d35e;">Solflare/Other:</b> Press "Connect Wallet" button above<br>
+      💻 <b style="color:#f4d35e;">Desktop:</b> Connect wallet extension directly in browser
     </div>
-    <button class="wib-close" onclick="document.getElementById('wallet-info-banner').classList.add('hide')">✕</button>
+    <button onclick="this.parentElement.parentElement.style.display='none'" style="margin-left:auto;background:none;border:none;color:#666;cursor:pointer;font-family:'Press Start 2P',monospace;font-size:0.4rem;flex-shrink:0;">✕</button>
   </div>
+</div>
+
+<div class="container">
 
   <!-- LOBBY -->
   <div class="panel">
@@ -3121,6 +3123,8 @@ window.closeWinner = async function() {
 
 </body>
 </html>
+
+
 
 
 
