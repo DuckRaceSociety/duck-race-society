@@ -5,10 +5,11 @@
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://telegram.org https://www.gstatic.com https://*.firebaseapp.com https://*.googleapis.com https://unpkg.com https://cdn.jsdelivr.net; connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://firestore.googleapis.com wss://*.firebaseio.com https://api.mainnet-beta.solana.com https://unpkg.com;"
+          "value": "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://telegram.org https://www.gstatic.com https://*.firebaseapp.com https://*.googleapis.com https://unpkg.com https://cdn.jsdelivr.net; connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://firestore.googleapis.com wss://*.firebaseio.com https://api.mainnet-beta.solana.com https://unpkg.com https://www.gstatic.com https://*.gstatic.com;"
         }
       ]
     }
   ]
 }
+
 
