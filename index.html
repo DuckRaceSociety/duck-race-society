@@ -1195,12 +1195,13 @@ function updatePlayerList() {
   document.getElementById("player-count").textContent =
     players.length > 0 ? players.length + " PLAYER(S) IN LOBBY" : "";
 
-  if (players.length > 0 && !raceRunning) previewTrack(players);
-  updatePowerUpUI();
-  else if (players.length === 0 && !raceRunning) {
+  if (players.length > 0 && !raceRunning) {
+    previewTrack(players);
+  } else if (players.length === 0 && !raceRunning) {
     if (canvas) { canvas.style.display = "none"; }
     document.getElementById("race-placeholder").style.display = "block";
   }
+  updatePowerUpUI();
 }
 
 function updateStartButton() {
@@ -1714,6 +1715,7 @@ window.closeWinner = async function() {
 <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
 </body>
 </html>
+
 
 
 
