@@ -1487,6 +1487,26 @@ const LAMPORTS_PER_SOL = 1_000_000_000;
 
 let walletConnected = false;
 let walletAddress = null;
+
+// Auto-detect wallet on load
+window.addEventListener('load', async () => {
+  // Wait for Phantom to inject
+  await new Promise(r => setTimeout(r, 500));
+  const phantom = window.solana || window.phantom?.solana;
+  if (phantom?.isPhantom && phantom.isConnected) {
+    try {
+      const resp = await phantom.connect({ onlyIfTrusted: true });
+      walletAddress = resp.publicKey.toString();
+      walletConnected = true;
+      document.getElementById("wallet-btn").textContent = "✓ CONNECTED";
+      document.getElementById("wallet-btn").classList.add("connected");
+      document.getElementById("wallet-info").classList.add("show");
+      document.getElementById("wallet-addr").textContent =
+        walletAddress.slice(0,4) + "..." + walletAddress.slice(-4);
+      updateBetUI();
+    } catch(e) {}
+  }
+});
 let selectedBet = 0.025;
 let hasBet = false;
 let betPool = {}; // playerId → { wallet, amount }
@@ -1494,12 +1514,32 @@ let betPool = {}; // playerId → { wallet, amount }
 // ── CONNECT PHANTOM ──
 window.connectWallet = async function() {
   try {
-    const phantom = window.solana;
+    // Method 1: window.solana (Phantom extension)
+    let phantom = window.solana;
+
+    // Method 2: window.phantom.solana (newer Phantom versions)
+    if (!phantom?.isPhantom && window.phantom?.solana) {
+      phantom = window.phantom.solana;
+    }
+
+    // Method 3: Not found - redirect to Phantom deep link
     if (!phantom?.isPhantom) {
-      showToast("⚠ INSTALL PHANTOM WALLET!");
-      window.open("https://phantom.app/", "_blank");
+      // Check if on mobile - use Phantom deep link
+      const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
+      if (isMobile) {
+        const url = encodeURIComponent("https://duck-race-society.vercel.app");
+        window.open(
+          "https://phantom.app/ul/browse/" + url + "?ref=" + url,
+          "_blank"
+        );
+        showToast("OPENING IN PHANTOM...");
+      } else {
+        showToast("⚠ INSTALL PHANTOM WALLET!");
+        window.open("https://phantom.app/", "_blank");
+      }
       return;
     }
+
     const resp = await phantom.connect();
     walletAddress = resp.publicKey.toString();
     walletConnected = true;
@@ -1513,7 +1553,12 @@ window.connectWallet = async function() {
     updateBetUI();
     showToast("✓ WALLET CONNECTED!");
   } catch(e) {
-    showToast("WALLET ERROR: " + e.message?.slice(0,20));
+    console.error("Wallet error:", e);
+    if (e.code === 4001) {
+      showToast("CONNECTION REJECTED!");
+    } else {
+      showToast("WALLET ERROR: " + (e.message?.slice(0,25) || "Unknown"));
+    }
   }
 };
 
@@ -1715,6 +1760,8 @@ window.closeWinner = async function() {
 <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
 </body>
 </html>
+
+
 
 
 
