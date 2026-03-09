@@ -981,6 +981,20 @@ header {
   <div class="wallet-info" id="wallet-info">◎ <span id="wallet-addr">-</span></div>
 </div>
 
+<!-- WALLET INFO BANNER -->
+<div id="wallet-info-banner" style="max-width:900px;margin:0.5rem auto;padding:0 1rem;">
+  <div style="background:#0a1628;border:3px solid #4361ee;padding:0.7rem 1rem;display:flex;gap:0.8rem;align-items:flex-start;">
+    <div style="font-size:1.3rem;flex-shrink:0;">💡</div>
+    <div style="font-family:'VT323',monospace;font-size:1.05rem;color:#fff;line-height:1.5;">
+      <b style="color:#f4d35e;">HOW TO CONNECT:</b>
+      📱 <b style="color:#f4d35e;">Phantom Mobile:</b> Use /join in bot → send SOL → verify &nbsp;|&nbsp;
+      🔥 <b style="color:#f4d35e;">Solflare/Other:</b> Press Connect Wallet above &nbsp;|&nbsp;
+      💻 <b style="color:#f4d35e;">Desktop:</b> Connect wallet extension directly
+    </div>
+    <button onclick="this.parentElement.parentElement.style.display='none'" style="margin-left:auto;background:none;border:none;color:#666;cursor:pointer;font-family:'Press Start 2P',monospace;font-size:0.4rem;flex-shrink:0;padding-left:0.5rem;">✕</button>
+  </div>
+</div>
+
 <!-- POOL DISPLAY -->
 <div class="pool-bar">
   <div class="pool-display">
@@ -1008,20 +1022,6 @@ header {
       <div class="pool-label">YOUR BET</div>
       <div class="pool-value" id="my-bet-status">NOT PLACED</div>
     </div>
-  </div>
-</div>
-
-<!-- WALLET INFO BANNER -->
-<div id="wallet-info-banner" style="max-width:900px;margin:0 auto 0.8rem;padding:0 1rem;">
-  <div style="background:#0a1628;border:3px solid #4361ee;padding:0.8rem 1rem;display:flex;gap:0.8rem;align-items:flex-start;">
-    <div style="font-size:1.5rem;flex-shrink:0;">💡</div>
-    <div style="font-family:'VT323',monospace;font-size:1.05rem;color:#fff;line-height:1.5;">
-      <b style="color:#f4d35e;">HOW TO CONNECT YOUR WALLET:</b><br>
-      📱 <b style="color:#f4d35e;">Phantom Mobile:</b> Use /join in the bot → send SOL → verify<br>
-      🔥 <b style="color:#f4d35e;">Solflare/Other:</b> Press "Connect Wallet" button above<br>
-      💻 <b style="color:#f4d35e;">Desktop:</b> Connect wallet extension directly in browser
-    </div>
-    <button onclick="this.parentElement.parentElement.style.display='none'" style="margin-left:auto;background:none;border:none;color:#666;cursor:pointer;font-family:'Press Start 2P',monospace;font-size:0.4rem;flex-shrink:0;">✕</button>
   </div>
 </div>
 
@@ -1145,30 +1145,7 @@ header {
 </div>
 
 
-<!-- PHANTOM BROWSER GUIDE -->
-<div id="phantom-guide-modal">
-  <div class="phantom-guide-box">
-    <h3>👻 OPEN IN PHANTOM BROWSER</h3>
-    <div class="phantom-step">
-      <span class="phantom-step-num">1</span>
-      <span class="phantom-step-text">Open <b>Phantom App</b> on your phone</span>
-    </div>
-    <div class="phantom-step">
-      <span class="phantom-step-num">2</span>
-      <span class="phantom-step-text">Tap the <b>🌐 Browser</b> tab at the bottom</span>
-    </div>
-    <div class="phantom-step">
-      <span class="phantom-step-num">3</span>
-      <span class="phantom-step-text">Paste this URL:<br><b>duck-race-society.vercel.app</b></span>
-    </div>
-    <div class="phantom-step">
-      <span class="phantom-step-num">4</span>
-      <span class="phantom-step-text">Connect wallet & play! ✅</span>
-    </div>
-    <button class="btn-copy-url" onclick="copyGameUrl()">📋 COPY GAME URL</button>
-    <button class="btn-close-guide" onclick="closePhantomGuide()">✕ CLOSE</button>
-  </div>
-</div>
+
 
 <!-- WINNER -->
 <div id="winner-overlay">
@@ -2640,16 +2617,6 @@ let activeWalletProvider = null;
 
 // ── OPEN WALLET MODAL ──
 window.connectWallet = function() {
-  const isInTelegram = !!window.Telegram?.WebApp?.initData;
-  const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
-
-  if (isInTelegram && isMobile) {
-    // Show mobile choice: which wallet
-    buildMobileWalletModal();
-    document.getElementById("wa-modal").classList.add("show");
-    return;
-  }
-
   buildWalletModal();
   document.getElementById("wa-modal").classList.add("show");
 };
@@ -2690,7 +2657,7 @@ function buildMobileWalletModal() {
       tag: "POPULAR",
       action: () => {
         closeWalletModal();
-        document.getElementById("phantom-guide-modal").classList.add("show");
+        showToast("📱 USE /join IN THE BOT TO JOIN WITH PHANTOM!");
       }
     },
     {
@@ -3123,6 +3090,8 @@ window.closeWinner = async function() {
 
 </body>
 </html>
+
+
 
 
 
