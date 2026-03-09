@@ -709,6 +709,69 @@ header {
   color: var(--text-dim);
   padding: 0.3rem 0;
 }
+
+/* ── KI KOMMENTATOR ── */
+#commentator-box {
+  display: none;
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: 500px;
+  z-index: 60;
+  animation: slideUpPixel 0.3s steps(4) forwards;
+}
+#commentator-box.show { display: block; }
+@keyframes slideUpPixel {
+  from { transform: translateX(-50%) translateY(20px); opacity: 0; }
+  to { transform: translateX(-50%) translateY(0); opacity: 1; }
+}
+.commentator-inner {
+  background: #000;
+  border: 4px solid var(--sand);
+  box-shadow: 6px 6px 0 #000, 0 0 20px rgba(244,211,94,0.2);
+  padding: 0.8rem 1rem;
+  display: flex;
+  gap: 0.8rem;
+  align-items: flex-start;
+}
+.commentator-avatar {
+  font-size: 2rem;
+  flex-shrink: 0;
+  animation: avatarBob 0.5s steps(2) infinite alternate;
+}
+@keyframes avatarBob {
+  from { transform: translateY(0); }
+  to { transform: translateY(-4px); }
+}
+.commentator-text-wrap {
+  flex: 1;
+}
+.commentator-name {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.45rem;
+  color: var(--sand);
+  margin-bottom: 0.3rem;
+  letter-spacing: 1px;
+}
+#commentator-text {
+  font-family: 'VT323', monospace;
+  font-size: 1.15rem;
+  color: #fff;
+  line-height: 1.4;
+  min-height: 1.4rem;
+}
+.commentator-cursor {
+  display: inline-block;
+  width: 8px;
+  height: 14px;
+  background: var(--sand);
+  margin-left: 2px;
+  animation: cursorBlink 0.5s steps(1) infinite;
+  vertical-align: middle;
+}
+@keyframes cursorBlink { 50% { opacity: 0; } }
 </style>
 </head>
 <body>
@@ -1358,6 +1421,233 @@ function showToast(msg) {
 window.showToast = showToast;
 
 // ══════════════════════════════════════════════════
+// 🎤 KI LIVE KOMMENTATOR
+// ══════════════════════════════════════════════════
+
+let commentatorActive = false;
+let commentatorInterval = null;
+let lastLeader = null;
+let commentQueue = [];
+let isTyping = false;
+
+// ── TYPE WRITER EFFECT ──
+function typeComment(text, callback) {
+  const el = document.getElementById("commentator-text");
+  if (!el) return;
+  isTyping = true;
+  el.innerHTML = '';
+  let i = 0;
+  const cursor = '<span class="commentator-cursor"></span>';
+  const interval = setInterval(() => {
+    if (i < text.length) {
+      el.innerHTML = text.slice(0, i+1) + cursor;
+      i++;
+    } else {
+      el.innerHTML = text + cursor;
+      clearInterval(interval);
+      isTyping = false;
+      if (callback) setTimeout(callback, 2000);
+    }
+  }, 28);
+}
+
+function showComment(text) {
+  commentQueue.push(text);
+  if (!isTyping) processQueue();
+}
+
+function processQueue() {
+  if (commentQueue.length === 0) return;
+  const next = commentQueue.shift();
+  typeComment(next, () => processQueue());
+}
+
+// ── COMMENTATOR LINES ──
+const COMMENTS = {
+  race_start: [
+    (d) => `AND THEY'RE OFF! ${d.players?.[0]?.name?.toUpperCase()} HITS THE WATER FIRST!`,
+    (d) => `LADIES AND GENTLEMEN, ${d.players?.length} DUCKS ARE READY TO RACE!`,
+    (d) => `THE CROWD GOES WILD AS THE RACE BEGINS! GOOD LUCK ${d.players?.map(p=>p.name.toUpperCase()).join(', ')}!`,
+    (d) => `SPLASH! THE STARTING GUN FIRES AND THE DUCKS ARE FLYING!`,
+    (d) => `THIS IS IT FOLKS! THE MOMENT WE'VE ALL BEEN WAITING FOR!`,
+    (d) => `FEATHERS ARE FLYING! THE DUCK RACE IS OFFICIALLY UNDERWAY!`,
+    (d) => `QUACK QUACK! LET THE MADNESS BEGIN!`,
+  ],
+  new_leader: [
+    (d) => `${d.leader?.toUpperCase()} SURGES TO THE FRONT! WHAT A MOVE!`,
+    (d) => `INCREDIBLE! ${d.leader?.toUpperCase()} JUST TOOK THE LEAD OUT OF NOWHERE!`,
+    (d) => `${d.leader?.toUpperCase()} IS PULLING AWAY! CAN ANYONE CATCH THEM?`,
+    (d) => `A NEW LEADER EMERGES! ${d.leader?.toUpperCase()} MEANS BUSINESS!`,
+    (d) => `${d.leader?.toUpperCase()} PADDLES LIKE THERE'S NO TOMORROW!`,
+    (d) => `LOOK AT THAT DUCK GO! ${d.leader?.toUpperCase()} IS ON FIRE!`,
+    (d) => `${d.leader?.toUpperCase()} TAKES CONTROL! THE SOL PRIZE IS IN SIGHT!`,
+  ],
+  boost_used: [
+    (d) => `${d.player?.toUpperCase()} HITS THE TURBO! VROOM VROOM QUACK!`,
+    (d) => `BOOST ACTIVATED! ${d.player?.toUpperCase()} IS A YELLOW LIGHTNING BOLT!`,
+    (d) => `${d.player?.toUpperCase()} JUST WENT INTO HYPERDUCK MODE!`,
+    (d) => `WHOOOOSH! ${d.player?.toUpperCase()} LEAVES EVERYONE IN THEIR WAKE!`,
+    (d) => `${d.player?.toUpperCase()} SPENT THEIR SOL WISELY ON THAT BOOST!`,
+  ],
+  freeze_used: [
+    (d) => `ICE ICE BABY! ${d.player?.toUpperCase()} FREEZES THE COMPETITION!`,
+    (d) => `EVERYBODY STOP! ${d.player?.toUpperCase()} JUST UNLEASHED THE FREEZE!`,
+    (d) => `COLD AS ICE! THE OTHER DUCKS ARE STUCK IN PLACE!`,
+    (d) => `${d.player?.toUpperCase()} TURNS THE WATER INTO AN ICE RINK! GENIUS!`,
+    (d) => `BRRRR! EVERYONE IS FROZEN EXCEPT ${d.player?.toUpperCase()}!`,
+  ],
+  tornado_used: [
+    (d) => `TORNADO! ${d.player?.toUpperCase()} SPINS THE COMPETITION INTO CHAOS!`,
+    (d) => `HERE COMES THE TWISTER! ${d.player?.toUpperCase()} PLAYS DIRTY!`,
+    (d) => `ABSOLUTE CHAOS ON THE TRACK! ${d.player?.toUpperCase()} LOVES IT!`,
+    (d) => `${d.player?.toUpperCase()} SENDS A RIVAL DUCK FLYING BACKWARDS!`,
+    (d) => `THE CROWD ERUPTS AS ${d.player?.toUpperCase()} LAUNCHES THE TORNADO!`,
+  ],
+  close_race: [
+    (d) => `TOO CLOSE TO CALL! ${d.p1?.toUpperCase()} AND ${d.p2?.toUpperCase()} ARE NECK AND NECK!`,
+    (d) => `I CANNOT BELIEVE THIS! ${d.p1?.toUpperCase()} VS ${d.p2?.toUpperCase()}! INSANE!`,
+    (d) => `SEPARATED BY A FEATHER! WHAT A RACE WE HAVE HERE!`,
+    (d) => `${d.p1?.toUpperCase()} AND ${d.p2?.toUpperCase()} ARE TRADING PLACES EVERY SECOND!`,
+    (d) => `MY HEART IS POUNDING! THIS IS THE CLOSEST RACE IN HISTORY!`,
+    (d) => `PHOTO FINISH INCOMING! EVERY PADDLE COUNTS NOW!`,
+  ],
+  bot_leading: [
+    (d) => `${d.leader?.toUpperCase()} THE BOT IS SHOWING THE HUMANS HOW IT'S DONE!`,
+    (d) => `ROBOTIC DOMINATION! ${d.leader?.toUpperCase()} HAS NO MERCY!`,
+    (d) => `THE MACHINES ARE WINNING! ${d.leader?.toUpperCase()} IS UNSTOPPABLE!`,
+    (d) => `${d.leader?.toUpperCase()} CALCULATED THE PERFECT RACING LINE!`,
+    (d) => `CAN ANY HUMAN BEAT ${d.leader?.toUpperCase()}? THIS IS EMBARRASSING!`,
+  ],
+  final_stretch: [
+    (d) => `${d.leader?.toUpperCase()} IS IN THE FINAL STRETCH! JUST METERS TO GO!`,
+    (d) => `WE ARE ALMOST THERE! ${d.leader?.toUpperCase()} CAN TASTE VICTORY!`,
+    (d) => `THE FINISH LINE IS RIGHT THERE! ${d.leader?.toUpperCase()} GIVES IT EVERYTHING!`,
+    (d) => `LAST CHANCE FOR A MIRACLE! ${d.leader?.toUpperCase()} IS ABOUT TO WIN!`,
+    (d) => `THE SOL PRIZE IS WITHIN REACH FOR ${d.leader?.toUpperCase()}!`,
+    (d) => `FINAL METERS! THE CROWD IS ON THEIR FEET!`,
+  ],
+  winner: [
+    (d) => `${d.winner?.toUpperCase()} WINS IT ALL! THE SOL AND 500 TRC ARE THEIRS!`,
+    (d) => `CHAMPION! ${d.winner?.toUpperCase()} CROSSES THE FINISH LINE FIRST!`,
+    (d) => `WHAT A RACE! ${d.winner?.toUpperCase()} TAKES HOME THE PRIZE POOL!`,
+    (d) => `${d.winner?.toUpperCase()} IS THE DUCK RACE SOCIETY CHAMPION!`,
+    (d) => `INCREDIBLE SCENES! ${d.winner?.toUpperCase()} WINS AND THE CROWD GOES MENTAL!`,
+    (d) => `${d.winner?.toUpperCase()} CONQUERS THE TRACK AND CLAIMS THE SOL REWARD!`,
+    (d) => `QUACK QUACK QUACK! ${d.winner?.toUpperCase()} IS THE WINNER!`,
+  ],
+};
+
+function getRandom(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+async function getAIComment(situation, data) {
+  const lines = COMMENTS[situation];
+  if (!lines) return "WHAT A RACE! UNBELIEVABLE SCENES!";
+  return getRandom(lines)(data);
+}
+
+// ── START COMMENTATOR ──
+async function startCommentator(racePlayers) {
+  commentatorActive = true;
+  commentQueue = [];
+  lastLeader = null;
+  document.getElementById("commentator-box").classList.add("show");
+
+  // Race start comment
+  const startComment = await getAIComment('race_start', { players: racePlayers });
+  showComment(startComment);
+
+  // Periodic comments during race
+  commentatorInterval = setInterval(async () => {
+    if (!raceRunning || !commentatorActive) {
+      clearInterval(commentatorInterval);
+      return;
+    }
+
+    // Find current leader
+    let leader = null;
+    let maxPos = -1;
+    let secondPos = -1;
+    let secondDuck = null;
+
+    racePlayers.forEach(p => {
+      const pos = duckPositions[p.id] || 0;
+      if (pos > maxPos) {
+        secondPos = maxPos;
+        secondDuck = leader;
+        maxPos = pos;
+        leader = p;
+      } else if (pos > secondPos) {
+        secondPos = pos;
+        secondDuck = p;
+      }
+    });
+
+    if (!leader) return;
+
+    // Determine situation
+    let situation = null;
+    let data = {};
+
+    if (leader.id !== lastLeader) {
+      lastLeader = leader.id;
+      situation = leader.isBot ? 'bot_leading' : 'new_leader';
+      data = { leader: leader.name };
+    } else if (secondDuck && maxPos - secondPos < 20) {
+      situation = 'close_race';
+      data = { p1: leader.name, p2: secondDuck.name };
+    } else if (maxPos > (trackWidth - 40) * 0.75) {
+      situation = 'final_stretch';
+      data = { leader: leader.name };
+    }
+
+    if (situation && !isTyping) {
+      const comment = await getAIComment(situation, data);
+      showComment(comment);
+    }
+  }, 4000);
+}
+
+// ── STOP COMMENTATOR ──
+async function stopCommentator(winner) {
+  commentatorActive = false;
+  if (commentatorInterval) { clearInterval(commentatorInterval); commentatorInterval = null; }
+  const comment = await getAIComment('winner', { winner: winner.name });
+  showComment(comment);
+  setTimeout(() => {
+    document.getElementById("commentator-box").classList.remove("show");
+    commentQueue = [];
+  }, 5000);
+}
+
+// ── POWER-UP COMMENTS ──
+const _origActivatePowerUp = window.activatePowerUp;
+window.activatePowerUp = async function() {
+  await _origActivatePowerUp();
+  if (purchasedPowerUp && commentatorActive) {
+    const situations = { boost: 'boost_used', freeze: 'freeze_used', tornado: 'tornado_used' };
+    const comment = await getAIComment(situations[purchasedPowerUp] || 'boost_used', { player: playerName });
+    showComment(comment);
+  }
+};
+
+// ── PATCH startLocalRace to start commentator ──
+const _origStartLocal = startLocalRace;
+function startLocalRace(racePlayers) {
+  _origStartLocal(racePlayers);
+  startCommentator(racePlayers);
+}
+
+// ── PATCH announceWinner to stop commentator ──
+const _origAnnounce = announceWinner;
+async function announceWinner(winner) {
+  await stopCommentator(winner);
+  await _origAnnounce(winner);
+}
+
+
+// ══════════════════════════════════════════════════
 // ⚡ POWER-UP SYSTEM
 // ══════════════════════════════════════════════════
 
@@ -1984,8 +2274,22 @@ window.closeWinner = async function() {
 
 </script>
 <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+
+<!-- KI KOMMENTATOR -->
+<div id="commentator-box">
+  <div class="commentator-inner">
+    <div class="commentator-avatar">🎙️</div>
+    <div class="commentator-text-wrap">
+      <div class="commentator-name">★ DUCK RACE COMMENTATOR ★</div>
+      <div id="commentator-text">Get ready for the race!<span class="commentator-cursor"></span></div>
+    </div>
+  </div>
+</div>
+
 </body>
-</html
+</html>
+
+
 
 
 
