@@ -108,14 +108,7 @@ header {
 
 /* ── LAYOUT ── */
 .container {
-  position: relative;
-  z-index: 10;
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 1rem 1rem 2rem;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  display: none;
 }
 @media(max-width:640px){ .container { grid-template-columns: 1fr; } }
 
@@ -963,6 +956,90 @@ header {
   font-family: 'Press Start 2P', monospace;
   font-size: 0.4rem;
 }
+
+/* ══════════════════════════════════════
+   TAB SYSTEM
+══════════════════════════════════════ */
+.tab-bar {
+  display: flex;
+  max-width: 900px;
+  margin: 0.5rem auto 0;
+  padding: 0 1rem;
+  gap: 4px;
+}
+.tab-btn {
+  flex: 1;
+  background: #0a1628;
+  border: 3px solid #1a3a5c;
+  border-bottom: none;
+  color: var(--text-dim);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.38rem;
+  padding: 0.6rem 0.3rem;
+  cursor: pointer;
+  letter-spacing: 1px;
+  transition: all 0.1s;
+  text-align: center;
+}
+.tab-btn:hover { border-color: var(--sand2); color: var(--sand); }
+.tab-btn.active {
+  background: #0d1b2a;
+  border-color: var(--sand);
+  color: var(--sand);
+  box-shadow: 0 -2px 8px rgba(244,211,94,0.2);
+}
+.tab-btn .tab-icon { display: block; font-size: 1rem; margin-bottom: 0.2rem; }
+
+.tab-content {
+  display: none;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0.8rem 1rem 2rem;
+}
+.tab-content.active { display: block; }
+
+/* Tab specific layouts */
+.tab-lobby-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+.tab-bet-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+.tab-race-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+@media(max-width:600px) {
+  .tab-lobby-grid,
+  .tab-bet-grid { grid-template-columns: 1fr; }
+  .tab-btn { font-size: 0.3rem; padding: 0.5rem 0.2rem; }
+}
+
+/* Step indicator */
+.step-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+.step-dot {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.35rem;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.step-dot.done { color: #2dc653; }
+.step-dot.active { color: var(--sand); }
+.step-arrow { color: #333; font-size: 0.8rem; }
 </style>
 </head>
 <body>
@@ -976,7 +1053,7 @@ header {
 <!-- WALLET BAR -->
 <div class="wallet-bar">
   <button class="wallet-connect-btn" id="wallet-btn" onclick="connectWallet()">
-    ◎ CONNECT PHANTOM
+    ◎ CONNECT WALLET
   </button>
   <div class="wallet-info" id="wallet-info">◎ <span id="wallet-addr">-</span></div>
 </div>
@@ -1025,9 +1102,33 @@ header {
   </div>
 </div>
 
-<div class="container">
+<!-- TAB BAR -->
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('lobby')" id="tab-btn-lobby">
+    <span class="tab-icon">🏊</span>LOBBY
+  </button>
+  <button class="tab-btn" onclick="switchTab('bet')" id="tab-btn-bet">
+    <span class="tab-icon">◎</span>BET
+  </button>
+  <button class="tab-btn" onclick="switchTab('race')" id="tab-btn-race">
+    <span class="tab-icon">🏁</span>RACE
+  </button>
+  <button class="tab-btn" onclick="switchTab('leaderboard')" id="tab-btn-leaderboard">
+    <span class="tab-icon">🏆</span>TOP
+  </button>
+</div>
 
-  <!-- LOBBY -->
+<!-- TAB: LOBBY -->
+<div class="tab-content active" id="tab-lobby">
+  <div class="step-indicator">
+    <span class="step-dot active">① JOIN LOBBY</span>
+    <span class="step-arrow">▶</span>
+    <span class="step-dot">② PLACE BET</span>
+    <span class="step-arrow">▶</span>
+    <span class="step-dot">③ RACE!</span>
+  </div>
+  <div class="tab-lobby-grid">
+    <!-- LOBBY -->
   <div class="panel">
     <h2>🏊 LOBBY</h2>
     <ul id="players">
@@ -1038,12 +1139,41 @@ header {
     <button class="btn btn-leave" onclick="leaveRace()">◀ LEAVE</button>
   </div>
 
-  <!-- BET PANEL -->
+  
+    <!-- RACE CONTROL -->
+  <div class="panel">
+    <h2>🏁 RACE</h2>
+    <p style="font-size:1rem;color:var(--text-dim);line-height:1.6;">
+      GATHER PLAYERS IN THE LOBBY.<br>
+      ONLY THE <span style="color:var(--sand)">HOST</span> CAN START!
+    </p>
+    <div class="host-info" id="host-info">YOU HAVE NOT JOINED YET.</div>
+    <div style="font-size:0.8rem;color:var(--text-dim);margin-top:0.4rem;font-family:VT323,monospace;" id="bot-info"></div>
+    <button class="btn btn-start" id="start-btn" onclick="startRace()" disabled>▶▶ START RACE</button>
+    <div id="race-status"></div>
+  </div>
+
+
+  
+  </div>
+</div>
+
+<!-- TAB: BET -->
+<div class="tab-content" id="tab-bet">
+  <div class="step-indicator">
+    <span class="step-dot done">① JOIN ✓</span>
+    <span class="step-arrow">▶</span>
+    <span class="step-dot active">② PLACE BET</span>
+    <span class="step-arrow">▶</span>
+    <span class="step-dot">③ RACE!</span>
+  </div>
+  <div class="tab-bet-grid">
+    <!-- BET PANEL -->
   <div class="panel">
     <h2>◎ PLACE BET</h2>
     <div class="bet-panel-inner">
       <p style="font-size:0.9rem;color:var(--text-dim);line-height:1.6;">
-        CONNECT PHANTOM & JOIN THE RACE TO PLACE YOUR BET!
+        CONNECT WALLET & JOIN THE RACE TO PLACE YOUR BET!
       </p>
       <div class="bet-amount-row">
         <button class="bet-preset active" onclick="selectBet(0.025)">0.025 SOL</button>
@@ -1058,21 +1188,8 @@ header {
     </div>
   </div>
 
-  <!-- RACE CONTROL -->
-  <div class="panel">
-    <h2>🏁 RACE</h2>
-    <p style="font-size:1rem;color:var(--text-dim);line-height:1.6;">
-      GATHER PLAYERS IN THE LOBBY.<br>
-      ONLY THE <span style="color:var(--sand)">HOST</span> CAN START!
-    </p>
-    <div class="host-info" id="host-info">YOU HAVE NOT JOINED YET.</div>
-    <div style="font-size:0.8rem;color:var(--text-dim);margin-top:0.4rem;font-family:VT323,monospace;" id="bot-info"></div>
-    <button class="btn btn-start" id="start-btn" onclick="startRace()" disabled>▶▶ START RACE</button>
-    <div id="race-status"></div>
-  </div>
-
-
-  <!-- POWER-UP PANEL -->
+  
+    <!-- POWER-UP PANEL -->
   <div class="panel" style="grid-column: 1 / -1;">
     <h2>⚡ POWER-UPS</h2>
     <p style="font-size:0.9rem;color:var(--text-dim);margin-bottom:0.6rem;">
@@ -1105,6 +1222,8 @@ header {
   </div>
 
 
+  
+  </div>
   <!-- LIVE WETT-QUOTEN -->
   <div class="panel odds-panel">
     <h2>📊 LIVE ODDS <span class="odds-live-badge">LIVE</span></h2>
@@ -1114,7 +1233,20 @@ header {
     <div class="odds-total" id="odds-total"></div>
   </div>
 
-  <!-- RACE TRACK -->
+  
+</div>
+
+<!-- TAB: RACE -->
+<div class="tab-content" id="tab-race">
+  <div class="step-indicator">
+    <span class="step-dot done">① JOIN ✓</span>
+    <span class="step-arrow">▶</span>
+    <span class="step-dot done">② BET ✓</span>
+    <span class="step-arrow">▶</span>
+    <span class="step-dot active">③ RACE!</span>
+  </div>
+  <div class="tab-race-grid">
+    <!-- RACE TRACK -->
   <div class="panel race-panel">
     <h2>🌊 RACE TRACK</h2>
     <div id="race-canvas-wrap">
@@ -1125,13 +1257,21 @@ header {
 
 </div>
 
-<!-- POWER-UP ACTIVATE -->
-<div id="powerup-activate-bar">
-  <button class="btn-activate" id="activate-btn" onclick="activatePowerUp()">
-    ⚡ USE POWER-UP NOW!
-  </button>
+
+  </div>
 </div>
 
+<!-- TAB: LEADERBOARD -->
+<div class="tab-content" id="tab-leaderboard">
+  <div class="panel">
+    <h2>🏆 TOP WINNERS</h2>
+    <div id="leaderboard-list">
+      <p style="font-size:0.9rem;color:var(--text-dim);text-align:center;padding:1rem;">
+        LEADERBOARD COMING SOON...<br><br>🦆 WIN RACES TO APPEAR HERE!
+      </p>
+    </div>
+  </div>
+</div>
 
 <!-- WALLET SELECT MODAL -->
 <div class="wa-modal-overlay" id="wa-modal">
@@ -1279,6 +1419,7 @@ window.joinRace = async function() {
   await addDoc(lobbyRef, { name: playerName, id: playerId, uid: currentUser.uid, joinedAt: Date.now(), isHost: snap.empty });
   isInLobby = true;
   showToast("🦆 JOINED!");
+  setTimeout(() => switchTab('bet'), 800);
   const botInfoEl = document.getElementById("bot-info");
   if (botInfoEl) botInfoEl.textContent = "⏳ WAITING 15s FOR PLAYERS, THEN BOTS JOIN...";
   setTimeout(() => document.querySelector('.race-panel')?.scrollIntoView({ behavior:'smooth', block:'start' }), 300);
@@ -1622,6 +1763,7 @@ function startLocalRace(racePlayers) {
   document.getElementById("start-btn").disabled = true;
   document.getElementById("race-status").textContent = "▶ RACE IN PROGRESS...";
   setTimeout(showPowerUpActivate, 500);
+  switchTab('race');
 
   initCanvas(racePlayers);
 
@@ -1806,6 +1948,34 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove("show"), 2500);
 }
 window.showToast = showToast;
+
+// ══════════════════════════════════════════════════
+// 🗂️ TAB SYSTEM
+// ══════════════════════════════════════════════════
+window.switchTab = function(tab) {
+  // Hide all tabs
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  // Show selected
+  document.getElementById('tab-' + tab)?.classList.add('active');
+  document.getElementById('tab-btn-' + tab)?.classList.add('active');
+  // Init canvas when race tab opens
+  if (tab === 'race' && players.length > 0) {
+    setTimeout(() => previewTrack(players), 100);
+  }
+};
+
+// Auto switch to race tab when race starts
+const _origRaceStart = null;
+function autoSwitchToRace() {
+  switchTab('race');
+}
+
+// Auto switch to bet tab when joined lobby
+function autoSwitchToBet() {
+  switchTab('bet');
+}
+
 
 // ══════════════════════════════════════════════════
 // 🎆 CONFETTI & FINISH EFFECTS
@@ -2559,7 +2729,7 @@ let selectedBet = 0.025;
 let hasBet = false;
 let betPool = {}; // playerId → { wallet, amount }
 
-// ── CONNECT PHANTOM ──
+// ── CONNECT WALLET ──
 // ══════════════════════════════════════════════════
 // ◎ MULTI-WALLET ADAPTER
 // ══════════════════════════════════════════════════
@@ -3090,6 +3260,8 @@ window.closeWinner = async function() {
 
 </body>
 </html>
+
+
 
 
 
