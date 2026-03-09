@@ -1646,45 +1646,50 @@ header {
 <div id="wc-modal-overlay">
   <div class="wc-box">
     <h3>◎ CONNECT WALLET</h3>
-    
-    <!-- Wallet Apps -->
-    <div class="wc-wallet-grid">
-      <div class="wc-wallet-item" onclick="connectWalletApp('phantom')">
-        <img src="https://phantom.app/img/phantom-logo.png" onerror="this.style.display='none'">
-        <span>Phantom</span>
-        <span class="wc-tag">POPULAR</span>
+
+    <!-- Desktop: try direct connect -->
+    <div id="wc-desktop-section">
+      <div class="wc-wallet-grid">
+        <div class="wc-wallet-item" onclick="connectWalletApp('phantom')">
+          <span style="font-size:2rem;">👻</span>
+          <span>Phantom</span>
+          <span class="wc-tag">DESKTOP</span>
+        </div>
+        <div class="wc-wallet-item" onclick="connectWalletApp('solflare')">
+          <span style="font-size:2rem;">🔥</span>
+          <span>Solflare</span>
+          <span class="wc-tag">DESKTOP</span>
+        </div>
+        <div class="wc-wallet-item" onclick="connectWalletApp('backpack')">
+          <span style="font-size:2rem;">🎒</span>
+          <span>Backpack</span>
+          <span class="wc-tag">DESKTOP</span>
+        </div>
+        <div class="wc-wallet-item" onclick="connectWalletApp('trust')">
+          <span style="font-size:2rem;">🛡️</span>
+          <span>Trust</span>
+          <span class="wc-tag">DESKTOP</span>
+        </div>
       </div>
-      <div class="wc-wallet-item" onclick="connectWalletApp('solflare')">
-        <img src="https://solflare.com/assets/logo.svg" onerror="this.style.display='none'">
-        <span>Solflare</span>
-        <span class="wc-tag">POPULAR</span>
-      </div>
-      <div class="wc-wallet-item" onclick="connectWalletApp('backpack')">
-        <img src="https://backpack.app/icon.png" onerror="this.style.display='none'">
-        <span>Backpack</span>
-        <span class="wc-tag">NEW</span>
-      </div>
-      <div class="wc-wallet-item" onclick="connectWalletApp('trust')">
-        <img src="https://trustwallet.com/assets/images/favicon.png" onerror="this.style.display='none'">
-        <span>Trust</span>
-        <span class="wc-tag">MOBILE</span>
-      </div>
+      <div class="wc-divider">── OR ──</div>
     </div>
 
-    <div class="wc-divider">── OR ENTER ADDRESS MANUALLY ──</div>
-
-    <!-- Manual address input -->
+    <!-- Manual address (primary on mobile) -->
+    <p style="font-family:'Press Start 2P',monospace;font-size:0.4rem;color:#f4d35e;margin-bottom:0.6rem;">
+      📋 PASTE YOUR WALLET ADDRESS
+    </p>
     <div class="wc-input-row">
       <input 
         class="wc-address-input" 
         id="wc-address-input"
-        placeholder="Your Solana wallet address..."
+        placeholder="e.g. 7xKXtg2CW..."
         maxlength="44"
       />
-      <button class="btn-wc-connect" onclick="connectManualWallet()">✓ USE</button>
+      <button class="btn-wc-connect" onclick="connectManualWallet()">✓</button>
     </div>
-    <p style="font-family:'VT323',monospace;font-size:0.9rem;color:#555;margin-bottom:0.5rem;">
-      Note: Manual address = view only. SOL payments via bot /join
+    <p style="font-family:'VT323',monospace;font-size:0.95rem;color:#555;margin-bottom:0.8rem;line-height:1.4;">
+      📱 Mobile: Copy address from Phantom/Solflare → paste here<br>
+      💰 To join races use /join in the Telegram bot
     </p>
 
     <button class="btn-wc-close" onclick="closeWCModal()">✕ CANCEL</button>
@@ -3552,6 +3557,12 @@ let activeWalletProvider = null;
 
 // ── OPEN WALLET MODAL ──
 window.connectWallet = function() {
+  const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
+  const isInTelegram = !!window.Telegram?.WebApp?.initData;
+  const desktopSection = document.getElementById("wc-desktop-section");
+  if (desktopSection) {
+    desktopSection.style.display = (isMobile || isInTelegram) ? "none" : "block";
+  }
   document.getElementById("wc-modal-overlay").classList.add("show");
 };
 
@@ -4111,6 +4122,7 @@ window.closeWinner = async function() {
 
 </body>
 </html>
+
 
 
 
