@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -931,6 +932,38 @@ header {
   cursor: pointer;
   margin-top: 0.5rem;
 }
+
+/* ── WALLET INFO BANNER ── */
+#wallet-info-banner {
+  background: #0a1628;
+  border: 3px solid #4361ee;
+  padding: 0.8rem 1rem;
+  margin-bottom: 0.8rem;
+  display: flex;
+  gap: 0.8rem;
+  align-items: flex-start;
+}
+#wallet-info-banner.hide { display: none; }
+.wib-icon { font-size: 1.5rem; flex-shrink: 0; }
+.wib-text {
+  font-family: 'VT323', monospace;
+  font-size: 1.05rem;
+  color: #fff;
+  line-height: 1.5;
+}
+.wib-text b { color: #f4d35e; }
+.wib-text a { color: #4CC9F0; }
+.wib-close {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 1rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.4rem;
+}
 </style>
 </head>
 <body>
@@ -980,6 +1013,18 @@ header {
 </div>
 
 <div class="container">
+
+  <!-- WALLET INFO BANNER -->
+  <div id="wallet-info-banner">
+    <div class="wib-icon">💡</div>
+    <div class="wib-text">
+      <b>HOW TO CONNECT YOUR WALLET:</b><br>
+      📱 <b>Phantom:</b> Use /join in the bot → send SOL → verify<br>
+      🔥 <b>Solflare/Other:</b> Press "Connect Wallet" above<br>
+      💻 <b>Desktop:</b> Connect wallet directly in browser
+    </div>
+    <button class="wib-close" onclick="document.getElementById('wallet-info-banner').classList.add('hide')">✕</button>
+  </div>
 
   <!-- LOBBY -->
   <div class="panel">
@@ -3077,6 +3122,7 @@ window.closeWinner = async function() {
 
 </body>
 </html>
+
 
 
 
