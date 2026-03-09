@@ -948,7 +948,7 @@ header {
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
   getFirestore, collection, addDoc, onSnapshot,
-  deleteDoc, doc, getDocs, setDoc, getDoc, collectionGroup
+  deleteDoc, doc, getDocs, setDoc, getDoc, updateDoc, collectionGroup
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import {
   getAuth, signInAnonymously, onAuthStateChanged
@@ -1077,6 +1077,58 @@ window.leaveRace = async function() {
   isInLobby = false;
   showToast("LEFT LOBBY");
 };
+
+// ── AUTO CLEANUP ON PAGE LEAVE ──
+async function removePlayerFromLobby() {
+  if (!isInLobby || !playerId) return;
+  try {
+    const snap = await getDocs(lobbyRef);
+    for (const d of snap.docs) {
+      if (d.data().id === playerId) {
+        await deleteDoc(doc(db, "lobby", d.id));
+        break;
+      }
+    }
+  } catch(e) {}
+}
+
+// Telegram WebApp close event
+window.Telegram?.WebApp?.onEvent('viewportChanged', async () => {
+  if (window.Telegram?.WebApp?.viewportHeight === 0) {
+    await removePlayerFromLobby();
+  }
+});
+
+// Browser tab close / refresh
+window.addEventListener('beforeunload', async (e) => {
+  removePlayerFromLobby();
+});
+
+// Page visibility change (user switches app on mobile)
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState === 'hidden' && isInLobby) {
+    await removePlayerFromLobby();
+  }
+});
+
+// Periodic stale player cleanup (removes players inactive > 2 min)
+setInterval(async () => {
+  if (!isInLobby) return;
+  try {
+    const snap = await getDocs(lobbyRef);
+    const now = Date.now();
+    for (const d of snap.docs) {
+      const data = d.data();
+      // Remove stale entries older than 2 minutes that aren't bots
+      if (!data.isBot && data.joinedAt && (now - data.joinedAt) > 120000) {
+        // Check if this is our own entry - refresh it
+        if (data.id === playerId) {
+          await updateDoc(doc(db, "lobby", d.id), { joinedAt: now });
+        }
+      }
+    }
+  } catch(e) {}
+}, 30000);
 
 // ── START ──
 async function cleanupBeforeRace() {
@@ -2385,7 +2437,9 @@ window.closeWinner = async function() {
 </div>
 
 </body>
-</ht
+</html>
+
+
 
 
 
