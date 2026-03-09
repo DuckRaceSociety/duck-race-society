@@ -621,6 +621,94 @@ header {
   from { transform: translateY(0) scale(1); opacity: 1; }
   to { transform: translateY(-60px) scale(1.5); opacity: 0; }
 }
+
+/* ── WALLET ADAPTER MODAL ── */
+.wa-modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  z-index: 300;
+  align-items: center;
+  justify-content: center;
+}
+.wa-modal-overlay.show { display: flex; }
+.wa-modal {
+  background: #0d1b2a;
+  border: 4px solid var(--sand);
+  box-shadow: 8px 8px 0 #000;
+  padding: 1.5rem;
+  width: 90%;
+  max-width: 360px;
+  animation: pixelPop 0.2s steps(4) forwards;
+}
+.wa-modal h3 {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.65rem;
+  color: var(--sand);
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--sand2);
+  letter-spacing: 1px;
+}
+.wa-wallet-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.wa-wallet-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  background: #0a1628;
+  border: 3px solid #1a3a5c;
+  padding: 0.7rem 0.9rem;
+  cursor: pointer;
+  transition: all 0.05s;
+  width: 100%;
+  color: var(--text);
+  font-family: 'VT323', monospace;
+  font-size: 1.1rem;
+}
+.wa-wallet-btn:hover {
+  border-color: var(--sand);
+  background: #1a1400;
+}
+.wa-wallet-btn img {
+  width: 28px;
+  height: 28px;
+  image-rendering: pixelated;
+}
+.wa-wallet-name {
+  flex: 1;
+  text-align: left;
+}
+.wa-wallet-tag {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.35rem;
+  color: #2dc653;
+  background: #001a0a;
+  border: 1px solid #2dc653;
+  padding: 0.2rem 0.4rem;
+}
+.wa-close {
+  width: 100%;
+  margin-top: 0.8rem;
+  background: #1a1a2e;
+  color: var(--text-dim);
+  border: 3px solid #333;
+  padding: 0.5rem;
+  font-family: 'VT323', monospace;
+  font-size: 1rem;
+  cursor: pointer;
+  box-shadow: 3px 3px 0 #000;
+}
+.wa-detecting {
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  padding: 0.3rem 0;
+}
 </style>
 </head>
 <body>
@@ -764,6 +852,18 @@ header {
   <button class="btn-activate" id="activate-btn" onclick="activatePowerUp()">
     ⚡ USE POWER-UP NOW!
   </button>
+</div>
+
+
+<!-- WALLET SELECT MODAL -->
+<div class="wa-modal-overlay" id="wa-modal">
+  <div class="wa-modal">
+    <h3>◎ SELECT WALLET</h3>
+    <div class="wa-wallet-list" id="wa-wallet-list">
+      <div class="wa-detecting">Detecting wallets...</div>
+    </div>
+    <button class="wa-close" onclick="closeWalletModal()">✕ CANCEL</button>
+  </div>
 </div>
 
 <!-- WINNER -->
@@ -1273,7 +1373,7 @@ window.buyPowerUp = async function() {
     document.getElementById('buy-pu-btn').disabled = true;
     document.getElementById('powerup-status').textContent = "⏳ BUYING...";
 
-    const phantom = window.solana;
+    const phantom = activeWalletProvider || window.solana;
     const connection = new window.solanaWeb3.Connection("https://api.mainnet-beta.solana.com", "confirmed");
     const TREASURY = "5sDfMWBNFMne13aJLhiG3k7V8MwULmHfQrkt2eHupSQ1";
     const fromPubkey = new window.solanaWeb3.PublicKey(walletAddress);
@@ -1512,55 +1612,160 @@ let hasBet = false;
 let betPool = {}; // playerId → { wallet, amount }
 
 // ── CONNECT PHANTOM ──
-window.connectWallet = async function() {
+// ══════════════════════════════════════════════════
+// ◎ MULTI-WALLET ADAPTER
+// ══════════════════════════════════════════════════
+
+const SUPPORTED_WALLETS = [
+  {
+    name: "Phantom",
+    tag: "POPULAR",
+    icon: "https://phantom.app/img/phantom-logo.png",
+    detect: () => window.solana?.isPhantom ? window.solana : window.phantom?.solana?.isPhantom ? window.phantom.solana : null,
+    deeplink: (url) => `https://phantom.app/ul/browse/${encodeURIComponent(url)}?ref=${encodeURIComponent(url)}`
+  },
+  {
+    name: "Solflare",
+    tag: "POPULAR",
+    icon: "https://solflare.com/assets/logo.svg",
+    detect: () => window.solflare?.isSolflare ? window.solflare : null,
+    deeplink: (url) => `https://solflare.com/ul/v1/browse/${encodeURIComponent(url)}?ref=${encodeURIComponent(url)}`
+  },
+  {
+    name: "Backpack",
+    tag: "NEW",
+    icon: "https://backpack.app/icon.png",
+    detect: () => window.backpack?.isBackpack ? window.backpack : window.xnft?.solana ? window.xnft.solana : null,
+    deeplink: null
+  },
+  {
+    name: "Trust Wallet",
+    tag: "MOBILE",
+    icon: "https://trustwallet.com/assets/images/favicon.png",
+    detect: () => window.trustwallet?.solana ? window.trustwallet.solana : null,
+    deeplink: (url) => `https://link.trustwallet.com/open_url?coin_id=501&url=${encodeURIComponent(url)}`
+  },
+  {
+    name: "Coinbase Wallet",
+    tag: "",
+    icon: "https://www.coinbase.com/favicon.ico",
+    detect: () => window.coinbaseSolana ? window.coinbaseSolana : null,
+    deeplink: null
+  }
+];
+
+let activeWalletProvider = null;
+
+// ── OPEN WALLET MODAL ──
+window.connectWallet = function() {
+  buildWalletModal();
+  document.getElementById("wa-modal").classList.add("show");
+};
+
+window.closeWalletModal = function() {
+  document.getElementById("wa-modal").classList.remove("show");
+};
+
+function buildWalletModal() {
+  const list = document.getElementById("wa-wallet-list");
+  list.innerHTML = "";
+  const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
+
+  SUPPORTED_WALLETS.forEach(wallet => {
+    const provider = wallet.detect();
+    const isDetected = !!provider;
+
+    // On mobile show all, on desktop only detected + install links
+    const btn = document.createElement("button");
+    btn.className = "wa-wallet-btn";
+    btn.innerHTML = `
+      <img src="${wallet.icon}" alt="${wallet.name}" onerror="this.style.display='none'">
+      <span class="wa-wallet-name">${wallet.name}</span>
+      ${wallet.tag ? `<span class="wa-wallet-tag">${wallet.tag}</span>` : ""}
+      ${isDetected ? '<span style="color:#2dc653;font-size:0.8rem;">●</span>' : '<span style="color:#555;font-size:0.8rem;">○</span>'}
+    `;
+
+    btn.onclick = () => connectWithWallet(wallet, provider, isMobile);
+    list.appendChild(btn);
+  });
+
+  // WalletConnect option
+  const wcBtn = document.createElement("button");
+  wcBtn.className = "wa-wallet-btn";
+  wcBtn.innerHTML = `
+    <span style="font-size:1.4rem;">🔗</span>
+    <span class="wa-wallet-name">Other Wallets</span>
+    <span class="wa-wallet-tag">300+</span>
+  `;
+  wcBtn.onclick = () => showToast("WALLETCONNECT COMING SOON!");
+  list.appendChild(wcBtn);
+}
+
+async function connectWithWallet(wallet, provider, isMobile) {
   try {
-    // Method 1: window.solana (Phantom extension)
-    let phantom = window.solana;
-
-    // Method 2: window.phantom.solana (newer Phantom versions)
-    if (!phantom?.isPhantom && window.phantom?.solana) {
-      phantom = window.phantom.solana;
-    }
-
-    // Method 3: Not found - redirect to Phantom deep link
-    if (!phantom?.isPhantom) {
-      // Check if on mobile - use Phantom deep link
-      const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
-      if (isMobile) {
-        const url = encodeURIComponent("https://duck-race-society.vercel.app");
-        window.open(
-          "https://phantom.app/ul/browse/" + url + "?ref=" + url,
-          "_blank"
-        );
-        showToast("OPENING IN PHANTOM...");
+    if (!provider) {
+      // Not installed - redirect
+      if (isMobile && wallet.deeplink) {
+        const url = "https://duck-race-society.vercel.app";
+        window.open(wallet.deeplink(url), "_blank");
+        showToast("OPENING " + wallet.name.toUpperCase() + "...");
       } else {
-        showToast("⚠ INSTALL PHANTOM WALLET!");
-        window.open("https://phantom.app/", "_blank");
+        showToast("⚠ INSTALL " + wallet.name.toUpperCase() + " FIRST!");
+        window.open("https://" + wallet.name.toLowerCase().replace(" ", "") + ".app", "_blank");
       }
+      closeWalletModal();
       return;
     }
 
-    const resp = await phantom.connect();
+    closeWalletModal();
+    showToast("⏳ CONNECTING " + wallet.name.toUpperCase() + "...");
+
+    const resp = await provider.connect();
     walletAddress = resp.publicKey.toString();
     walletConnected = true;
+    activeWalletProvider = provider;
 
-    document.getElementById("wallet-btn").textContent = "✓ CONNECTED";
+    document.getElementById("wallet-btn").textContent = "✓ " + wallet.name.toUpperCase();
     document.getElementById("wallet-btn").classList.add("connected");
     document.getElementById("wallet-info").classList.add("show");
     document.getElementById("wallet-addr").textContent =
       walletAddress.slice(0,4) + "..." + walletAddress.slice(-4);
 
     updateBetUI();
-    showToast("✓ WALLET CONNECTED!");
+    showToast("✓ " + wallet.name.toUpperCase() + " CONNECTED!");
+
   } catch(e) {
-    console.error("Wallet error:", e);
+    console.error("Wallet connect error:", e);
     if (e.code === 4001) {
       showToast("CONNECTION REJECTED!");
     } else {
-      showToast("WALLET ERROR: " + (e.message?.slice(0,25) || "Unknown"));
+      showToast("ERROR: " + (e.message?.slice(0,20) || "Unknown"));
     }
   }
-};
+}
+
+// ── AUTO RECONNECT ──
+window.addEventListener('load', async () => {
+  await new Promise(r => setTimeout(r, 600));
+  for (const wallet of SUPPORTED_WALLETS) {
+    const provider = wallet.detect();
+    if (provider?.isConnected) {
+      try {
+        const resp = await provider.connect({ onlyIfTrusted: true });
+        walletAddress = resp.publicKey.toString();
+        walletConnected = true;
+        activeWalletProvider = provider;
+        document.getElementById("wallet-btn").textContent = "✓ " + wallet.name.toUpperCase();
+        document.getElementById("wallet-btn").classList.add("connected");
+        document.getElementById("wallet-info").classList.add("show");
+        document.getElementById("wallet-addr").textContent =
+          walletAddress.slice(0,4) + "..." + walletAddress.slice(-4);
+        updateBetUI();
+        break;
+      } catch(e) {}
+    }
+  }
+});
 
 // ── SELECT BET AMOUNT ──
 window.selectBet = function(amount) {
@@ -1581,7 +1786,7 @@ window.placeBet = async function() {
     document.getElementById("bet-btn").disabled = true;
     document.getElementById("bet-status").textContent = "⏳ SENDING TRANSACTION...";
 
-    const phantom = window.solana;
+    const phantom = activeWalletProvider || window.solana;
     const connection = new window.solanaWeb3.Connection(
       "https://api.mainnet-beta.solana.com", "confirmed"
     );
@@ -1760,6 +1965,8 @@ window.closeWinner = async function() {
 <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
 </body>
 </html>
+
+
 
 
 
