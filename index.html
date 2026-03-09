@@ -1853,8 +1853,9 @@ window.joinRace = async function() {
             uid: "bot", joinedAt: Date.now(), isBot: true, isHost: false
           });
         }
-        if (botInfoEl) botInfoEl.textContent = "🤖 BOTS JOINED! START THE RACE!";
-        showToast("🤖 2 BOTS JOINED!");
+        if (botInfoEl) botInfoEl.textContent = "🤖 BOTS JOINED! PRESS START RACE!";
+        showToast("🤖 2 BOTS JOINED! PRESS START!");
+        updateStartButton();
       }
     } catch(e) { console.error("Bot add error:", e); }
   }, 15000);
@@ -1963,7 +1964,7 @@ async function cleanupBeforeRace() {
 
 window.startRace = async function() {
   if (!isInLobby) { showToast("⛔ JOIN LOBBY FIRST!"); return; }
-  if (players.length < 2) { showToast("⚠ NEED 2+ PLAYERS!"); return; }
+  if (players.length < 2) { showToast("⚠ BOTS JOINING IN 15s..."); return; }
   if (raceRunning) return;
 
   // Clean stale data before starting
@@ -2377,19 +2378,19 @@ function updatePlayerList() {
 }
 
 function updateStartButton() {
-  const canStart = isInLobby && players.length >= 2 && !raceRunning;
   const btn = document.getElementById("start-btn");
+  if (!btn) return;
+  const canStart = isInLobby && players.length >= 2 && !raceRunning;
   btn.disabled = !canStart;
-  // Show start button only to host, hide to others
-  if (isHost()) {
-    btn.style.display = "block";
+  if (canStart) {
     btn.textContent = "▶▶ START RACE (" + players.length + " PLAYERS)";
-  } else if (isInLobby && players.length >= 2) {
-    btn.style.display = "block";
-    btn.disabled = true;
-    btn.textContent = "⏳ WAITING FOR HOST TO START...";
+    btn.style.background = "#2dc653";
+  } else if (isInLobby) {
+    btn.textContent = "⏳ WAITING FOR PLAYERS...";
+    btn.style.background = "";
   } else {
     btn.textContent = "▶▶ START RACE";
+    btn.style.background = "";
   }
 }
 
@@ -4038,12 +4039,15 @@ window.placeBet = async function() {
   if (hasBet) { showToast("BET ALREADY PLACED!"); return; }
   if (raceRunning) { showToast("RACE ALREADY RUNNING!"); return; }
 
-  // No wallet provider = manual address = use bot flow
+  // No wallet provider = show payment instructions
   if (!activeWalletProvider) {
-    document.getElementById("bet-status").textContent = "USE /join IN BOT TO PAY!";
-    showToast("📱 USE /join IN TELEGRAM BOT TO BET!");
-    // Mark as bet placed (bot already verified payment)
-    hasBet = true;
+    showToast("⚠ SEND 0.025 SOL TO TREASURY MANUALLY!");
+    document.getElementById("bet-status").textContent = "SEND SOL TO TREASURY → THEN PRESS CONFIRM";
+    // Show confirm button
+    const btn = document.getElementById("bet-btn");
+    btn.textContent = "✓ I SENT THE SOL";
+    btn.onclick = async function() {
+      hasBet = true;
     document.getElementById("bet-status").textContent = "✓ JOINED VIA BOT!";
     document.getElementById("my-bet-status").textContent = selectedBet + " SOL ✓";
     document.getElementById("my-bet-status").style.color = "#2dc653";
@@ -4256,6 +4260,7 @@ window.closeWinner = async function() {
 
 </body>
 </html>
+
 
 
 
