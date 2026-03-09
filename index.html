@@ -997,11 +997,32 @@ window.leaveRace = async function() {
 };
 
 // ── START ──
+async function cleanupBeforeRace() {
+  try {
+    // Clear old bets
+    const betsSnap = await getDocs(collection(db, "bets"));
+    for (const d of betsSnap.docs) await deleteDoc(doc(db, "bets", d.id));
+    // Clear old powerups
+    const puSnap = await getDocs(collection(db, "powerups"));
+    for (const d of puSnap.docs) await deleteDoc(doc(db, "powerups", d.id));
+    console.log("✅ Pre-race cleanup done!");
+  } catch(e) { console.error("Cleanup error:", e); }
+}
+
 window.startRace = async function() {
   if (!isHost()) { showToast("⛔ HOST ONLY!"); return; }
   if (players.length < 2) { showToast("⚠ NEED 2+ PLAYERS!"); return; }
   if (raceRunning) return;
-  await setDoc(raceRef, { running: true, startedAt: Date.now(), players: players.map(p=>({id:p.id,name:p.name})), winner: null });
+
+  // Clean stale data before starting
+  await cleanupBeforeRace();
+
+  await setDoc(raceRef, {
+    running: true,
+    startedAt: Date.now(),
+    players: players.map(p => ({ id: p.id, name: p.name })),
+    winner: null
+  });
 };
 
 // ── CANVAS RACE ──
@@ -1964,7 +1985,8 @@ window.closeWinner = async function() {
 </script>
 <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
 </body>
-</html>
+</html
+
 
 
 
