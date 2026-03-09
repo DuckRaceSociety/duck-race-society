@@ -1,76 +1,75 @@
-// api/bot.js
+// api/bot.js - Telegram Bot Webhook Handler
+const TREASURY = "5sDfMWBNFMne13aJLhiG3k7V8MwULmHfQrkt2eHupSQ1";
+const ENTRY_SOL = 0.025;
+const GAME_URL = "https://duck-race-society.vercel.app";
+
 module.exports = async function handler(req, res) {
-  res.status(200).json({ ok: true });
-  if (req.method !== "POST") return;
+  if (req.method !== "POST") return res.status(200).json({ ok: true });
 
-  const TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-  const GAME = "https://duck-race-society.vercel.app";
-  const TREASURY = "5sDfMWBNFMne13aJLhiG3k7V8MwULmHfQrkt2eHupSQ1";
+  const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
   const update = req.body;
-  if (!update) return;
+  const msg = update.message || update.callback_query?.message;
+  const callbackData = update.callback_query?.data;
+  const chatId = msg?.chat?.id;
+  const from = update.message?.from || update.callback_query?.from;
+  const userName = from?.first_name || "Player";
+  const text = update.message?.text || "";
 
-  const msg = update.message;
-  const cb = update.callback_query;
-  const chatId = msg?.chat?.id || cb?.message?.chat?.id;
-  const text = msg?.text || "";
-  const cbData = cb?.data || "";
-  const name = msg?.from?.first_name || cb?.from?.first_name || "Player";
+  if (!chatId) return res.status(200).json({ ok: true });
 
-  if (!chatId) return;
-
-  const api = `https://api.telegram.org/bot${TOKEN}`;
-
-  async function send(txt, keyboard) {
-    const body = { chat_id: chatId, text: txt, parse_mode: "HTML" };
-    if (keyboard) body.reply_markup = { inline_keyboard: keyboard };
-    await fetch(`${api}/sendMessage`, {
+  async function sendMessage(txt, extra = {}) {
+    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body)
+      body: JSON.stringify({ chat_id: chatId, text: txt, parse_mode: "HTML", ...extra })
     });
   }
 
-  if (cb) {
-    await fetch(`${api}/answerCallbackQuery`, {
-      method: "POST", 
+  if (update.callback_query) {
+    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/answerCallbackQuery`, {
+      method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ callback_query_id: cb.id })
+      body: JSON.stringify({ callback_query_id: update.callback_query.id })
     });
   }
 
-  if (text.startsWith("/start") || cbData === "join") {
-    await send(
-      `🦆 <b>DUCK RACE SOCIETY</b>\n\nHey ${name}!\n\n` +
-      `<b>HOW TO PLAY:</b>\n` +
-      `1️⃣ Send <code>0.025 SOL</code> to treasury\n` +
-      `2️⃣ Open the game\n` +
-      `3️⃣ Join lobby + place bet\n` +
-      `4️⃣ Race your duck! 🏁\n\n` +
-      `💰 Treasury:\n<code>${TREASURY}</code>\n\n` +
-      `🏆 Winner: 80% SOL + 500 $TRC`,
-      [[{ text: "🎮 OPEN GAME", web_app: { url: GAME } }],
-       [{ text: "🦆 HOW TO JOIN", callback_data: "join" }]]
-    );
+  try {
+    if (text.startsWith("/start") || callbackData === "join") {
+      await sendMessage(
+        `🦆 <b>DUCK RACE SOCIETY</b>\n\nHey ${userName}!\n\n` +
+        `<b>HOW TO JOIN:</b>\n` +
+        `1️⃣ Send <code>${ENTRY_SOL} SOL</code> to:\n<code>${TREASURY}</code>\n\n` +
+        `2️⃣ Open the game\n` +
+        `3️⃣ Join lobby + place bet + race! 🏁\n\n` +
+        `🏆 Winner: <b>80% SOL + 500 $TRC</b>`,
+        { reply_markup: { inline_keyboard: [
+          [{ text: "🎮 OPEN GAME", web_app: { url: GAME_URL } }],
+          [{ text: "🦆 JOIN RACE", callback_data: "join" }]
+        ]}}
+      );
+    } else if (text === "/join") {
+      await sendMessage(
+        `🦆 <b>JOIN A RACE</b>\n\n` +
+        `Send <code>${ENTRY_SOL} SOL</code> to:\n<code>${TREASURY}</code>\n\n` +
+        `Then open the game and join the lobby!`,
+        { reply_markup: { inline_keyboard: [[
+          { text: "🎮 OPEN GAME", web_app: { url: GAME_URL } }
+        ]]}}
+      );
+    } else if (text === "/help") {
+      await sendMessage(
+        `🦆 <b>HOW TO PLAY</b>\n\n` +
+        `/start - Main menu\n/join - Join a race\n\n` +
+        `Treasury:\n<code>${TREASURY}</code>`
+      );
+    }
+  } catch(e) {
+    console.error("Bot error:", e);
   }
 
-  else if (text === "/join") {
-    await send(
-      `🦆 <b>JOIN A RACE</b>\n\n` +
-      `Send <code>0.025 SOL</code> to:\n<code>${TREASURY}</code>\n\n` +
-      `Then open the game and join the lobby!`,
-      [[{ text: "🎮 OPEN GAME", web_app: { url: GAME } }]]
-    );
-  }
-
-  else if (text === "/help") {
-    await send(
-      `🦆 <b>HELP</b>\n\n` +
-      `/start - Main menu\n` +
-      `/join - Join a race\n\n` +
-      `Treasury: <code>${TREASURY}</code>`
-    );
-  }
+  return res.status(200).json({ ok: true });
 };
+
 
 
 
