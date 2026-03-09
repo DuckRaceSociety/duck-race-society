@@ -1296,6 +1296,9 @@ function spawnParticles(x, y) {
 
 function startLocalRace(racePlayers) {
   raceRunning = true;
+  canvas._racePlayers = racePlayers;
+  setTimeout(showPowerUpActivate, 500);
+  setTimeout(() => startCommentator(racePlayers), 300);
   document.getElementById("start-btn").disabled = true;
   document.getElementById("race-status").textContent = "▶ RACE IN PROGRESS...";
   setTimeout(showPowerUpActivate, 500);
@@ -1365,6 +1368,7 @@ function previewTrack(racePlayers) {
 
 // ── WINNER ──
 async function announceWinner(winner) {
+  await stopCommentator(winner);
   document.getElementById("race-status").textContent = "★ " + winner.name.toUpperCase() + " WINS!";
   setTimeout(() => {
     document.getElementById("winner-name").textContent = winner.name.toUpperCase();
@@ -1735,17 +1739,17 @@ window.activatePowerUp = async function() {
 };
 
 // ── PATCH startLocalRace to start commentator ──
-const _origStartLocal = startLocalRace;
-function startLocalRace(racePlayers) {
-  _origStartLocal(racePlayers);
+const _origStartLocalCommentator = startLocalRace;
+function startLocalRaceWithCommentator(racePlayers) {
+  _origStartLocalCommentator(racePlayers);
   startCommentator(racePlayers);
 }
 
 // ── PATCH announceWinner to stop commentator ──
-const _origAnnounce = announceWinner;
-async function announceWinner(winner) {
+const _origAnnounceCommentator = announceWinner;
+async function announceWinnerWithCommentator(winner) {
   await stopCommentator(winner);
-  await _origAnnounce(winner);
+  await _origAnnounceCommentator(winner);
 }
 
 
@@ -1940,14 +1944,6 @@ const _origSetInterval = window.setInterval;
 // Patch duck movement inside race loop to respect freeze
 // We do this by overriding duckPositions setter behavior in the loop
 const _origRaceLoop = null;
-
-// Patch freeze into existing race interval
-function patchFreezeIntoRace(racePlayers) {
-  const originalTick = () => {
-    if (freezeActive) return; // Skip movement when frozen
-  };
-  // Freeze is checked inside applyPowerUpEffect directly on positions
-}
 
 // ── RESET ON CLOSE ──
 const _origClose3 = window.closeWinner;
@@ -2373,6 +2369,8 @@ window.closeWinner = async function() {
 
 </body>
 </html>
+
+
 
 
 
