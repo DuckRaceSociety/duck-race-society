@@ -2013,7 +2013,18 @@ const SUPPORTED_WALLETS = [
     name: "Phantom",
     tag: "POPULAR",
     icon: "https://phantom.app/img/phantom-logo.png",
-    detect: () => window.solana?.isPhantom ? window.solana : window.phantom?.solana?.isPhantom ? window.phantom.solana : null,
+    detect: () => {
+      // Check all possible Phantom injection points
+      if (window.phantom?.solana?.isPhantom) return window.phantom.solana;
+      if (window.solana?.isPhantom) return window.solana;
+      if (window._phantom?.solana?.isPhantom) return window._phantom.solana;
+      // Check providers list
+      if (window.ethereum?.providers) {
+        const p = window.ethereum.providers.find(p => p.isPhantom);
+        if (p) return p;
+      }
+      return null;
+    },
     deeplink: (url) => `https://phantom.app/ul/browse/${encodeURIComponent(url)}?ref=${encodeURIComponent(url)}`
   },
   {
@@ -2062,6 +2073,8 @@ function buildWalletModal() {
   const list = document.getElementById("wa-wallet-list");
   list.innerHTML = "";
   const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
+  // Re-detect all wallets fresh each time modal opens
+  
 
   SUPPORTED_WALLETS.forEach(wallet => {
     const provider = wallet.detect();
@@ -2095,15 +2108,18 @@ function buildWalletModal() {
 
 async function connectWithWallet(wallet, provider, isMobile) {
   try {
+    // Re-detect provider at click time (might have loaded late)
+    if (!provider) provider = wallet.detect();
+
     if (!provider) {
-      // Not installed - redirect
-      if (isMobile && wallet.deeplink) {
-        const url = "https://duck-race-society.vercel.app";
+      // Not installed - use deeplink on mobile, install page on desktop
+      const url = "https://duck-race-society.vercel.app";
+      if (wallet.deeplink) {
         window.open(wallet.deeplink(url), "_blank");
-        showToast("OPENING " + wallet.name.toUpperCase() + "...");
+        showToast("OPENING " + wallet.name.toUpperCase() + " APP...");
       } else {
         showToast("⚠ INSTALL " + wallet.name.toUpperCase() + " FIRST!");
-        window.open("https://" + wallet.name.toLowerCase().replace(" ", "") + ".app", "_blank");
+        window.open("https://phantom.app", "_blank");
       }
       closeWalletModal();
       return;
@@ -2138,7 +2154,8 @@ async function connectWithWallet(wallet, provider, isMobile) {
 
 // ── AUTO RECONNECT ──
 window.addEventListener('load', async () => {
-  await new Promise(r => setTimeout(r, 600));
+  // Wait longer for wallet extensions to inject
+  await new Promise(r => setTimeout(r, 1000));
   for (const wallet of SUPPORTED_WALLETS) {
     const provider = wallet.detect();
     if (provider?.isConnected) {
@@ -2368,7 +2385,8 @@ window.closeWinner = async function() {
 </div>
 
 </body>
-</html>
+</ht
+
 
 
 
