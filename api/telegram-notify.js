@@ -86,6 +86,17 @@ Watch live 👇
       `.trim();
       break;
 
+    case "odds_update":
+      message = `
+📊 <b>LIVE ODDS UPDATE!</b>
+
+${data.lines}
+
+💰 Total Pool: <b>◎ ${data.totalPool} SOL</b>
+🎮 <a href="https://t.me/duck_race_society_bot">JOIN THE RACE!</a>
+      `.trim();
+      break;
+
     default:
       return res.status(400).json({ error: "Unknown notification type" });
   }
