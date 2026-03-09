@@ -2539,39 +2539,35 @@ function buildWalletModal() {
 
 async function connectWithWallet(wallet, provider, isMobile) {
   try {
-    // Re-detect provider at click time (might have loaded late)
+    // Re-detect provider at click time
     if (!provider) provider = wallet.detect();
 
+    const isInTelegram = !!window.Telegram?.WebApp?.initData;
+    const isMobileDevice = /Android|iPhone|iPad/i.test(navigator.userAgent);
+
+    // On mobile/Telegram: always use deep link for Phantom
+    if ((isInTelegram || isMobileDevice) && wallet.name === "Phantom") {
+      closeWalletModal();
+      usePhanomDeepLink();
+      return;
+    }
+
     if (!provider) {
-      // Not installed - use deeplink on mobile, install page on desktop
-      const url = "https://duck-race-society.vercel.app";
-      if (wallet.deeplink) {
-        window.open(wallet.deeplink(url), "_blank");
-        showToast("OPENING " + wallet.name.toUpperCase() + " APP...");
-      } else {
-        showToast("⚠ INSTALL " + wallet.name.toUpperCase() + " FIRST!");
-        window.open("https://phantom.app", "_blank");
-      }
+      // Desktop - not installed
+      showToast("⚠ INSTALL " + wallet.name.toUpperCase() + " FIRST!");
+      window.open("https://phantom.app", "_blank");
       closeWalletModal();
       return;
     }
 
     closeWalletModal();
-    showToast("⏳ CONNECTING " + wallet.name.toUpperCase() + "...");
+    showToast("⏳ CONNECTING...");
 
     const resp = await provider.connect();
     walletAddress = resp.publicKey.toString();
     walletConnected = true;
     activeWalletProvider = provider;
-
-    document.getElementById("wallet-btn").textContent = "✓ " + wallet.name.toUpperCase();
-    document.getElementById("wallet-btn").classList.add("connected");
-    document.getElementById("wallet-info").classList.add("show");
-    document.getElementById("wallet-addr").textContent =
-      walletAddress.slice(0,4) + "..." + walletAddress.slice(-4);
-
-    updateBetUI();
-    showToast("✓ " + wallet.name.toUpperCase() + " CONNECTED!");
+    onWalletConnected(wallet.name);
 
   } catch(e) {
     console.error("Wallet connect error:", e);
@@ -2582,6 +2578,65 @@ async function connectWithWallet(wallet, provider, isMobile) {
     }
   }
 }
+
+function onWalletConnected(walletName) {
+  document.getElementById("wallet-btn").textContent = "✓ " + walletName.toUpperCase();
+  document.getElementById("wallet-btn").classList.add("connected");
+  document.getElementById("wallet-info").classList.add("show");
+  document.getElementById("wallet-addr").textContent =
+    walletAddress.slice(0,4) + "..." + walletAddress.slice(-4);
+  updateBetUI();
+  showToast("✓ WALLET CONNECTED!");
+}
+
+// ── PHANTOM MOBILE DEEP LINK FLOW ──
+function usePhanomDeepLink() {
+  const APP_URL = "https://duck-race-society.vercel.app";
+  const REDIRECT = encodeURIComponent(APP_URL + "?phantom_connected=1");
+  const deepLink = "https://phantom.app/ul/v1/connect" +
+    "?app_url=" + encodeURIComponent(APP_URL) +
+    "&redirect_link=" + REDIRECT +
+    "&cluster=mainnet-beta";
+
+  showToast("OPENING PHANTOM APP...");
+  window.open(deepLink, "_blank");
+}
+
+// ── CHECK FOR PHANTOM REDIRECT RETURN ──
+(function checkPhantomReturn() {
+  const params = new URLSearchParams(window.location.search);
+  const phantomKey = params.get("phantom_encryption_public_key") ||
+                     params.get("data") ||
+                     params.get("phantom_connected");
+  
+  // Phantom v1 connect response
+  const pubkey = params.get("data");
+  
+  if (params.get("phantom_connected") === "1") {
+    // Try to get wallet from Phantom after redirect
+    setTimeout(async () => {
+      const phantom = window.phantom?.solana || window.solana;
+      if (phantom?.isPhantom) {
+        try {
+          const resp = await phantom.connect({ onlyIfTrusted: true });
+          walletAddress = resp.publicKey.toString();
+          walletConnected = true;
+          activeWalletProvider = phantom;
+          onWalletConnected("Phantom");
+        } catch(e) {
+          // Try eager connect
+          try {
+            const resp2 = await phantom.connect();
+            walletAddress = resp2.publicKey.toString();
+            walletConnected = true;
+            activeWalletProvider = phantom;
+            onWalletConnected("Phantom");
+          } catch(e2) {}
+        }
+      }
+    }, 800);
+  }
+})();
 
 // ── AUTO RECONNECT ──
 window.addEventListener('load', async () => {
@@ -2817,6 +2872,8 @@ window.closeWinner = async function() {
 
 </body>
 </html>
+
+
 
 
 
