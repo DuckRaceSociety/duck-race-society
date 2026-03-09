@@ -1040,7 +1040,118 @@ header {
 .step-dot.done { color: #2dc653; }
 .step-dot.active { color: var(--sand); }
 .step-arrow { color: #333; font-size: 0.8rem; }
+
+/* ── WALLETCONNECT ── */
+#wc-modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.9);
+  z-index: 400;
+  align-items: center;
+  justify-content: center;
+}
+#wc-modal-overlay.show { display: flex; }
+.wc-box {
+  background: #0a1628;
+  border: 4px solid #f4d35e;
+  box-shadow: 8px 8px 0 #000;
+  padding: 1.5rem;
+  width: 92%;
+  max-width: 360px;
+  text-align: center;
+}
+.wc-box h3 {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.6rem;
+  color: #f4d35e;
+  margin-bottom: 1rem;
+  line-height: 1.6;
+}
+.wc-wallet-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.wc-wallet-item {
+  background: #0d1b2a;
+  border: 3px solid #1a3a5c;
+  padding: 0.8rem 0.5rem;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.1s;
+}
+.wc-wallet-item:hover { border-color: var(--sand); }
+.wc-wallet-item img {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  margin-bottom: 0.3rem;
+  display: block;
+  margin: 0 auto 0.3rem;
+}
+.wc-wallet-item span {
+  font-family: 'VT323', monospace;
+  font-size: 0.95rem;
+  color: #fff;
+  display: block;
+}
+.wc-wallet-item .wc-tag {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.3rem;
+  color: #2dc653;
+  margin-top: 0.2rem;
+}
+.wc-divider {
+  font-family: 'VT323', monospace;
+  font-size: 1rem;
+  color: #555;
+  margin: 0.5rem 0;
+}
+.wc-input-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.8rem;
+}
+.wc-address-input {
+  flex: 1;
+  background: #050d1a;
+  border: 3px solid #1a3a5c;
+  color: #fff;
+  font-family: 'VT323', monospace;
+  font-size: 1rem;
+  padding: 0.5rem;
+  outline: none;
+}
+.wc-address-input:focus { border-color: var(--sand); }
+.wc-address-input::placeholder { color: #444; }
+.btn-wc-connect {
+  background: #2dc653;
+  color: #000;
+  border: 3px solid #000;
+  box-shadow: 3px 3px 0 #000;
+  padding: 0.5rem 0.8rem;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.4rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn-wc-close {
+  width: 100%;
+  background: transparent;
+  color: #555;
+  border: 2px solid #333;
+  padding: 0.5rem;
+  font-family: 'VT323', monospace;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-top: 0.3rem;
+}
 </style>
+
+<script src="https://unpkg.com/@walletconnect/web3wallet@1.13.0/dist/index.umd.js"></script>
+<script src="https://unpkg.com/@web3modal/standalone@2.4.3/dist/index.umd.js"></script>
 </head>
 <body>
 
@@ -1286,6 +1397,56 @@ header {
 
 
 
+
+
+<!-- WALLETCONNECT MODAL -->
+<div id="wc-modal-overlay">
+  <div class="wc-box">
+    <h3>◎ CONNECT WALLET</h3>
+    
+    <!-- Wallet Apps -->
+    <div class="wc-wallet-grid">
+      <div class="wc-wallet-item" onclick="connectWalletApp('phantom')">
+        <img src="https://phantom.app/img/phantom-logo.png" onerror="this.style.display='none'">
+        <span>Phantom</span>
+        <span class="wc-tag">POPULAR</span>
+      </div>
+      <div class="wc-wallet-item" onclick="connectWalletApp('solflare')">
+        <img src="https://solflare.com/assets/logo.svg" onerror="this.style.display='none'">
+        <span>Solflare</span>
+        <span class="wc-tag">POPULAR</span>
+      </div>
+      <div class="wc-wallet-item" onclick="connectWalletApp('backpack')">
+        <img src="https://backpack.app/icon.png" onerror="this.style.display='none'">
+        <span>Backpack</span>
+        <span class="wc-tag">NEW</span>
+      </div>
+      <div class="wc-wallet-item" onclick="connectWalletApp('trust')">
+        <img src="https://trustwallet.com/assets/images/favicon.png" onerror="this.style.display='none'">
+        <span>Trust</span>
+        <span class="wc-tag">MOBILE</span>
+      </div>
+    </div>
+
+    <div class="wc-divider">── OR ENTER ADDRESS MANUALLY ──</div>
+
+    <!-- Manual address input -->
+    <div class="wc-input-row">
+      <input 
+        class="wc-address-input" 
+        id="wc-address-input"
+        placeholder="Your Solana wallet address..."
+        maxlength="44"
+      />
+      <button class="btn-wc-connect" onclick="connectManualWallet()">✓ USE</button>
+    </div>
+    <p style="font-family:'VT323',monospace;font-size:0.9rem;color:#555;margin-bottom:0.5rem;">
+      Note: Manual address = view only. SOL payments via bot /join
+    </p>
+
+    <button class="btn-wc-close" onclick="closeWCModal()">✕ CANCEL</button>
+  </div>
+</div>
 
 <!-- WINNER -->
 <div id="winner-overlay">
@@ -2787,15 +2948,69 @@ let activeWalletProvider = null;
 
 // ── OPEN WALLET MODAL ──
 window.connectWallet = function() {
-  const isInTelegram = !!window.Telegram?.WebApp?.initData;
-  const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
+  document.getElementById("wc-modal-overlay").classList.add("show");
+};
 
-  if (isInTelegram && isMobile) {
-    buildMobileWalletModal();
+window.closeWCModal = function() {
+  document.getElementById("wc-modal-overlay").classList.remove("show");
+  document.getElementById("wc-address-input").value = "";
+};
+
+// Connect wallet app (extension or deep link)
+window.connectWalletApp = async function(type) {
+  const providers = {
+    phantom: window.phantom?.solana || window.solana,
+    solflare: window.solflare,
+    backpack: window.backpack || window.xnft?.solana,
+    trust: window.trustwallet?.solana
+  };
+
+  const deeplinks = {
+    phantom: `https://phantom.app/ul/v1/connect?app_url=${encodeURIComponent("https://duck-race-society.vercel.app")}&redirect_link=${encodeURIComponent("https://duck-race-society.vercel.app")}`,
+    solflare: `https://solflare.com/ul/v1/browse/${encodeURIComponent("https://duck-race-society.vercel.app")}`,
+    trust: `https://link.trustwallet.com/open_url?coin_id=501&url=${encodeURIComponent("https://duck-race-society.vercel.app")}`,
+    backpack: null
+  };
+
+  const names = { phantom: "Phantom", solflare: "Solflare", backpack: "Backpack", trust: "Trust Wallet" };
+  const provider = providers[type];
+
+  if (provider) {
+    try {
+      closeWCModal();
+      const resp = await provider.connect();
+      walletAddress = resp.publicKey.toString();
+      walletConnected = true;
+      activeWalletProvider = provider;
+      onWalletConnected(names[type]);
+    } catch(e) {
+      if (e.code !== 4001) showToast("CONNECTION FAILED!");
+    }
   } else {
-    buildWalletModal();
+    const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
+    if (isMobile && deeplinks[type]) {
+      closeWCModal();
+      window.open(deeplinks[type], "_blank");
+      showToast("OPENING " + names[type].toUpperCase() + "...");
+    } else {
+      showToast(names[type].toUpperCase() + " NOT DETECTED!");
+    }
   }
-  document.getElementById("wa-modal").classList.add("show");
+};
+
+// Manual wallet address
+window.connectManualWallet = function() {
+  const addr = document.getElementById("wc-address-input").value.trim();
+  if (!addr || addr.length < 32 || addr.length > 44) {
+    showToast("⚠ INVALID WALLET ADDRESS!");
+    return;
+  }
+  walletAddress = addr;
+  walletConnected = true;
+  activeWalletProvider = null;
+  closeWCModal();
+  onWalletConnected("Wallet");
+  showToast("✓ ADDRESS CONNECTED! USE /join TO PAY!");
 };
 
 window.closePhantomGuide = function() {
@@ -3292,6 +3507,8 @@ window.closeWinner = async function() {
 
 </body>
 </html>
+
+
 
 
 
