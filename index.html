@@ -979,21 +979,40 @@ function parseTelegramData() {
     const tg = window.Telegram?.WebApp;
     if (!tg) return;
     tg.ready();
+    // Method 1: initDataUnsafe
     const user = tg.initDataUnsafe?.user;
-    if (user?.first_name) { playerName = user.first_name; telegramId = String(user.id); }
-    if (!telegramId && tg.initData?.length > 0) {
+    if (user?.first_name) {
+      playerName = user.first_name;
+      if (user.last_name) playerName += " " + user.last_name;
+      telegramId = String(user.id);
+      return;
+    }
+    // Method 2: parse initData string
+    if (tg.initData?.length > 0) {
       try {
         const params = new URLSearchParams(tg.initData);
         const userStr = params.get("user");
         if (userStr) {
           const u = JSON.parse(decodeURIComponent(userStr));
-          if (u?.first_name) { playerName = u.first_name; telegramId = String(u.id); }
+          if (u?.first_name) {
+            playerName = u.first_name;
+            if (u.last_name) playerName += " " + u.last_name;
+            telegramId = String(u.id);
+            return;
+          }
         }
       } catch(e) {}
     }
   } catch(e) {}
 }
+
+// Try immediately
 parseTelegramData();
+
+// Retry after short delays (Telegram sometimes loads data late)
+setTimeout(() => { if (!telegramId) parseTelegramData(); }, 300);
+setTimeout(() => { if (!telegramId) parseTelegramData(); }, 800);
+setTimeout(() => { if (!telegramId) parseTelegramData(); }, 1500);
 try { const tg = window.Telegram?.WebApp; if (tg) { tg.expand(); try { tg.enableClosingConfirmation?.(); } catch(e){} } } catch(e) {}
 
 // ── STATE ──
@@ -1983,24 +2002,7 @@ let walletConnected = false;
 let walletAddress = null;
 
 // Auto-detect wallet on load
-window.addEventListener('load', async () => {
-  // Wait for Phantom to inject
-  await new Promise(r => setTimeout(r, 500));
-  const phantom = window.solana || window.phantom?.solana;
-  if (phantom?.isPhantom && phantom.isConnected) {
-    try {
-      const resp = await phantom.connect({ onlyIfTrusted: true });
-      walletAddress = resp.publicKey.toString();
-      walletConnected = true;
-      document.getElementById("wallet-btn").textContent = "✓ CONNECTED";
-      document.getElementById("wallet-btn").classList.add("connected");
-      document.getElementById("wallet-info").classList.add("show");
-      document.getElementById("wallet-addr").textContent =
-        walletAddress.slice(0,4) + "..." + walletAddress.slice(-4);
-      updateBetUI();
-    } catch(e) {}
-  }
-});
+
 let selectedBet = 0.025;
 let hasBet = false;
 let betPool = {}; // playerId → { wallet, amount }
@@ -2371,6 +2373,8 @@ window.closeWinner = async function() {
 
 </body>
 </html>
+
+
 
 
 
