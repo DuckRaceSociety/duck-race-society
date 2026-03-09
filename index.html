@@ -1080,12 +1080,41 @@ window.startRace = async function() {
   // Clean stale data before starting
   await cleanupBeforeRace();
 
-  await setDoc(raceRef, {
-    running: true,
-    startedAt: Date.now(),
-    players: players.map(p => ({ id: p.id, name: p.name })),
-    winner: null
-  });
+  // Calculate current pool
+  const bSnap = await getDocs(collection(db, "bets"));
+  let poolSOL = 0;
+  bSnap.forEach(d => { poolSOL += d.data().amount || 0; });
+
+  // Send Telegram countdown notification
+  await startRaceCountdown(players, poolSOL);
+
+  // Show countdown in UI
+  let countdown = 5;
+  document.getElementById("race-status").textContent = "⏳ STARTING IN " + countdown + "...";
+  const cdInterval = setInterval(() => {
+    countdown--;
+    if (countdown > 0) {
+      document.getElementById("race-status").textContent = "⏳ STARTING IN " + countdown + "...";
+    } else {
+      clearInterval(cdInterval);
+    }
+  }, 1000);
+
+  // Start race after 5 second countdown
+  setTimeout(async () => {
+    await setDoc(raceRef, {
+      running: true,
+      startedAt: Date.now(),
+      players: players.map(p => ({ id: p.id, name: p.name })),
+      winner: null
+    });
+
+    // Notify group race is live
+    await sendTelegramNotification("race_live", {
+      playerCount: players.length,
+      poolSOL: poolSOL.toFixed(3)
+    });
+  }, 5000);
 };
 
 // ── CANVAS RACE ──
@@ -1323,6 +1352,20 @@ async function announceWinner(winner) {
     document.getElementById("winner-overlay").classList.add("show");
   }, 600);
   await setDoc(raceRef, { running: false, winner: winner.name }, { merge: true });
+
+  // Calculate payout for notification
+  const bSnap = await getDocs(collection(db, "bets"));
+  let totalPool = 0;
+  bSnap.forEach(d => { totalPool += d.data().amount || 0; });
+  const solPayout = (totalPool * 0.8).toFixed(3);
+
+  // Send winner notification to Telegram group
+  await sendTelegramNotification("winner", {
+    winner: winner.name,
+    solPayout,
+    tokenBonus: 500
+  });
+
   await triggerPayoutSafe(winner);
   const snap = await getDocs(lobbyRef);
   for (const d of snap.docs) await deleteDoc(doc(db,"lobby",d.id));
@@ -1419,6 +1462,46 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove("show"), 2500);
 }
 window.showToast = showToast;
+
+// ══════════════════════════════════════════════════
+// 📱 TELEGRAM LIVE NOTIFICATIONS
+// ══════════════════════════════════════════════════
+
+async function sendTelegramNotification(type, data) {
+  try {
+    await fetch("/api/telegram-notify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type, data })
+    });
+  } catch(e) {
+    console.log("Telegram notify error:", e);
+  }
+}
+
+// Countdown timer before race
+async function startRaceCountdown(players, poolSOL) {
+  // Notify group race is starting
+  await sendTelegramNotification("race_starting", {
+    players,
+    poolSOL: poolSOL.toFixed(3)
+  });
+
+  // 30 second countdown
+  let seconds = 30;
+  const countdownInterval = setInterval(async () => {
+    seconds -= 10;
+    if (seconds === 20 || seconds === 10) {
+      await sendTelegramNotification("countdown", {
+        seconds,
+        playerCount: players.length,
+        poolSOL: poolSOL.toFixed(3)
+      });
+    }
+    if (seconds <= 0) clearInterval(countdownInterval);
+  }, 10000);
+}
+
 
 // ══════════════════════════════════════════════════
 // 🎤 KI LIVE KOMMENTATOR
@@ -2288,6 +2371,7 @@ window.closeWinner = async function() {
 
 </body>
 </html>
+
 
 
 
