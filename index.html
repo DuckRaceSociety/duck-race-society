@@ -855,6 +855,82 @@ header {
   animation: livePulse 1s steps(2) infinite;
 }
 @keyframes livePulse { 50% { opacity: 0.4; } }
+
+/* ── PHANTOM BROWSER MODAL ── */
+#phantom-guide-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.92);
+  z-index: 500;
+  align-items: center;
+  justify-content: center;
+}
+#phantom-guide-modal.show { display: flex; }
+.phantom-guide-box {
+  background: #0a1628;
+  border: 4px solid #f4d35e;
+  box-shadow: 8px 8px 0 #000;
+  padding: 1.5rem;
+  width: 92%;
+  max-width: 380px;
+  text-align: center;
+}
+.phantom-guide-box h3 {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.6rem;
+  color: #f4d35e;
+  margin-bottom: 1.2rem;
+  line-height: 1.6;
+}
+.phantom-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.8rem;
+  background: rgba(255,255,255,0.04);
+  border: 2px solid rgba(255,255,255,0.08);
+  padding: 0.7rem;
+  margin-bottom: 0.5rem;
+  text-align: left;
+}
+.phantom-step-num {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.55rem;
+  color: #f72585;
+  min-width: 20px;
+}
+.phantom-step-text {
+  font-family: 'VT323', monospace;
+  font-size: 1.1rem;
+  color: #fff;
+  line-height: 1.4;
+}
+.phantom-step-text b { color: #f4d35e; }
+.btn-copy-url {
+  width: 100%;
+  background: #4361ee;
+  color: #fff;
+  border: 4px solid #000;
+  box-shadow: 4px 4px 0 #000;
+  padding: 0.7rem;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.45rem;
+  cursor: pointer;
+  margin-top: 0.8rem;
+  letter-spacing: 1px;
+}
+.btn-copy-url:active { transform: translate(4px,4px); box-shadow: none; }
+.btn-close-guide {
+  width: 100%;
+  background: transparent;
+  color: #666;
+  border: 2px solid #333;
+  padding: 0.5rem;
+  font-family: 'VT323', monospace;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-top: 0.5rem;
+}
 </style>
 </head>
 <body>
@@ -1019,6 +1095,32 @@ header {
       <div class="wa-detecting">Detecting wallets...</div>
     </div>
     <button class="wa-close" onclick="closeWalletModal()">✕ CANCEL</button>
+  </div>
+</div>
+
+
+<!-- PHANTOM BROWSER GUIDE -->
+<div id="phantom-guide-modal">
+  <div class="phantom-guide-box">
+    <h3>👻 OPEN IN PHANTOM BROWSER</h3>
+    <div class="phantom-step">
+      <span class="phantom-step-num">1</span>
+      <span class="phantom-step-text">Open <b>Phantom App</b> on your phone</span>
+    </div>
+    <div class="phantom-step">
+      <span class="phantom-step-num">2</span>
+      <span class="phantom-step-text">Tap the <b>🌐 Browser</b> tab at the bottom</span>
+    </div>
+    <div class="phantom-step">
+      <span class="phantom-step-num">3</span>
+      <span class="phantom-step-text">Paste this URL:<br><b>duck-race-society.vercel.app</b></span>
+    </div>
+    <div class="phantom-step">
+      <span class="phantom-step-num">4</span>
+      <span class="phantom-step-text">Connect wallet & play! ✅</span>
+    </div>
+    <button class="btn-copy-url" onclick="copyGameUrl()">📋 COPY GAME URL</button>
+    <button class="btn-close-guide" onclick="closePhantomGuide()">✕ CLOSE</button>
   </div>
 </div>
 
@@ -2492,8 +2594,37 @@ let activeWalletProvider = null;
 
 // ── OPEN WALLET MODAL ──
 window.connectWallet = function() {
+  const isInTelegram = !!window.Telegram?.WebApp?.initData;
+  const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
+
+  // On Telegram mobile - show Phantom Browser guide
+  if (isInTelegram && isMobile) {
+    document.getElementById("phantom-guide-modal").classList.add("show");
+    return;
+  }
+
   buildWalletModal();
   document.getElementById("wa-modal").classList.add("show");
+};
+
+window.closePhantomGuide = function() {
+  document.getElementById("phantom-guide-modal").classList.remove("show");
+};
+
+window.copyGameUrl = function() {
+  const url = "https://duck-race-society.vercel.app";
+  navigator.clipboard?.writeText(url).then(() => {
+    showToast("✓ URL COPIED! OPEN IN PHANTOM!");
+  }).catch(() => {
+    // Fallback
+    const el = document.createElement('textarea');
+    el.value = url;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    showToast("✓ URL COPIED! OPEN IN PHANTOM!");
+  });
 };
 
 window.closeWalletModal = function() {
@@ -2872,6 +3003,7 @@ window.closeWinner = async function() {
 
 </body>
 </html>
+
 
 
 
