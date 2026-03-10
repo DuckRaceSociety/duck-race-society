@@ -4758,10 +4758,6 @@ onSnapshot(collection(db, "bets"), snap => {
       return `<div class="wallet-tag ${isYou ? 'is-you' : ''}"><span class="wallet-dot"></span>${w.name}: <b>${short}</b>${isYou ? ' 👈 YOU' : ''}</div>`;
     }).join('');
   } else { listBar.style.display = "none"; }
-  // legacy ignore rest
-  betCount++; });
-  document.getElementById("pool-sol").textContent = totalSOL.toFixed(3) + " SOL";
-  document.getElementById("pool-players").textContent = betCount + " / " + players.length;
 });
 
 // ── UPDATE BET UI ──
@@ -4875,6 +4871,8 @@ window.closeWinner = async function() {
 
 </body>
 </html>
+
+
 
 
 
