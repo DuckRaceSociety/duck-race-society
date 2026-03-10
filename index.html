@@ -1314,6 +1314,52 @@ header {
   box-shadow: none;
 }
 .btn-buy-gimmick:active:not(:disabled) { transform: translate(3px,3px); box-shadow: none; }
+
+/* ── SOLANA PAY ── */
+.solanapay-box {
+  background: #0a1628;
+  border: 3px solid #9945FF;
+  padding: 0.8rem;
+  margin-top: 0.8rem;
+  text-align: center;
+}
+.solanapay-box p {
+  font-family: 'VT323', monospace;
+  font-size: 1rem;
+  color: #888;
+  margin-bottom: 0.6rem;
+  line-height: 1.4;
+}
+.btn-solanapay {
+  width: 100%;
+  background: #9945FF;
+  color: #fff;
+  border: 4px solid #000;
+  box-shadow: 4px 4px 0 #000;
+  padding: 0.7rem;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.45rem;
+  cursor: pointer;
+  letter-spacing: 1px;
+  margin-bottom: 0.4rem;
+}
+.btn-solanapay:hover { background: #b06aff; }
+.btn-solanapay:active { transform: translate(4px,4px); box-shadow: none; }
+.btn-solanapay-confirm {
+  width: 100%;
+  background: #2dc653;
+  color: #000;
+  border: 4px solid #000;
+  box-shadow: 4px 4px 0 #000;
+  padding: 0.7rem;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.45rem;
+  cursor: pointer;
+  letter-spacing: 1px;
+  display: none;
+}
+.btn-solanapay-confirm.show { display: block; }
+.btn-solanapay-confirm:active { transform: translate(4px,4px); box-shadow: none; }
 </style>
 
 <script src="https://unpkg.com/@walletconnect/web3wallet@1.13.0/dist/index.umd.js"></script>
@@ -1465,6 +1511,20 @@ header {
       </button>
       <div class="bet-status" id="bet-status">CONNECT WALLET FIRST</div>
       <a class="tx-link" id="tx-link" target="_blank">VIEW ON SOLSCAN ↗</a>
+
+      <!-- SOLANA PAY -->
+      <div class="solanapay-box" id="solanapay-box" style="display:none;">
+        <p>📱 <b style="color:#9945FF;">Mobile?</b> Pay directly with your wallet app:</p>
+        <button class="btn-solanapay" onclick="openSolanaPay()">
+          💜 PAY WITH WALLET APP
+        </button>
+        <button class="btn-solanapay-confirm" id="btn-solanapay-confirm" onclick="confirmSolanaPay()">
+          ✅ I CONFIRMED THE PAYMENT
+        </button>
+        <p style="font-size:0.85rem;color:#555;margin-top:0.3rem;">
+          Opens Phantom · Solflare · any Solana wallet
+        </p>
+      </div>
     </div>
   </div>
 
@@ -2421,6 +2481,55 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove("show"), 2500);
 }
 window.showToast = showToast;
+
+// ── SOLANA PAY ──
+const SOLANA_PAY_URL = "solana:5sDfMWBNFMne13aJLhiG3k7V8MwULmHfQrkt2eHupSQ1?amount=0.025&label=Duck%20Race%20Society&message=Duck%20Race%20Entry%20Fee&memo=duck-race";
+
+window.openSolanaPay = function() {
+  // Open Solana Pay deep link
+  window.location.href = SOLANA_PAY_URL;
+  // Show confirm button after 3 seconds
+  setTimeout(() => {
+    document.getElementById("btn-solanapay-confirm").classList.add("show");
+  }, 3000);
+};
+
+window.confirmSolanaPay = async function() {
+  if (!isInLobby) { showToast("JOIN LOBBY FIRST!"); return; }
+  // Mark bet as placed via Solana Pay
+  hasBet = true;
+  document.getElementById("bet-status").textContent = "✓ PAYMENT CONFIRMED!";
+  document.getElementById("bet-status").style.color = "#2dc653";
+  document.getElementById("my-bet-status").textContent = selectedBet + " SOL ✓";
+  document.getElementById("my-bet-status").style.color = "#2dc653";
+  document.getElementById("solanapay-box").style.display = "none";
+  document.getElementById("bet-btn").disabled = true;
+  await setDoc(doc(db, "bets", playerId), {
+    wallet: walletAddress || "solanapay",
+    amount: selectedBet,
+    playerId,
+    playerName,
+    txSig: "solanapay_" + Date.now(),
+    placedAt: Date.now()
+  });
+  showToast("✓ BET PLACED!");
+  updatePoolDisplay();
+};
+
+// Show Solana Pay box when wallet connected or on mobile
+function updateSolanaPayVisibility() {
+  const box = document.getElementById("solanapay-box");
+  if (!box) return;
+  const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
+  if (isMobile && walletConnected && isInLobby && !hasBet) {
+    box.style.display = "block";
+  } else if (!activeWalletProvider && walletConnected && isInLobby && !hasBet) {
+    box.style.display = "block";
+  } else {
+    box.style.display = "none";
+  }
+}
+
 
 // ══════════════════════════════════════════════════
 // 🦆 NFT DUCK SYSTEM
@@ -4039,28 +4148,10 @@ window.placeBet = async function() {
   if (hasBet) { showToast("BET ALREADY PLACED!"); return; }
   if (raceRunning) { showToast("RACE ALREADY RUNNING!"); return; }
 
-  // No wallet provider = show payment instructions
+  // No wallet provider = show Solana Pay
   if (!activeWalletProvider) {
-    showToast("⚠ SEND 0.025 SOL TO TREASURY MANUALLY!");
-    document.getElementById("bet-status").textContent = "SEND SOL TO TREASURY → THEN PRESS CONFIRM";
-    // Show confirm button
-    const btn = document.getElementById("bet-btn");
-    btn.textContent = "✓ I SENT THE SOL";
-    btn.onclick = async function() {
-      hasBet = true;
-    document.getElementById("bet-status").textContent = "✓ JOINED VIA BOT!";
-    document.getElementById("my-bet-status").textContent = selectedBet + " SOL ✓";
-    document.getElementById("my-bet-status").style.color = "#2dc653";
-    await setDoc(doc(db, "bets", playerId), {
-      wallet: walletAddress,
-      amount: selectedBet,
-      playerId,
-      playerName,
-      txSig: "bot_payment",
-      placedAt: Date.now()
-    });
-    showToast("✓ BET CONFIRMED VIA BOT!");
-    updatePoolDisplay();
+    updateSolanaPayVisibility();
+    showToast("💜 USE WALLET APP TO PAY!");
     return;
   }
 
@@ -4069,59 +4160,45 @@ window.placeBet = async function() {
     document.getElementById("bet-status").textContent = "⏳ CONFIRM IN WALLET...";
 
     const provider = activeWalletProvider;
-    const connection = new window.solanaWeb3.Connection(
-      "https://api.mainnet-beta.solana.com", "confirmed"
-    );
-
+    const connection = new window.solanaWeb3.Connection("https://api.mainnet-beta.solana.com", "confirmed");
     const TREASURY_WALLET = "5sDfMWBNFMne13aJLhiG3k7V8MwULmHfQrkt2eHupSQ1";
     const treasuryPubkey = new window.solanaWeb3.PublicKey(TREASURY_WALLET);
     const fromPubkey = new window.solanaWeb3.PublicKey(walletAddress);
     const lamports = Math.floor(selectedBet * LAMPORTS_PER_SOL);
 
     const tx = new window.solanaWeb3.Transaction().add(
-      window.solanaWeb3.SystemProgram.transfer({
-        fromPubkey,
-        toPubkey: treasuryPubkey,
-        lamports
-      })
+      window.solanaWeb3.SystemProgram.transfer({ fromPubkey, toPubkey: treasuryPubkey, lamports })
     );
-
     tx.feePayer = fromPubkey;
     const { blockhash } = await connection.getLatestBlockhash();
     tx.recentBlockhash = blockhash;
 
     document.getElementById("bet-status").textContent = "⏳ WAITING FOR SIGNATURE...";
     const signed = await provider.signTransaction(tx);
-    document.getElementById("bet-status").textContent = "⏳ SENDING TO BLOCKCHAIN...";
+    document.getElementById("bet-status").textContent = "⏳ SENDING...";
     const sig = await connection.sendRawTransaction(signed.serialize());
     document.getElementById("bet-status").textContent = "⏳ CONFIRMING...";
     await connection.confirmTransaction(sig, "confirmed");
 
-    // Save bet to Firestore
     await setDoc(doc(db, "bets", playerId), {
-      wallet: walletAddress,
-      amount: selectedBet,
-      playerId,
-      playerName,
-      txSig: sig,
-      placedAt: Date.now()
+      wallet: walletAddress, amount: selectedBet,
+      playerId, playerName, txSig: sig, placedAt: Date.now()
     });
 
     hasBet = true;
     document.getElementById("bet-status").textContent = "✓ BET PLACED! " + selectedBet + " SOL";
+    document.getElementById("bet-status").style.color = "#2dc653";
     document.getElementById("my-bet-status").textContent = selectedBet + " SOL ✓";
     document.getElementById("my-bet-status").style.color = "#2dc653";
-
     const txLink = document.getElementById("tx-link");
     txLink.href = "https://solscan.io/tx/" + sig;
     txLink.classList.add("show");
-
     showToast("✓ BET PLACED!");
     updatePoolDisplay();
 
   } catch(e) {
     console.error(e);
-    document.getElementById("bet-status").textContent = "✗ ERROR: " + (e.message?.slice(0,30) || "Unknown");
+    document.getElementById("bet-status").textContent = "✗ " + (e.message?.slice(0,40) || "ERROR");
     document.getElementById("bet-btn").disabled = false;
     showToast("BET FAILED!");
   }
@@ -4152,6 +4229,7 @@ onSnapshot(collection(db, "bets"), snap => {
 
 // ── UPDATE BET UI ──
 function updateBetUI() {
+  updateSolanaPayVisibility();
   const btn = document.getElementById("bet-btn");
   const status = document.getElementById("bet-status");
   if (!walletConnected) {
@@ -4260,6 +4338,8 @@ window.closeWinner = async function() {
 
 </body>
 </html>
+
+
 
 
 
