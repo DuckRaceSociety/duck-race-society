@@ -2139,7 +2139,7 @@ body::after {
   <div class="wc-box">
     <h3>◎ CONNECT WALLET</h3>
 
-    <!-- Desktop: try direct connect -->
+    <!-- Desktop wallet options -->
     <div id="wc-desktop-section">
       <div class="wc-wallet-grid">
         <div class="wc-wallet-item" onclick="connectWalletApp('phantom')">
@@ -2166,7 +2166,7 @@ body::after {
       <div class="wc-divider">── OR ──</div>
     </div>
 
-    <!-- Manual address (primary on mobile) -->
+    <!-- Manual address input -->
     <p style="font-family:'Press Start 2P',monospace;font-size:0.4rem;color:#f4d35e;margin-bottom:0.6rem;">
       📋 PASTE YOUR WALLET ADDRESS
     </p>
@@ -2177,14 +2177,12 @@ body::after {
         placeholder="e.g. 7xKXtg2CW..."
         maxlength="44"
       />
-      <button class="btn-wc-connect" onclick="connectManualWallet()" style="font-size:0.5rem;padding:0.4rem 0.8rem;white-space:nowrap;">OK</button>
     </div>
     <p style="font-family:'VT323',monospace;font-size:0.95rem;color:#555;margin-bottom:0.8rem;line-height:1.4;">
-      📱 Mobile: Copy address from Phantom/Solflare → paste here<br>
-      💰 To join races use /join in the Telegram bot
+      📱 Mobile: Copy address from Phantom/Solflare → paste here
     </p>
 
-    <button class="btn-wc-close" onclick="closeWCModal()">✅ CONFIRM & ENTER GAME</button>
+    <button class="btn-wc-close" onclick="connectManualWallet()">✅ CONFIRM & ENTER GAME</button>
   </div>
 </div>
 
@@ -4871,6 +4869,8 @@ window.closeWinner = async function() {
 
 </body>
 </html>
+
+
 
 
 
