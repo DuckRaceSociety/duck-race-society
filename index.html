@@ -1436,6 +1436,11 @@ header {
   0%,100% { transform: translateY(0); }
   50% { transform: translateY(-10px); }
 }
+
+@keyframes pulse-gold {
+  0%,100% { box-shadow: 4px 4px 0 #000, 0 0 15px rgba(244,211,94,0.4); }
+  50% { box-shadow: 4px 4px 0 #000, 0 0 30px rgba(244,211,94,0.9); }
+}
 </style><style>
 /* ── ENHANCED PIXEL ART ANIMATIONS ── */
 
@@ -2193,8 +2198,19 @@ body::after {
     <span class="winner-duck-big">🦆</span>
     <h2>WINNER!</h2>
     <div class="winner-name" id="winner-name">-</div>
-    <div style="font-family:'VT323',monospace;font-size:1.1rem;color:#2dc653;margin-bottom:0.3rem;" id="winner-sol-payout"></div>
-    <div style="font-family:'VT323',monospace;font-size:1.1rem;color:#ab9ff2;margin-bottom:1rem;" id="winner-token-payout"></div>
+    <div style="font-family:'VT323',monospace;font-size:1.3rem;color:#f4d35e;margin-bottom:0.3rem;" id="winner-prize-display"></div>
+    <div style="font-family:'VT323',monospace;font-size:1rem;color:#ab9ff2;margin-bottom:1rem;" id="winner-token-payout"></div>
+    
+    <!-- CLAIM BUTTON (only shown to winner) -->
+    <div id="claim-section" style="display:none;margin-bottom:0.8rem;">
+      <button id="claim-btn" onclick="claimPrize()" 
+        style="width:100%;background:#f4d35e;color:#000;border:4px solid #000;box-shadow:4px 4px 0 #000;padding:0.9rem;font-family:'Press Start 2P',monospace;font-size:0.55rem;cursor:pointer;animation:pulse-gold 1.2s ease-in-out infinite;">
+        🏆 CLAIM PRIZE
+      </button>
+      <div id="claim-status" style="font-family:'VT323',monospace;font-size:1rem;color:#888;margin-top:0.4rem;"></div>
+    </div>
+
+    <div id="winner-sol-payout" style="font-family:'VT323',monospace;font-size:1rem;color:#2dc653;margin-bottom:0.5rem;"></div>
     <button class="btn-close-winner" onclick="closeWinner()">▶ PLAY AGAIN</button>
   </div>
 </div>
@@ -2802,7 +2818,7 @@ async function announceWinner(winner) {
     tokenBonus: 500
   });
 
-  await triggerPayoutSafe(winner);
+  await triggerPayout(winner);
   const snap = await getDocs(lobbyRef);
   for (const d of snap.docs) await deleteDoc(doc(db,"lobby",d.id));
 }
@@ -4179,6 +4195,8 @@ async function checkTRCBalance(address) {
   }
 }
 
+let hasSufficientTRC = false;
+
 async function verifyTRCAndEnter(address) {
   const gateStatus = document.getElementById("gate-status");
   const gateError = document.getElementById("gate-trc-error");
@@ -4192,18 +4210,40 @@ async function verifyTRCAndEnter(address) {
   const balance = await checkTRCBalance(address);
   
   if (balance >= MIN_TRC_BALANCE) {
+    hasSufficientTRC = true;
     gateStatus.textContent = "✅ " + balance.toLocaleString() + " $TRC — ACCESS GRANTED!";
     gateStatus.style.color = "#2dc653";
     setTimeout(() => {
       document.getElementById("gate-screen").style.display = "none";
     }, 1000);
   } else {
-    gateStatus.textContent = "❌ Only " + balance.toLocaleString() + " $TRC found";
-    gateStatus.style.color = "#f72585";
+    hasSufficientTRC = false;
+    // Let them in as spectator
+    gateStatus.textContent = "👀 " + balance.toLocaleString() + " $TRC — SPECTATOR MODE";
+    gateStatus.style.color = "#f4d35e";
     gateError.style.display = "block";
-    gateBtn.disabled = false;
-    gateBtn.textContent = "🔗 CONNECT WALLET";
+    setTimeout(() => {
+      document.getElementById("gate-screen").style.display = "none";
+      showTRCWarningBanner(balance);
+    }, 1500);
   }
+}
+
+function showTRCWarningBanner(balance) {
+  const banner = document.createElement("div");
+  banner.id = "trc-warning-banner";
+  banner.style.cssText = "position:fixed;top:0;left:0;right:0;z-index:9000;background:#1a0a00;border-bottom:2px solid #f72585;padding:0.5rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:0.5rem;";
+  banner.innerHTML = `
+    <div style="font-family:'VT323',monospace;font-size:1rem;color:#f4d35e;">
+      ⚠ You have ${balance.toLocaleString()} $TRC — Need 10,000 to play
+    </div>
+    <a href="https://raydium.io/swap/?inputCurrency=sol&outputCurrency=H4FTTQ5nhGdFFqHa3FPd5TpjcXYLAokN8SYFdBq4yERL" 
+      target="_blank"
+      style="background:#9945FF;color:#fff;border:2px solid #000;padding:0.3rem 0.6rem;font-family:'Press Start 2P',monospace;font-size:0.3rem;text-decoration:none;white-space:nowrap;">
+      BUY $TRC
+    </a>
+  `;
+  document.body.prepend(banner);
 }
 
 // Auto-detect wallet on load
@@ -4782,62 +4822,95 @@ function updateBetUI() {
 }
 
 // ── PAYOUT AFTER RACE ──
+let pendingWinner = null;
+
 async function triggerPayout(winner) {
+  // Store winner for claim
+  pendingWinner = winner;
+  
+  // Get winner wallet
+  const betDoc = await getDoc(doc(db, "bets", winner.id));
+  const winnerWallet = betDoc.exists() ? betDoc.data().wallet : null;
+
+  // Calculate pool
+  const betsSnap = await getDocs(collection(db, "bets"));
+  let totalPoolSOL = 0;
+  betsSnap.forEach(d => { totalPoolSOL += d.data().amount || 0; });
+  const solPayout = (totalPoolSOL * 0.8);
+
+  // Show prize info
+  document.getElementById("winner-prize-display").textContent = "◎ " + solPayout.toFixed(3) + " SOL + 500 $TRC";
+  document.getElementById("winner-token-payout").textContent = "Press CLAIM to receive your prize!";
+
+  // Only show claim button to the actual winner
+  const isWinner = winner.id === playerId || winner.uid === currentUid;
+  if (isWinner && winnerWallet && !winner.isBot) {
+    document.getElementById("claim-section").style.display = "block";
+    // Store data for claim
+    window._claimData = { winnerWallet, totalPoolSOL, winner };
+  }
+}
+
+window.claimPrize = async function() {
+  const btn = document.getElementById("claim-btn");
+  const status = document.getElementById("claim-status");
+  const data = window._claimData;
+  
+  if (!data) { showToast("NO PRIZE TO CLAIM!"); return; }
+  
+  btn.disabled = true;
+  btn.textContent = "⏳ CLAIMING...";
+  status.textContent = "Sending prize to your wallet...";
+  status.style.color = "#4cc9f0";
+
   try {
-    // Get winner wallet from bets
-    const betDoc = await getDoc(doc(db, "bets", winner.id));
-    if (!betDoc.exists()) {
-      showToast("⚠ WINNER HAS NO BET - NO PAYOUT");
-      return;
-    }
-    const winnerWallet = betDoc.data().wallet;
-
-    // Count players
-    const betsSnap = await getDocs(collection(db, "bets"));
-    const playerCount = betsSnap.size;
-
-    showToast("⏳ SENDING PRIZE...");
-
-    // Calculate total pool
-    const betsSnap2 = await getDocs(collection(db, "bets"));
-    let totalPoolSOL = 0;
-    betsSnap2.forEach(d => { totalPoolSOL += d.data().amount || 0; });
-
     const resp = await fetch("/api/payout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        winnerWallet,
+        winnerWallet: data.winnerWallet,
         raceId: Date.now().toString(),
-        playerCount,
-        totalPoolSOL
+        playerCount: data.totalPoolSOL / 0.025,
+        totalPoolSOL: data.totalPoolSOL
       })
     });
 
-    const data = await resp.json();
-    if (data.success) {
-      showToast("🏆 " + data.solPayout.toFixed(3) + " SOL + 500 TRC SENT!");
-      document.getElementById("winner-sol-payout").textContent = "◎ " + data.solPayout.toFixed(3) + " SOL SENT!";
-      document.getElementById("winner-token-payout").textContent = "🪙 500 TRC SENT!";
-      // Save payout tx
-      await setDoc(doc(db, "payouts", winner.id + "_" + Date.now()), {
-        winner: winner.name,
-        wallet: winnerWallet,
-        solPayout: data.solPayout,
+    const result = await resp.json();
+    if (result.success) {
+      btn.textContent = "✅ CLAIMED!";
+      btn.style.background = "#2dc653";
+      status.textContent = "◎ " + result.solPayout.toFixed(3) + " SOL + 500 TRC sent!";
+      status.style.color = "#2dc653";
+      showToast("🏆 " + result.solPayout.toFixed(3) + " SOL SENT TO YOUR WALLET!");
+      document.getElementById("winner-sol-payout").textContent = "✅ Prize claimed!";
+      
+      // Save payout record
+      await setDoc(doc(db, "payouts", data.winner.id + "_" + Date.now()), {
+        winner: data.winner.name,
+        wallet: data.winnerWallet,
+        solPayout: result.solPayout,
         tokenBonus: 500,
-        solTx: data.solSignature,
-        tokenTx: data.tokenSignature,
+        solTx: result.solSignature,
         paidAt: Date.now()
       });
+
       // Clear bets
       const bSnap = await getDocs(collection(db, "bets"));
       for (const d of bSnap.docs) await deleteDoc(doc(db, "bets", d.id));
+      window._claimData = null;
     } else {
-      showToast("PAYOUT ERROR: " + data.error?.slice(0,20));
+      btn.disabled = false;
+      btn.textContent = "🏆 CLAIM PRIZE";
+      status.textContent = "Error: " + (result.error || "Try again");
+      status.style.color = "#f72585";
+      showToast("CLAIM FAILED - TRY AGAIN!");
     }
   } catch(e) {
-    console.error("Payout error:", e);
-    showToast("PAYOUT FAILED!");
+    console.error("Claim error:", e);
+    btn.disabled = false;
+    btn.textContent = "🏆 CLAIM PRIZE";
+    status.textContent = "Network error - try again";
+    status.style.color = "#f72585";
   }
 }
 
@@ -4869,6 +4942,8 @@ window.closeWinner = async function() {
 
 </body>
 </html>
+
+
 
 
 
