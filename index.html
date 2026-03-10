@@ -2177,14 +2177,14 @@ body::after {
         placeholder="e.g. 7xKXtg2CW..."
         maxlength="44"
       />
-      <button class="btn-wc-connect" onclick="connectManualWallet()">✓</button>
+      <button class="btn-wc-connect" onclick="connectManualWallet()" style="font-size:0.5rem;padding:0.4rem 0.8rem;white-space:nowrap;">OK</button>
     </div>
     <p style="font-family:'VT323',monospace;font-size:0.95rem;color:#555;margin-bottom:0.8rem;line-height:1.4;">
       📱 Mobile: Copy address from Phantom/Solflare → paste here<br>
       💰 To join races use /join in the Telegram bot
     </p>
 
-    <button class="btn-wc-close" onclick="closeWCModal()">✕ BACK TO GAME</button>
+    <button class="btn-wc-close" onclick="closeWCModal()">✅ CONFIRM & ENTER GAME</button>
   </div>
 </div>
 
@@ -4871,6 +4871,8 @@ window.closeWinner = async function() {
 
 </body>
 </html>
+
+
 
 
 
