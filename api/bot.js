@@ -1,6 +1,4 @@
 // api/bot.js - Telegram Bot Webhook Handler
-const TREASURY = "5sDfMWBNFMne13aJLhiG3k7V8MwULmHfQrkt2eHupSQ1";
-const ENTRY_SOL = 0.025;
 const GAME_URL = "https://duck-race-society.vercel.app";
 
 module.exports = async function handler(req, res) {
@@ -36,22 +34,21 @@ module.exports = async function handler(req, res) {
   try {
     if (text.startsWith("/start") || callbackData === "join") {
       await sendMessage(
-        `🦆 <b>DUCK RACE SOCIETY</b>\n\nHey ${userName}!\n\n` +
+        `🦆 <b>DUCK RACE SOCIETY</b>\n\nHey ${userName}! Welcome to the fastest duck races on Solana! 🏁\n\n` +
         `<b>HOW TO JOIN:</b>\n` +
-        `1️⃣ Send <code>${ENTRY_SOL} SOL</code> to:\n<code>${TREASURY}</code>\n\n` +
-        `2️⃣ Open the game\n` +
-        `3️⃣ Join lobby + place bet + race! 🏁\n\n` +
-        `🏆 Winner: <b>80% SOL + 500 $TRC</b>`,
+        `1️⃣ Open the game\n` +
+        `2️⃣ Join the lobby\n` +
+        `3️⃣ Follow the instructions inside the game\n` +
+        `4️⃣ Race your duck! 🦆⚡`,
         { reply_markup: { inline_keyboard: [
-          [{ text: "🎮 OPEN GAME", web_app: { url: GAME_URL } }],
-          [{ text: "🦆 JOIN RACE", callback_data: "join" }]
+          [{ text: "🎮 OPEN GAME", web_app: { url: GAME_URL } }]
         ]}}
       );
     } else if (text === "/join") {
       await sendMessage(
-        `🦆 <b>JOIN A RACE</b>\n\n` +
-        `Send <code>${ENTRY_SOL} SOL</code> to:\n<code>${TREASURY}</code>\n\n` +
-        `Then open the game and join the lobby!`,
+        `🦆 <b>READY TO RACE?</b>\n\n` +
+        `Open the game, join the lobby and follow the instructions!\n\n` +
+        `See you on the track! 🏁`,
         { reply_markup: { inline_keyboard: [[
           { text: "🎮 OPEN GAME", web_app: { url: GAME_URL } }
         ]]}}
@@ -59,8 +56,15 @@ module.exports = async function handler(req, res) {
     } else if (text === "/help") {
       await sendMessage(
         `🦆 <b>HOW TO PLAY</b>\n\n` +
-        `/start - Main menu\n/join - Join a race\n\n` +
-        `Treasury:\n<code>${TREASURY}</code>`
+        `1️⃣ Open the game\n` +
+        `2️⃣ Join the lobby\n` +
+        `3️⃣ Follow the in-game instructions\n` +
+        `4️⃣ Race & win! 🏆\n\n` +
+        `/start - Main menu\n` +
+        `/join - Join a race`,
+        { reply_markup: { inline_keyboard: [[
+          { text: "🎮 OPEN GAME", web_app: { url: GAME_URL } }
+        ]]}}
       );
     }
   } catch(e) {
@@ -69,6 +73,7 @@ module.exports = async function handler(req, res) {
 
   return res.status(200).json({ ok: true });
 };
+
 
 
 
