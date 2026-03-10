@@ -1356,9 +1356,8 @@ header {
   font-size: 0.45rem;
   cursor: pointer;
   letter-spacing: 1px;
-  display: none;
+  margin-top: 0.5rem;
 }
-.btn-solanapay-confirm.show { display: block; }
 .btn-solanapay-confirm:active { transform: translate(4px,4px); box-shadow: none; }
 </style>
 
@@ -1385,11 +1384,13 @@ header {
 <div id="wallet-info-banner" style="max-width:900px;margin:0.5rem auto;padding:0 1rem;">
   <div style="background:#0a1628;border:3px solid #4361ee;padding:0.7rem 1rem;display:flex;gap:0.8rem;align-items:flex-start;">
     <div style="font-size:1.3rem;flex-shrink:0;">💡</div>
-    <div style="font-family:'VT323',monospace;font-size:1.05rem;color:#fff;line-height:1.5;">
-      <b style="color:#f4d35e;">HOW TO CONNECT:</b>
-      📱 <b style="color:#f4d35e;">Phantom Mobile:</b> Use /join in bot → send SOL → verify &nbsp;|&nbsp;
-      🔥 <b style="color:#f4d35e;">Solflare/Other:</b> Press Connect Wallet above &nbsp;|&nbsp;
-      💻 <b style="color:#f4d35e;">Desktop:</b> Connect wallet extension directly
+    <div style="font-family:'VT323',monospace;font-size:1.05rem;color:#fff;line-height:1.6;">
+      <b style="color:#f4d35e;">HOW TO PLAY:</b><br>
+      1️⃣ Press <b style="color:#f4d35e;">JOIN RACE</b> in the Lobby tab<br>
+      2️⃣ Send <b style="color:#f4d35e;">0.025 SOL</b> to the treasury address shown<br>
+      3️⃣ Press <b style="color:#f4d35e;">✅ I SENT THE SOL</b> to confirm your bet<br>
+      4️⃣ Wait for players → Press <b style="color:#f4d35e;">START RACE</b> → 🏁 Race!<br>
+      🏆 Winner gets <b style="color:#f4d35e;">80% SOL + 500 $TRC</b> automatically!
     </div>
     <button onclick="this.parentElement.parentElement.style.display='none'" style="margin-left:auto;background:none;border:none;color:#666;cursor:pointer;font-family:'Press Start 2P',monospace;font-size:0.4rem;flex-shrink:0;padding-left:0.5rem;">✕</button>
   </div>
@@ -1512,18 +1513,17 @@ header {
       <div class="bet-status" id="bet-status">CONNECT WALLET FIRST</div>
       <a class="tx-link" id="tx-link" target="_blank">VIEW ON SOLSCAN ↗</a>
 
-      <!-- SOLANA PAY -->
+      <!-- MANUAL PAY BOX -->
       <div class="solanapay-box" id="solanapay-box" style="display:none;">
-        <p>📱 <b style="color:#9945FF;">Mobile?</b> Pay directly with your wallet app:</p>
-        <button class="btn-solanapay" onclick="openSolanaPay()">
-          💜 PAY WITH WALLET APP
+        <p>📱 <b style="color:#f4d35e;">Send exactly 0.025 SOL to:</b></p>
+        <div style="background:#050d1a;border:2px solid #1a3a5c;padding:0.5rem;margin:0.4rem 0;display:flex;align-items:center;gap:0.5rem;">
+          <code style="font-family:'VT323',monospace;font-size:0.9rem;color:#4CC9F0;word-break:break-all;flex:1;">5sDfMWBNFMne13aJLhiG3k7V8MwULmHfQrkt2eHupSQ1</code>
+          <button onclick="copyTreasury()" style="background:#4361ee;border:2px solid #000;color:#fff;font-family:'Press Start 2P',monospace;font-size:0.3rem;padding:0.3rem 0.5rem;cursor:pointer;flex-shrink:0;">📋</button>
+        </div>
+        <p style="color:#888;font-size:0.85rem;">Open Phantom/Solflare → send 0.025 SOL → come back here</p>
+        <button class="btn-solanapay-confirm show" id="btn-solanapay-confirm" onclick="confirmSolanaPay()">
+          ✅ I SENT THE SOL — CONFIRM BET
         </button>
-        <button class="btn-solanapay-confirm" id="btn-solanapay-confirm" onclick="confirmSolanaPay()">
-          ✅ I CONFIRMED THE PAYMENT
-        </button>
-        <p style="font-size:0.85rem;color:#555;margin-top:0.3rem;">
-          Opens Phantom · Solflare · any Solana wallet
-        </p>
       </div>
     </div>
   </div>
@@ -2485,13 +2485,22 @@ window.showToast = showToast;
 // ── SOLANA PAY ──
 const SOLANA_PAY_URL = "solana:5sDfMWBNFMne13aJLhiG3k7V8MwULmHfQrkt2eHupSQ1?amount=0.025&label=Duck%20Race%20Society&message=Duck%20Race%20Entry%20Fee&memo=duck-race";
 
+window.copyTreasury = function() {
+  const addr = "5sDfMWBNFMne13aJLhiG3k7V8MwULmHfQrkt2eHupSQ1";
+  navigator.clipboard?.writeText(addr).catch(() => {
+    const el = document.createElement('textarea');
+    el.value = addr;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+  });
+  showToast("📋 TREASURY ADDRESS COPIED!");
+};
+
 window.openSolanaPay = function() {
-  // Open Solana Pay deep link
-  window.location.href = SOLANA_PAY_URL;
-  // Show confirm button after 3 seconds
-  setTimeout(() => {
-    document.getElementById("btn-solanapay-confirm").classList.add("show");
-  }, 3000);
+  // Just show the manual pay box
+  updateSolanaPayVisibility();
 };
 
 window.confirmSolanaPay = async function() {
@@ -4335,6 +4344,8 @@ window.closeWinner = async function() {
 
 </body>
 </html>
+
+
 
 
 
