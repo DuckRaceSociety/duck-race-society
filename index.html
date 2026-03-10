@@ -1085,7 +1085,7 @@ header {
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,0.9);
-  z-index: 400;
+  z-index: 999999;
   align-items: center;
   justify-content: center;
 }
@@ -4759,7 +4759,7 @@ onSnapshot(collection(db, "bets"), snap => {
     }).join('');
   } else { listBar.style.display = "none"; }
   // legacy ignore rest
-  let _betCount++; });
+  betCount++; });
   document.getElementById("pool-sol").textContent = totalSOL.toFixed(3) + " SOL";
   document.getElementById("pool-players").textContent = betCount + " / " + players.length;
 });
@@ -4875,6 +4875,8 @@ window.closeWinner = async function() {
 
 </body>
 </html>
+
+
 
 
 
