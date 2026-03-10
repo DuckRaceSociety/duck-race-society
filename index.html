@@ -1894,7 +1894,7 @@ window.joinRace = async function() {
   await addDoc(lobbyRef, { name: playerName, id: playerId, uid: currentUser.uid, joinedAt: Date.now(), isHost: snap.empty });
   isInLobby = true;
   showToast("🦆 JOINED!");
-  setTimeout(() => switchTab('bet'), 800);
+  setTimeout(() => { switchTab('bet'); updateSolanaPayVisibility(); }, 800);
   const botInfoEl = document.getElementById("bot-info");
   if (botInfoEl) botInfoEl.textContent = "⏳ WAITING 15s FOR OTHER PLAYERS...";
 
@@ -2520,10 +2520,7 @@ window.confirmSolanaPay = async function() {
 function updateSolanaPayVisibility() {
   const box = document.getElementById("solanapay-box");
   if (!box) return;
-  const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
-  if (isMobile && walletConnected && isInLobby && !hasBet) {
-    box.style.display = "block";
-  } else if (!activeWalletProvider && walletConnected && isInLobby && !hasBet) {
+  if (walletConnected && isInLobby && !hasBet) {
     box.style.display = "block";
   } else {
     box.style.display = "none";
@@ -4338,6 +4335,8 @@ window.closeWinner = async function() {
 
 </body>
 </html>
+
+
 
 
 
