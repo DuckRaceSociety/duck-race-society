@@ -77,6 +77,14 @@ header {
   padding: 1.5rem 1rem 0.5rem;
 }
 
+.header-duck {
+  display: inline-block;
+  animation: duckFloat 2s ease-in-out infinite;
+}
+@keyframes duckFloat {
+  0%, 100% { transform: translateY(0) rotate(-3deg); }
+  50%       { transform: translateY(-6px) rotate(3deg); }
+}
 .pixel-title {
   font-family: 'Press Start 2P', monospace;
   font-size: clamp(1.2rem, 4vw, 2rem);
@@ -118,12 +126,33 @@ header {
 
 /* ── PIXEL PANELS ── */
 .panel {
-  background: linear-gradient(145deg, #0d1b2a 0%, #0a1220 100%);
+  background: linear-gradient(145deg, #0d1b2a 0%, #071018 100%);
   border: 3px solid var(--panel-border);
-  box-shadow: 6px 6px 0 #000, 0 0 20px rgba(244,211,94,0.08), inset 0 1px 0 rgba(255,255,255,0.05);
+  box-shadow: 6px 6px 0 #000, 0 0 30px rgba(244,211,94,0.15), inset 0 1px 0 rgba(255,255,255,0.07);
   padding: 1.2rem;
   position: relative;
-  transition: box-shadow 0.2s ease;
+  transition: box-shadow 0.3s ease, transform 0.2s ease;
+  animation: panelGlow 4s ease-in-out infinite alternate;
+}
+.panel:hover {
+  box-shadow: 6px 6px 0 #000, 0 0 40px rgba(244,211,94,0.25), inset 0 1px 0 rgba(255,255,255,0.1);
+}
+.panel::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--panel-border), transparent);
+  animation: scanline 3s linear infinite;
+}
+@keyframes panelGlow {
+  from { box-shadow: 6px 6px 0 #000, 0 0 20px rgba(244,211,94,0.1); }
+  to   { box-shadow: 6px 6px 0 #000, 0 0 40px rgba(244,211,94,0.2); }
+}
+@keyframes scanline {
+  0%   { transform: translateX(-100%); opacity: 0; }
+  50%  { opacity: 1; }
+  100% { transform: translateX(200%); opacity: 0; }
 }
 .panel:hover {
   box-shadow: 6px 6px 0 #000, 0 0 30px rgba(244,211,94,0.15), inset 0 1px 0 rgba(255,255,255,0.05);
@@ -977,7 +1006,7 @@ header {
 }
 .tab-btn {
   flex: 1;
-  background: linear-gradient(180deg, #0d1f35 0%, #0a1628 100%);
+  background: linear-gradient(180deg, #0d1f35 0%, #071018 100%);
   border: 3px solid #1a3a5c;
   border-bottom: none;
   color: var(--text-dim);
@@ -986,6 +1015,7 @@ header {
   padding: 0.6rem 0.3rem;
   cursor: pointer;
   letter-spacing: 1px;
+  transition: all 0.2s ease;
   transition: all 0.15s ease;
   text-align: center;
 }
@@ -1371,6 +1401,41 @@ header {
   margin-top: 0.5rem;
 }
 .btn-solanapay-confirm:active { transform: translate(4px,4px); box-shadow: none; }
+
+/* ── WALLET LIST ── */
+.wallet-tag {
+  font-family: 'VT323', monospace;
+  font-size: 0.85rem;
+  background: #0a1628;
+  border: 1px solid #1a3a5c;
+  color: #4cc9f0;
+  padding: 0.15rem 0.4rem;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  animation: slide-in 0.3s ease forwards;
+}
+.wallet-tag.is-you {
+  border-color: #f4d35e;
+  color: #f4d35e;
+  background: #1a1200;
+}
+.wallet-tag .wallet-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #2dc653;
+  display: inline-block;
+  animation: pulse-dot 1.5s ease-in-out infinite;
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+@keyframes duck-bounce {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
 </style><style>
 /* ── ENHANCED PIXEL ART ANIMATIONS ── */
 
@@ -1697,6 +1762,32 @@ body::after {
 </head>
 <body>
 
+<!-- GATE SCREEN -->
+<div id="gate-screen" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#050d1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;text-align:center;">
+  <div style="font-size:4rem;margin-bottom:1rem;animation:duck-bounce 1s ease-in-out infinite;">🦆</div>
+  <div style="font-family:'Press Start 2P',monospace;font-size:0.8rem;color:#f4d35e;margin-bottom:0.5rem;">DUCK RACE SOCIETY</div>
+  <div style="font-family:'VT323',monospace;font-size:1.3rem;color:#4cc9f0;margin-bottom:2rem;">Powered by $TRC on Solana</div>
+  
+  <div id="gate-status" style="font-family:'VT323',monospace;font-size:1.1rem;color:#888;margin-bottom:1.5rem;">Connect your wallet to play</div>
+
+  <button onclick="connectWallet()" id="gate-connect-btn" style="background:#f4d35e;color:#000;border:4px solid #000;box-shadow:4px 4px 0 #000;padding:1rem 2rem;font-family:'Press Start 2P',monospace;font-size:0.6rem;cursor:pointer;margin-bottom:1rem;width:100%;max-width:300px;">
+    🔗 CONNECT WALLET
+  </button>
+
+  <div id="gate-trc-error" style="display:none;background:#0d1b2a;border:2px solid #f72585;padding:1rem;margin-top:1rem;max-width:300px;width:100%;">
+    <div style="font-family:'Press Start 2P',monospace;font-size:0.45rem;color:#f72585;margin-bottom:0.5rem;">⚠ NOT ENOUGH $TRC</div>
+    <div style="font-family:'VT323',monospace;font-size:1rem;color:#aaa;margin-bottom:0.8rem;">You need at least <b style="color:#f4d35e;">10,000 $TRC</b> to play!</div>
+    <a href="https://raydium.io/swap/?inputCurrency=sol&outputCurrency=H4FTTQ5nhGdFFqHa3FPd5TpjcXYLAokN8SYFdBq4yERL" target="_blank"
+      style="display:block;background:#9945FF;color:#fff;border:3px solid #000;box-shadow:3px 3px 0 #000;padding:0.6rem;font-family:'Press Start 2P',monospace;font-size:0.4rem;text-decoration:none;">
+      💜 BUY $TRC ON RAYDIUM
+    </a>
+  </div>
+
+  <div style="font-family:'VT323',monospace;font-size:0.9rem;color:#444;margin-top:1.5rem;">
+    Hold 10,000 $TRC to access Duck Race Society
+  </div>
+</div>
+
 <header>
   <div class="pixel-title">🦆 DUCK <span>RACE</span></div>
   <div id="player-badge">👤 LOADING...</div>
@@ -1754,6 +1845,11 @@ body::after {
       <div class="pool-label">YOUR BET</div>
       <div class="pool-value" id="my-bet-status">NOT PLACED</div>
     </div>
+  </div>
+  <!-- WALLET LIST -->
+  <div id="wallet-list-bar" style="border-top:1px solid rgba(76,201,240,0.1);padding:0.4rem 0.8rem;display:none;">
+    <div style="font-family:'Press Start 2P',monospace;font-size:0.3rem;color:#7fb3d3;margin-bottom:0.3rem;">🔐 WALLETS IN RACE:</div>
+    <div id="wallet-list" style="display:flex;flex-wrap:wrap;gap:0.4rem;"></div>
   </div>
 </div>
 
@@ -1852,6 +1948,11 @@ body::after {
           <button onclick="copyTreasury()" style="background:#4361ee;border:2px solid #000;color:#fff;font-family:'Press Start 2P',monospace;font-size:0.3rem;padding:0.3rem 0.5rem;cursor:pointer;flex-shrink:0;">📋</button>
         </div>
         <p style="color:#888;font-size:0.85rem;">Open Phantom/Solflare → send 0.025 SOL → come back here</p>
+        <div style="margin-top:0.5rem;">
+          <p style="font-family:'VT323',monospace;font-size:0.95rem;color:#f4d35e;margin-bottom:0.3rem;">👇 Enter your wallet address for payout:</p>
+          <input id="manual-wallet-input" type="text" placeholder="Your Solana wallet address..." 
+            style="width:100%;background:#050d1a;border:2px solid #1a3a5c;color:#4cc9f0;font-family:'VT323',monospace;font-size:0.95rem;padding:0.5rem;outline:none;box-sizing:border-box;" />
+        </div>
         <button class="btn-solanapay-confirm show" id="btn-solanapay-confirm" onclick="confirmSolanaPay()">
           ✅ I SENT THE SOL — CONFIRM BET
         </button>
@@ -2836,7 +2937,18 @@ window.openSolanaPay = function() {
 
 window.confirmSolanaPay = async function() {
   if (!isInLobby) { showToast("JOIN LOBBY FIRST!"); return; }
-  // Mark bet as placed via Solana Pay
+  
+  // Get wallet address from input or connected wallet
+  const inputEl = document.getElementById("manual-wallet-input");
+  const manualWallet = inputEl ? inputEl.value.trim() : "";
+  const finalWallet = walletAddress || manualWallet;
+  
+  if (!finalWallet || finalWallet.length < 32) {
+    showToast("⚠ ENTER YOUR WALLET ADDRESS!");
+    if (inputEl) inputEl.style.borderColor = "#f72585";
+    return;
+  }
+  
   hasBet = true;
   document.getElementById("bet-status").textContent = "✓ PAYMENT CONFIRMED!";
   document.getElementById("bet-status").style.color = "#2dc653";
@@ -2844,12 +2956,13 @@ window.confirmSolanaPay = async function() {
   document.getElementById("my-bet-status").style.color = "#2dc653";
   document.getElementById("solanapay-box").style.display = "none";
   document.getElementById("bet-btn").disabled = true;
+  
   await setDoc(doc(db, "bets", playerId), {
-    wallet: walletAddress || "solanapay",
+    wallet: finalWallet,
     amount: selectedBet,
     playerId,
     playerName,
-    txSig: "solanapay_" + Date.now(),
+    txSig: "manual_" + Date.now(),
     placedAt: Date.now()
   });
   showToast("✓ BET PLACED!");
@@ -4047,9 +4160,53 @@ window.getFreezeAware = getFreezeAware;
 const TOKEN_MINT = "H4FTTQ5nhGdFFqHa3FPd5TpjcXYLAokN8SYFdBq4yERL";
 const ENTRY_FEE_SOL = 0.025;
 const LAMPORTS_PER_SOL = 1_000_000_000;
+const MIN_TRC_BALANCE = 10000;
 
 let walletConnected = false;
 let walletAddress = null;
+
+// ── GATE: Check TRC Balance ──
+async function checkTRCBalance(address) {
+  try {
+    const connection = new window.solanaWeb3.Connection("https://api.mainnet-beta.solana.com", "confirmed");
+    const pubkey = new window.solanaWeb3.PublicKey(address);
+    const mintPubkey = new window.solanaWeb3.PublicKey(TOKEN_MINT);
+    const tokenAccounts = await connection.getParsedTokenAccountsByOwner(pubkey, { mint: mintPubkey });
+    if (tokenAccounts.value.length === 0) return 0;
+    const balance = tokenAccounts.value[0].account.data.parsed.info.tokenAmount.uiAmount;
+    return balance || 0;
+  } catch(e) {
+    console.error("TRC balance check error:", e);
+    return 0;
+  }
+}
+
+async function verifyTRCAndEnter(address) {
+  const gateStatus = document.getElementById("gate-status");
+  const gateError = document.getElementById("gate-trc-error");
+  const gateBtn = document.getElementById("gate-connect-btn");
+  
+  gateStatus.textContent = "⏳ Checking $TRC balance...";
+  gateStatus.style.color = "#4cc9f0";
+  gateBtn.disabled = true;
+  gateBtn.textContent = "⏳ CHECKING...";
+
+  const balance = await checkTRCBalance(address);
+  
+  if (balance >= MIN_TRC_BALANCE) {
+    gateStatus.textContent = "✅ " + balance.toLocaleString() + " $TRC — ACCESS GRANTED!";
+    gateStatus.style.color = "#2dc653";
+    setTimeout(() => {
+      document.getElementById("gate-screen").style.display = "none";
+    }, 1000);
+  } else {
+    gateStatus.textContent = "❌ Only " + balance.toLocaleString() + " $TRC found";
+    gateStatus.style.color = "#f72585";
+    gateError.style.display = "block";
+    gateBtn.disabled = false;
+    gateBtn.textContent = "🔗 CONNECT WALLET";
+  }
+}
 
 // Auto-detect wallet on load
 
@@ -4393,6 +4550,8 @@ function onWalletConnected(walletName) {
   document.getElementById("wallet-info").classList.add("show");
   document.getElementById("wallet-addr").textContent =
     walletAddress.slice(0,4) + "..." + walletAddress.slice(-4);
+  // Verify TRC balance before granting access
+  verifyTRCAndEnter(walletAddress);
   updateBetUI();
   showToast("✓ WALLET CONNECTED!");
 }
@@ -4547,19 +4706,60 @@ async function updatePoolDisplay() {
     const betsSnap = await getDocs(collection(db, "bets"));
     let totalSOL = 0;
     let betCount = 0;
+    const wallets = [];
     betsSnap.forEach(d => {
-      totalSOL += d.data().amount || 0;
+      const data = d.data();
+      totalSOL += data.amount || 0;
       betCount++;
+      if (data.wallet && data.wallet.length > 10) {
+        wallets.push({ wallet: data.wallet, name: data.playerName || "Player", id: data.playerId });
+      }
     });
     document.getElementById("pool-sol").textContent = totalSOL.toFixed(3) + " SOL";
     document.getElementById("pool-players").textContent = betCount + " / " + players.length;
+    
+    // Update wallet list
+    const listBar = document.getElementById("wallet-list-bar");
+    const listEl = document.getElementById("wallet-list");
+    if (wallets.length > 0) {
+      listBar.style.display = "block";
+      listEl.innerHTML = wallets.map(w => {
+        const isYou = w.id === playerId || w.wallet === walletAddress;
+        const short = w.wallet.slice(0,4) + "..." + w.wallet.slice(-4);
+        return `<div class="wallet-tag ${isYou ? 'is-you' : ''}">
+          <span class="wallet-dot"></span>
+          ${w.name}: <b>${short}</b>${isYou ? ' 👈 YOU' : ''}
+        </div>`;
+      }).join('');
+    } else {
+      listBar.style.display = "none";
+    }
   } catch(e) {}
 }
 
 // Live bets listener
 onSnapshot(collection(db, "bets"), snap => {
   let totalSOL = 0, betCount = 0;
-  snap.forEach(d => { totalSOL += d.data().amount || 0; betCount++; });
+  const wallets = [];
+  snap.forEach(d => {
+    const data = d.data();
+    totalSOL += data.amount || 0; betCount++;
+    if (data.wallet && data.wallet.length > 10) wallets.push({ wallet: data.wallet, name: data.playerName || "Player", id: data.playerId });
+  });
+  document.getElementById("pool-sol").textContent = totalSOL.toFixed(3) + " SOL";
+  document.getElementById("pool-players").textContent = betCount + " / " + players.length;
+  const listBar = document.getElementById("wallet-list-bar");
+  const listEl = document.getElementById("wallet-list");
+  if (wallets.length > 0) {
+    listBar.style.display = "block";
+    listEl.innerHTML = wallets.map(w => {
+      const isYou = w.id === playerId || w.wallet === walletAddress;
+      const short = w.wallet.slice(0,4) + "..." + w.wallet.slice(-4);
+      return `<div class="wallet-tag ${isYou ? 'is-you' : ''}"><span class="wallet-dot"></span>${w.name}: <b>${short}</b>${isYou ? ' 👈 YOU' : ''}</div>`;
+    }).join('');
+  } else { listBar.style.display = "none"; }
+  // legacy ignore rest
+  let _betCount++; });
   document.getElementById("pool-sol").textContent = totalSOL.toFixed(3) + " SOL";
   document.getElementById("pool-players").textContent = betCount + " / " + players.length;
 });
@@ -4675,6 +4875,8 @@ window.closeWinner = async function() {
 
 </body>
 </html>
+
+
 
 
 
