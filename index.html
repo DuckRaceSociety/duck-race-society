@@ -9,8 +9,8 @@
 <style>
 :root {
   --pixel: 4px;
-  --sky1: #1a1a2e;
-  --sky2: #16213e;
+  --sky1: #080c1a;
+  --sky2: #0d1530;
   --water1: #0077b6;
   --water2: #023e8a;
   --water3: #48cae4;
@@ -19,8 +19,9 @@
   --sand: #f4d35e;
   --sand2: #ee9b00;
   --pixel-border: #000;
-  --panel-bg: #0d1b2a;
+  --panel-bg: #080f1e;
   --panel-border: #f4d35e;
+  --panel-glow: rgba(244, 211, 94, 0.15);
   --text: #e8f4fd;
   --text-dim: #7fb3d3;
   --accent: #f72585;
@@ -28,6 +29,9 @@
   --btn-green: #2dc653;
   --btn-red: #e63946;
   --btn-blue: #4361ee;
+  --neon-yellow: #f4d35e;
+  --neon-pink: #f72585;
+  --neon-blue: #4cc9f0;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; image-rendering: pixelated; }
@@ -114,11 +118,15 @@ header {
 
 /* ── PIXEL PANELS ── */
 .panel {
-  background: var(--panel-bg);
-  border: 4px solid var(--panel-border);
-  box-shadow: 6px 6px 0 #000;
+  background: linear-gradient(145deg, #0d1b2a 0%, #0a1220 100%);
+  border: 3px solid var(--panel-border);
+  box-shadow: 6px 6px 0 #000, 0 0 20px rgba(244,211,94,0.08), inset 0 1px 0 rgba(255,255,255,0.05);
   padding: 1.2rem;
   position: relative;
+  transition: box-shadow 0.2s ease;
+}
+.panel:hover {
+  box-shadow: 6px 6px 0 #000, 0 0 30px rgba(244,211,94,0.15), inset 0 1px 0 rgba(255,255,255,0.05);
 }
 .panel::before {
   content: '';
@@ -969,7 +977,7 @@ header {
 }
 .tab-btn {
   flex: 1;
-  background: #0a1628;
+  background: linear-gradient(180deg, #0d1f35 0%, #0a1628 100%);
   border: 3px solid #1a3a5c;
   border-bottom: none;
   color: var(--text-dim);
@@ -978,7 +986,7 @@ header {
   padding: 0.6rem 0.3rem;
   cursor: pointer;
   letter-spacing: 1px;
-  transition: all 0.1s;
+  transition: all 0.15s ease;
   text-align: center;
 }
 .tab-btn:hover { border-color: var(--sand2); color: var(--sand); }
@@ -1363,7 +1371,326 @@ header {
   margin-top: 0.5rem;
 }
 .btn-solanapay-confirm:active { transform: translate(4px,4px); box-shadow: none; }
+</style><style>
+/* ── ENHANCED PIXEL ART ANIMATIONS ── */
+
+/* Shimmer on panel headers */
+.panel h2 {
+  position: relative;
+  display: inline-block;
+}
+.panel h2::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--panel-border), transparent);
+  animation: shimmer 3s infinite;
+}
+@keyframes shimmer {
+  0% { opacity: 0.3; transform: scaleX(0.5); }
+  50% { opacity: 1; transform: scaleX(1); }
+  100% { opacity: 0.3; transform: scaleX(0.5); }
+}
+
+/* Pulse on active tab */
+.tab-btn.active {
+  animation: tabPulse 2s ease-in-out infinite;
+}
+@keyframes tabPulse {
+  0%, 100% { box-shadow: inset 0 -3px 0 var(--panel-border), 0 0 8px rgba(244,211,94,0.2); }
+  50% { box-shadow: inset 0 -3px 0 var(--panel-border), 0 0 16px rgba(244,211,94,0.4); }
+}
+
+/* Floating animation for duck emoji in lobby */
+.duck-float {
+  display: inline-block;
+  animation: duckFloat 2s ease-in-out infinite;
+}
+@keyframes duckFloat {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-4px); }
+}
+
+/* Pixel scanline overlay on body */
+body::after {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.03) 2px,
+    rgba(0,0,0,0.03) 4px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* Glow on bet button */
+.btn-bet {
+  transition: all 0.15s ease !important;
+}
+.btn-bet:not(:disabled):hover {
+  box-shadow: 0 0 20px rgba(244,211,94,0.5), 6px 6px 0 #000 !important;
+  transform: translateY(-2px);
+}
+.btn-bet:not(:disabled):active {
+  transform: translate(4px, 4px) !important;
+  box-shadow: none !important;
+}
+
+/* Glow on join button */
+.btn-join:hover {
+  box-shadow: 0 0 20px rgba(45,198,83,0.5), 6px 6px 0 #000 !important;
+  transform: translateY(-2px);
+}
+
+/* SOL pool counter glow */
+#pool-sol {
+  text-shadow: 0 0 10px rgba(244,211,94,0.6);
+  animation: solGlow 2s ease-in-out infinite;
+}
+@keyframes solGlow {
+  0%, 100% { text-shadow: 0 0 8px rgba(244,211,94,0.4); }
+  50% { text-shadow: 0 0 16px rgba(244,211,94,0.8); }
+}
+
+/* Pixel corner decorations on panels */
+.panel::after {
+  content: '▪';
+  position: absolute;
+  bottom: 4px;
+  right: 6px;
+  color: rgba(244,211,94,0.2);
+  font-size: 0.5rem;
+  animation: blink 1.5s step-end infinite;
+}
+@keyframes blink {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 0.8; }
+}
+
+/* Background stars */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-image:
+    radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,0.15) 0%, transparent 100%),
+    radial-gradient(1px 1px at 80% 10%, rgba(255,255,255,0.1) 0%, transparent 100%),
+    radial-gradient(1px 1px at 50% 80%, rgba(255,255,255,0.12) 0%, transparent 100%),
+    radial-gradient(1px 1px at 10% 60%, rgba(255,255,255,0.08) 0%, transparent 100%),
+    radial-gradient(1px 1px at 90% 50%, rgba(255,255,255,0.1) 0%, transparent 100%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Player list items with hover */
+#players li {
+  transition: all 0.1s ease;
+}
+#players li:hover {
+  background: rgba(244,211,94,0.08) !important;
+  border-color: rgba(244,211,94,0.4) !important;
+  transform: translateX(3px);
+}
+
+/* Commentator box glow */
+.commentator-box {
+  animation: commentatorGlow 4s ease-in-out infinite;
+}
+@keyframes commentatorGlow {
+  0%, 100% { box-shadow: 6px 6px 0 #000, 0 0 15px rgba(76,201,240,0.1); }
+  50% { box-shadow: 6px 6px 0 #000, 0 0 25px rgba(76,201,240,0.25); }
+}
+
+/* Entrance animation for panels */
+.panel {
+  animation: panelIn 0.3s ease-out backwards;
+}
+@keyframes panelIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.tab-content.active .panel:nth-child(1) { animation-delay: 0.05s; }
+.tab-content.active .panel:nth-child(2) { animation-delay: 0.1s; }
+.tab-content.active .panel:nth-child(3) { animation-delay: 0.15s; }
+
+/* ═══════════════════════════════════════════
+   ✨ VISUAL UPGRADE - PANELS & ANIMATIONS
+   ═══════════════════════════════════════════ */
+
+/* Animated scanline overlay on body */
+body::after {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.03) 2px,
+    rgba(0,0,0,0.03) 4px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* Glowing panels */
+.panel {
+  background: linear-gradient(145deg, #0d1b2a 0%, #071018 100%) !important;
+  border: 2px solid #1a3a5c !important;
+  box-shadow: 0 0 0 1px #0a2040, 0 4px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(76,201,240,0.07) !important;
+  position: relative;
+  overflow: hidden;
+  transition: box-shadow 0.3s ease, transform 0.2s ease !important;
+}
+.panel::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #4cc9f0, #f4d35e, #f72585, transparent);
+  opacity: 0.6;
+  animation: panel-shimmer 4s linear infinite;
+}
+.panel:hover {
+  box-shadow: 0 0 0 1px #1a3a5c, 0 8px 32px rgba(76,201,240,0.15), inset 0 1px 0 rgba(76,201,240,0.1) !important;
+  transform: translateY(-1px) !important;
+}
+@keyframes panel-shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+/* Tab buttons upgrade */
+.tab-btn {
+  transition: all 0.15s ease !important;
+  position: relative;
+  overflow: hidden;
+}
+.tab-btn::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 50%; right: 50%;
+  height: 2px;
+  background: #f4d35e;
+  transition: left 0.2s ease, right 0.2s ease;
+}
+.tab-btn.active::after {
+  left: 0; right: 0;
+}
+.tab-btn:hover:not(.active) {
+  background: linear-gradient(180deg, #142840 0%, #0d1f35 100%) !important;
+  color: #a0d8ef !important;
+}
+
+/* Button press animations */
+.btn, .btn-join, .btn-start, .btn-bet, .btn-solanapay, .btn-solanapay-confirm, .btn-wc-close {
+  transition: transform 0.08s ease, box-shadow 0.08s ease !important;
+}
+.btn:active, .btn-join:active, .btn-start:active, .btn-bet:active {
+  transform: translate(3px, 3px) !important;
+  box-shadow: 1px 1px 0 #000 !important;
+}
+
+/* Glowing join button */
+.btn-join {
+  background: linear-gradient(135deg, #2dc653, #1a9e3f) !important;
+  box-shadow: 4px 4px 0 #000, 0 0 15px rgba(45,198,83,0.3) !important;
+  animation: pulse-green 2s ease-in-out infinite;
+}
+@keyframes pulse-green {
+  0%, 100% { box-shadow: 4px 4px 0 #000, 0 0 10px rgba(45,198,83,0.2); }
+  50% { box-shadow: 4px 4px 0 #000, 0 0 25px rgba(45,198,83,0.5); }
+}
+
+/* Start race button glow */
+.btn-start:not([disabled]) {
+  background: linear-gradient(135deg, #f72585, #c71a6d) !important;
+  box-shadow: 4px 4px 0 #000, 0 0 20px rgba(247,37,133,0.4) !important;
+  animation: pulse-pink 1.5s ease-in-out infinite;
+}
+@keyframes pulse-pink {
+  0%, 100% { box-shadow: 4px 4px 0 #000, 0 0 15px rgba(247,37,133,0.3); }
+  50% { box-shadow: 4px 4px 0 #000, 0 0 30px rgba(247,37,133,0.6); }
+}
+
+/* Lobby player entries */
+#players li {
+  background: linear-gradient(90deg, #0a1628, #0d1f35) !important;
+  border-left: 3px solid #4cc9f0 !important;
+  transition: all 0.2s ease;
+  animation: slide-in 0.3s ease forwards;
+}
+#players li:hover {
+  background: linear-gradient(90deg, #0d1f35, #142840) !important;
+  transform: translateX(3px);
+}
+@keyframes slide-in {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* Pool display glow */
+#pool-sol {
+  text-shadow: 0 0 10px rgba(244,211,94,0.8), 0 0 20px rgba(244,211,94,0.4) !important;
+  animation: glow-gold 2s ease-in-out infinite;
+}
+@keyframes glow-gold {
+  0%, 100% { text-shadow: 0 0 8px rgba(244,211,94,0.6); }
+  50% { text-shadow: 0 0 20px rgba(244,211,94,1), 0 0 40px rgba(244,211,94,0.4); }
+}
+
+/* Step indicator animation */
+.step-dot.active {
+  animation: step-pulse 1.5s ease-in-out infinite;
+}
+@keyframes step-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* Race track water shimmer */
+.water-bg {
+  background: linear-gradient(180deg, #0077b6, #023e8a) !important;
+  position: relative;
+}
+
+/* Toast notification upgrade */
+#toast {
+  border: 2px solid rgba(255,255,255,0.2) !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5), 0 0 15px rgba(76,201,240,0.2) !important;
+  backdrop-filter: blur(4px) !important;
+}
+
+/* Bet preset buttons */
+.bet-preset {
+  transition: all 0.15s ease !important;
+  position: relative;
+}
+.bet-preset.active {
+  background: #f4d35e !important;
+  box-shadow: 3px 3px 0 #000, 0 0 12px rgba(244,211,94,0.5) !important;
+}
+.bet-preset:hover:not(.active) {
+  background: #1a3a5c !important;
+  transform: translateY(-2px);
+}
+
+/* Section headers */
+.panel h2 {
+  border-bottom: 1px solid rgba(76,201,240,0.2) !important;
+  padding-bottom: 0.5rem !important;
+  margin-bottom: 0.8rem !important;
+  text-shadow: 0 0 8px rgba(76,201,240,0.3);
+}
 </style>
+
 
 <script src="https://unpkg.com/@walletconnect/web3wallet@1.13.0/dist/index.umd.js"></script>
 <script src="https://unpkg.com/@web3modal/standalone@2.4.3/dist/index.umd.js"></script>
@@ -4348,6 +4675,8 @@ window.closeWinner = async function() {
 
 </body>
 </html>
+
+
 
 
 
