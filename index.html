@@ -1040,7 +1040,284 @@ header {
 .step-dot.done { color: #2dc653; }
 .step-dot.active { color: var(--sand); }
 .step-arrow { color: #333; font-size: 0.8rem; }
+
+/* ── WALLETCONNECT ── */
+#wc-modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.9);
+  z-index: 400;
+  align-items: center;
+  justify-content: center;
+}
+#wc-modal-overlay.show { display: flex; }
+.wc-box {
+  background: #0a1628;
+  border: 4px solid #f4d35e;
+  box-shadow: 8px 8px 0 #000;
+  padding: 1.5rem;
+  width: 92%;
+  max-width: 360px;
+  text-align: center;
+}
+.wc-box h3 {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.6rem;
+  color: #f4d35e;
+  margin-bottom: 1rem;
+  line-height: 1.6;
+}
+.wc-wallet-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.wc-wallet-item {
+  background: #0d1b2a;
+  border: 3px solid #1a3a5c;
+  padding: 0.8rem 0.5rem;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.1s;
+}
+.wc-wallet-item:hover { border-color: var(--sand); }
+.wc-wallet-item img {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  margin-bottom: 0.3rem;
+  display: block;
+  margin: 0 auto 0.3rem;
+}
+.wc-wallet-item span {
+  font-family: 'VT323', monospace;
+  font-size: 0.95rem;
+  color: #fff;
+  display: block;
+}
+.wc-wallet-item .wc-tag {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.3rem;
+  color: #2dc653;
+  margin-top: 0.2rem;
+}
+.wc-divider {
+  font-family: 'VT323', monospace;
+  font-size: 1rem;
+  color: #555;
+  margin: 0.5rem 0;
+}
+.wc-input-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.8rem;
+}
+.wc-address-input {
+  flex: 1;
+  background: #050d1a;
+  border: 3px solid #1a3a5c;
+  color: #fff;
+  font-family: 'VT323', monospace;
+  font-size: 1rem;
+  padding: 0.5rem;
+  outline: none;
+}
+.wc-address-input:focus { border-color: var(--sand); }
+.wc-address-input::placeholder { color: #444; }
+.btn-wc-connect {
+  background: #2dc653;
+  color: #000;
+  border: 3px solid #000;
+  box-shadow: 3px 3px 0 #000;
+  padding: 0.5rem 0.8rem;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.4rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn-wc-close {
+  width: 100%;
+  background: transparent;
+  color: #555;
+  border: 2px solid #333;
+  padding: 0.5rem;
+  font-family: 'VT323', monospace;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-top: 0.3rem;
+}
+
+/* ══════════════════════════════════════
+   NFT DUCK SYSTEM
+══════════════════════════════════════ */
+.nft-mint-box {
+  background: #0a1628;
+  border: 4px solid #f4d35e;
+  box-shadow: 8px 8px 0 #000;
+  padding: 1.2rem;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+.nft-mint-box h3 {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.55rem;
+  color: #f4d35e;
+  margin-bottom: 1rem;
+  line-height: 1.6;
+}
+.nft-duck-preview {
+  display: flex;
+  justify-content: center;
+  margin: 1rem 0;
+}
+#nft-canvas-preview {
+  image-rendering: pixelated;
+  border: 4px solid #1a3a5c;
+  box-shadow: 4px 4px 0 #000;
+}
+.nft-traits-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem;
+  margin: 0.8rem 0;
+  text-align: left;
+}
+.nft-trait {
+  background: #0d1b2a;
+  border: 2px solid #1a3a5c;
+  padding: 0.4rem 0.6rem;
+}
+.nft-trait-label {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.3rem;
+  color: #555;
+  display: block;
+  margin-bottom: 0.2rem;
+}
+.nft-trait-value {
+  font-family: 'VT323', monospace;
+  font-size: 1rem;
+  color: #f4d35e;
+}
+.btn-mint {
+  width: 100%;
+  background: #f4d35e;
+  color: #000;
+  border: 4px solid #000;
+  box-shadow: 6px 6px 0 #000;
+  padding: 0.8rem;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.5rem;
+  cursor: pointer;
+  letter-spacing: 1px;
+  margin-top: 0.5rem;
+}
+.btn-mint:hover { background: #ffeb80; }
+.btn-mint:active { transform: translate(6px,6px); box-shadow: none; }
+.btn-reroll {
+  width: 100%;
+  background: transparent;
+  color: #4361ee;
+  border: 3px solid #4361ee;
+  padding: 0.5rem;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.4rem;
+  cursor: pointer;
+  margin-top: 0.4rem;
+}
+.btn-reroll:hover { background: rgba(67,97,238,0.1); }
+
+/* MY DUCK */
+.my-duck-card {
+  background: #0a1628;
+  border: 4px solid #2dc653;
+  box-shadow: 6px 6px 0 #000;
+  padding: 1rem;
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+.my-duck-card canvas {
+  image-rendering: pixelated;
+  border: 3px solid #1a3a5c;
+  flex-shrink: 0;
+}
+.my-duck-info { flex: 1; text-align: left; }
+.my-duck-name {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.5rem;
+  color: #f4d35e;
+  margin-bottom: 0.5rem;
+}
+.my-duck-gimmicks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.5rem;
+}
+.gimmick-badge {
+  background: #0d1b2a;
+  border: 2px solid #f72585;
+  padding: 0.2rem 0.4rem;
+  font-family: 'VT323', monospace;
+  font-size: 0.85rem;
+  color: #f72585;
+}
+
+/* GIMMICK SHOP */
+.gimmick-shop-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.6rem;
+}
+.gimmick-item {
+  background: #0d1b2a;
+  border: 3px solid #1a3a5c;
+  padding: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+.gimmick-item.owned { border-color: #2dc653; }
+.gimmick-icon { font-size: 1.8rem; flex-shrink: 0; }
+.gimmick-details { flex: 1; text-align: left; }
+.gimmick-name {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.4rem;
+  color: #fff;
+  margin-bottom: 0.3rem;
+}
+.gimmick-desc {
+  font-family: 'VT323', monospace;
+  font-size: 0.95rem;
+  color: #888;
+  line-height: 1.3;
+}
+.btn-buy-gimmick {
+  background: #f72585;
+  color: #fff;
+  border: 3px solid #000;
+  box-shadow: 3px 3px 0 #000;
+  padding: 0.4rem 0.6rem;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.35rem;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.btn-buy-gimmick:disabled {
+  background: #2dc653;
+  cursor: default;
+  box-shadow: none;
+}
+.btn-buy-gimmick:active:not(:disabled) { transform: translate(3px,3px); box-shadow: none; }
 </style>
+
+<script src="https://unpkg.com/@walletconnect/web3wallet@1.13.0/dist/index.umd.js"></script>
+<script src="https://unpkg.com/@web3modal/standalone@2.4.3/dist/index.umd.js"></script>
 </head>
 <body>
 
@@ -1052,10 +1329,10 @@ header {
 
 <!-- WALLET BAR -->
 <div class="wallet-bar">
-  <button class="wallet-connect-btn" id="wallet-btn" onclick="connectWallet()">
+  <button class="wallet-connect-btn" id="wallet-btn" onclick="walletBtnClick()">
     ◎ CONNECT WALLET
   </button>
-  <div class="wallet-info" id="wallet-info">◎ <span id="wallet-addr">-</span></div>
+  <div class="wallet-info" id="wallet-info">◎ <span id="wallet-addr">-</span> <button onclick="disconnectWallet()" style="background:#f72585;border:2px solid #000;color:#fff;font-family:'Press Start 2P',monospace;font-size:0.3rem;padding:0.2rem 0.4rem;cursor:pointer;margin-left:0.5rem;">DISCONNECT</button></div>
 </div>
 
 <!-- WALLET INFO BANNER -->
@@ -1115,6 +1392,9 @@ header {
   </button>
   <button class="tab-btn" onclick="switchTab('leaderboard')" id="tab-btn-leaderboard">
     <span class="tab-icon">🏆</span>TOP
+  </button>
+  <button class="tab-btn" onclick="switchTab('nft')" id="tab-btn-nft">
+    <span class="tab-icon">🦆</span>MY DUCK
   </button>
 </div>
 
@@ -1261,6 +1541,80 @@ header {
   </div>
 </div>
 
+<!-- TAB: NFT DUCK -->
+<div class="tab-content" id="tab-nft">
+
+  <!-- MY DUCK (shown after mint) -->
+  <div id="my-duck-section" style="display:none;">
+    <div class="my-duck-card">
+      <canvas id="my-duck-canvas" width="80" height="80"></canvas>
+      <div class="my-duck-info">
+        <div class="my-duck-name" id="my-duck-name">DUCK #????</div>
+        <div style="font-family:'VT323',monospace;font-size:0.95rem;color:#888;" id="my-duck-traits-summary"></div>
+        <div class="my-duck-gimmicks" id="my-duck-gimmicks"></div>
+      </div>
+    </div>
+
+    <!-- GIMMICK SHOP -->
+    <div class="panel">
+      <h2>🛍️ GIMMICK SHOP</h2>
+      <p style="font-family:'VT323',monospace;font-size:1rem;color:#888;margin-bottom:0.8rem;">
+        Balance: <span id="trc-balance" style="color:#f4d35e;">0 $TRC</span>
+      </p>
+      <div class="gimmick-shop-grid">
+        <div class="gimmick-item" id="gimmick-lucky">
+          <div class="gimmick-icon">🍀</div>
+          <div class="gimmick-details">
+            <div class="gimmick-name">LUCKY CHARM</div>
+            <div class="gimmick-desc">+15% win chance every race</div>
+          </div>
+          <button class="btn-buy-gimmick" onclick="buyGimmick('lucky', 500)" id="btn-lucky">500 $TRC</button>
+        </div>
+        <div class="gimmick-item" id="gimmick-feather">
+          <div class="gimmick-icon">🪶</div>
+          <div class="gimmick-details">
+            <div class="gimmick-name">GOLDEN FEATHER</div>
+            <div class="gimmick-desc">+500 $TRC bonus when you win</div>
+          </div>
+          <button class="btn-buy-gimmick" onclick="buyGimmick('feather', 300)" id="btn-feather">300 $TRC</button>
+        </div>
+        <div class="gimmick-item" id="gimmick-shield">
+          <div class="gimmick-icon">🛡️</div>
+          <div class="gimmick-details">
+            <div class="gimmick-name">SHIELD</div>
+            <div class="gimmick-desc">Immune to Tornado power-up</div>
+          </div>
+          <button class="btn-buy-gimmick" onclick="buyGimmick('shield', 400)" id="btn-shield">400 $TRC</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MINT SECTION (shown before mint) -->
+  <div id="mint-section">
+    <div class="nft-mint-box">
+      <h3>🦆 MINT YOUR DUCK NFT</h3>
+      <p style="font-family:'VT323',monospace;font-size:1rem;color:#888;margin-bottom:0.5rem;">
+        Your unique duck. Your permanent race avatar.<br>
+        Equip gimmicks to gain advantages!
+      </p>
+
+      <div class="nft-duck-preview">
+        <canvas id="nft-canvas-preview" width="160" height="160"></canvas>
+      </div>
+
+      <div class="nft-traits-grid" id="nft-traits-display"></div>
+
+      <p style="font-family:'Press Start 2P',monospace;font-size:0.45rem;color:#f4d35e;margin:0.5rem 0;">
+        MINT PRICE: 0.1 SOL
+      </p>
+
+      <button class="btn-mint" onclick="mintDuckNFT()">🦆 MINT MY DUCK — 0.1 SOL</button>
+      <button class="btn-reroll" onclick="rollNewDuck()">🎲 REROLL TRAITS</button>
+    </div>
+  </div>
+</div>
+
 <!-- TAB: LEADERBOARD -->
 <div class="tab-content" id="tab-leaderboard">
   <div class="panel">
@@ -1286,6 +1640,61 @@ header {
 
 
 
+
+
+<!-- WALLETCONNECT MODAL -->
+<div id="wc-modal-overlay">
+  <div class="wc-box">
+    <h3>◎ CONNECT WALLET</h3>
+
+    <!-- Desktop: try direct connect -->
+    <div id="wc-desktop-section">
+      <div class="wc-wallet-grid">
+        <div class="wc-wallet-item" onclick="connectWalletApp('phantom')">
+          <span style="font-size:2rem;">👻</span>
+          <span>Phantom</span>
+          <span class="wc-tag">DESKTOP</span>
+        </div>
+        <div class="wc-wallet-item" onclick="connectWalletApp('solflare')">
+          <span style="font-size:2rem;">🔥</span>
+          <span>Solflare</span>
+          <span class="wc-tag">DESKTOP</span>
+        </div>
+        <div class="wc-wallet-item" onclick="connectWalletApp('backpack')">
+          <span style="font-size:2rem;">🎒</span>
+          <span>Backpack</span>
+          <span class="wc-tag">DESKTOP</span>
+        </div>
+        <div class="wc-wallet-item" onclick="connectWalletApp('trust')">
+          <span style="font-size:2rem;">🛡️</span>
+          <span>Trust</span>
+          <span class="wc-tag">DESKTOP</span>
+        </div>
+      </div>
+      <div class="wc-divider">── OR ──</div>
+    </div>
+
+    <!-- Manual address (primary on mobile) -->
+    <p style="font-family:'Press Start 2P',monospace;font-size:0.4rem;color:#f4d35e;margin-bottom:0.6rem;">
+      📋 PASTE YOUR WALLET ADDRESS
+    </p>
+    <div class="wc-input-row">
+      <input 
+        class="wc-address-input" 
+        id="wc-address-input"
+        placeholder="e.g. 7xKXtg2CW..."
+        maxlength="44"
+      />
+      <button class="btn-wc-connect" onclick="connectManualWallet()">✓</button>
+    </div>
+    <p style="font-family:'VT323',monospace;font-size:0.95rem;color:#555;margin-bottom:0.8rem;line-height:1.4;">
+      📱 Mobile: Copy address from Phantom/Solflare → paste here<br>
+      💰 To join races use /join in the Telegram bot
+    </p>
+
+    <button class="btn-wc-close" onclick="closeWCModal()">✕ CANCEL</button>
+  </div>
+</div>
 
 <!-- WINNER -->
 <div id="winner-overlay">
@@ -1416,12 +1825,40 @@ window.joinRace = async function() {
   let exists = false;
   snap.forEach(d => { if (d.data().id === playerId) exists = true; });
   if (exists) { showToast("ALREADY IN RACE 🦆"); return; }
+  // Delete any existing entry for this player first
+  for (const d of snap.docs) {
+    if (d.data().uid === currentUser.uid || d.data().id === playerId) {
+      await deleteDoc(doc(db, "lobby", d.id));
+    }
+  }
   await addDoc(lobbyRef, { name: playerName, id: playerId, uid: currentUser.uid, joinedAt: Date.now(), isHost: snap.empty });
   isInLobby = true;
   showToast("🦆 JOINED!");
   setTimeout(() => switchTab('bet'), 800);
   const botInfoEl = document.getElementById("bot-info");
-  if (botInfoEl) botInfoEl.textContent = "⏳ WAITING 15s FOR PLAYERS, THEN BOTS JOIN...";
+  if (botInfoEl) botInfoEl.textContent = "⏳ WAITING 15s FOR OTHER PLAYERS...";
+
+  // Add bots after 15 seconds if still only 1 real player
+  setTimeout(async () => {
+    try {
+      const currentSnap = await getDocs(lobbyRef);
+      const realPlayers = [];
+      currentSnap.forEach(d => { if (!d.data().isBot) realPlayers.push(d.data()); });
+      if (realPlayers.length < 2) {
+        const botNames = ["🤖 RoboDuck", "🌼 DaisyDuck", "💰 MoneyDuck", "🔪 KillBill"];
+        const shuffled = botNames.sort(() => Math.random() - 0.5).slice(0, 2);
+        for (const name of shuffled) {
+          await addDoc(lobbyRef, {
+            name, id: "bot_" + Math.random().toString(36).slice(2),
+            uid: "bot", joinedAt: Date.now(), isBot: true, isHost: false
+          });
+        }
+        if (botInfoEl) botInfoEl.textContent = "🤖 BOTS JOINED! PRESS START RACE!";
+        showToast("🤖 2 BOTS JOINED! PRESS START!");
+        updateStartButton();
+      }
+    } catch(e) { console.error("Bot add error:", e); }
+  }, 15000);
   setTimeout(() => document.querySelector('.race-panel')?.scrollIntoView({ behavior:'smooth', block:'start' }), 300);
   try { window.Telegram?.WebApp?.expand(); } catch(e) {}
 };
@@ -1439,17 +1876,23 @@ window.leaveRace = async function() {
 
 // ── AUTO CLEANUP ON PAGE LEAVE ──
 async function removePlayerFromLobby() {
-  if (!isInLobby || !playerId) return;
+  if (!playerId) return;
   try {
     const snap = await getDocs(lobbyRef);
     for (const d of snap.docs) {
-      if (d.data().id === playerId) {
+      if (d.data().id === playerId || d.data().uid === currentUser?.uid) {
         await deleteDoc(doc(db, "lobby", d.id));
-        break;
       }
     }
+    isInLobby = false;
   } catch(e) {}
 }
+
+// Manual cleanup button for stuck entries
+window.forceCleanMyLobby = async function() {
+  await removePlayerFromLobby();
+  showToast("✓ LOBBY CLEANED!");
+};
 
 // Telegram WebApp close event
 window.Telegram?.WebApp?.onEvent('viewportChanged', async () => {
@@ -1469,6 +1912,23 @@ document.addEventListener('visibilitychange', async () => {
     await removePlayerFromLobby();
   }
 });
+
+// Auto cleanup stale lobby entries (older than 10 min)
+async function cleanStaleEntries() {
+  try {
+    const snap = await getDocs(lobbyRef);
+    const tenMinAgo = Date.now() - 10 * 60 * 1000;
+    for (const d of snap.docs) {
+      const data = d.data();
+      if (data.joinedAt && data.joinedAt < tenMinAgo && !data.fromBot) {
+        await deleteDoc(doc(db, "lobby", d.id));
+        console.log("Removed stale entry:", data.name);
+      }
+    }
+  } catch(e) {}
+}
+setInterval(cleanStaleEntries, 60000); // Every 60 seconds
+cleanStaleEntries(); // Run on load
 
 // Periodic stale player cleanup (removes players inactive > 2 min)
 setInterval(async () => {
@@ -1503,8 +1963,8 @@ async function cleanupBeforeRace() {
 }
 
 window.startRace = async function() {
-  if (!isHost()) { showToast("⛔ HOST ONLY!"); return; }
-  if (players.length < 2) { showToast("⚠ NEED 2+ PLAYERS!"); return; }
+  if (!isInLobby) { showToast("⛔ JOIN LOBBY FIRST!"); return; }
+  if (players.length < 2) { showToast("⚠ BOTS JOINING IN 15s..."); return; }
   if (raceRunning) return;
 
   // Clean stale data before starting
@@ -1918,7 +2378,20 @@ function updatePlayerList() {
 }
 
 function updateStartButton() {
-  document.getElementById("start-btn").disabled = !isHost() || players.length < 2 || raceRunning;
+  const btn = document.getElementById("start-btn");
+  if (!btn) return;
+  const canStart = isInLobby && players.length >= 2 && !raceRunning;
+  btn.disabled = !canStart;
+  if (canStart) {
+    btn.textContent = "▶▶ START RACE (" + players.length + " PLAYERS)";
+    btn.style.background = "#2dc653";
+  } else if (isInLobby) {
+    btn.textContent = "⏳ WAITING FOR PLAYERS...";
+    btn.style.background = "";
+  } else {
+    btn.textContent = "▶▶ START RACE";
+    btn.style.background = "";
+  }
 }
 
 function updateHostInfo() {
@@ -1948,6 +2421,415 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove("show"), 2500);
 }
 window.showToast = showToast;
+
+// ══════════════════════════════════════════════════
+// 🦆 NFT DUCK SYSTEM
+// ══════════════════════════════════════════════════
+
+const DUCK_TRAITS = {
+  body: [
+    { name: "Yellow Classic", color: "#FFD700" },
+    { name: "Snow White", color: "#F0F0F0" },
+    { name: "Midnight Black", color: "#1a1a2e" },
+    { name: "Flamingo Pink", color: "#FF69B4" },
+    { name: "Ocean Blue", color: "#4CC9F0" },
+    { name: "Forest Green", color: "#2DC653" },
+    { name: "Royal Purple", color: "#7B2FBE" },
+    { name: "Lava Red", color: "#F72585" },
+  ],
+  beak: [
+    { name: "Orange", color: "#FF8C00" },
+    { name: "Red", color: "#FF3333" },
+    { name: "Golden", color: "#FFD700" },
+    { name: "Pink", color: "#FF69B4" },
+  ],
+  eye: [
+    { name: "Normal", style: "normal" },
+    { name: "Sunglasses", style: "sunglasses" },
+    { name: "Star Eyes", style: "star" },
+    { name: "Angry", style: "angry" },
+    { name: "Sleepy", style: "sleepy" },
+  ],
+  hat: [
+    { name: "None", style: "none" },
+    { name: "Top Hat", style: "tophat" },
+    { name: "Crown 👑", style: "crown" },
+    { name: "Cap", style: "cap" },
+    { name: "Halo", style: "halo" },
+    { name: "Viking Helmet", style: "viking" },
+  ],
+  bg: [
+    { name: "Deep Space", color: "#0d1b2a" },
+    { name: "Sunset", color: "#FF6B35" },
+    { name: "Ocean", color: "#4361EE" },
+    { name: "Matrix", color: "#0a2a0a" },
+    { name: "Gold Rush", color: "#8B6914" },
+    { name: "Pink Dreams", color: "#8B1A6B" },
+  ]
+};
+
+let currentDuckTraits = null;
+let myNFTDuck = null;
+let trcBalance = 0;
+let ownedGimmicks = [];
+
+function rollNewDuck() {
+  currentDuckTraits = {
+    body: DUCK_TRAITS.body[Math.floor(Math.random() * DUCK_TRAITS.body.length)],
+    beak: DUCK_TRAITS.beak[Math.floor(Math.random() * DUCK_TRAITS.beak.length)],
+    eye: DUCK_TRAITS.eye[Math.floor(Math.random() * DUCK_TRAITS.eye.length)],
+    hat: DUCK_TRAITS.hat[Math.floor(Math.random() * DUCK_TRAITS.hat.length)],
+    bg: DUCK_TRAITS.bg[Math.floor(Math.random() * DUCK_TRAITS.bg.length)],
+    id: Math.floor(Math.random() * 9999) + 1
+  };
+  drawDuckCanvas('nft-canvas-preview', currentDuckTraits, 160);
+  updateTraitsDisplay();
+}
+
+function drawDuckCanvas(canvasId, traits, size) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const s = size / 16; // scale factor (16x16 grid)
+
+  ctx.clearRect(0, 0, size, size);
+
+  // Background
+  ctx.fillStyle = traits.bg.color;
+  ctx.fillRect(0, 0, size, size);
+
+  // Pixel grid background pattern
+  ctx.fillStyle = 'rgba(0,0,0,0.1)';
+  for (let i = 0; i < 16; i++) {
+    for (let j = 0; j < 16; j++) {
+      if ((i + j) % 2 === 0) ctx.fillRect(i*s, j*s, s, s);
+    }
+  }
+
+  // Body (duck shape)
+  ctx.fillStyle = traits.body.color;
+  // Main body oval
+  const cx = size/2, cy = size*0.6;
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, size*0.28, size*0.22, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  // Head
+  ctx.beginPath();
+  ctx.arc(cx + size*0.05, size*0.35, size*0.16, 0, Math.PI*2);
+  ctx.fill();
+
+  // Outline
+  ctx.strokeStyle = 'rgba(0,0,0,0.4)';
+  ctx.lineWidth = s * 0.3;
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, size*0.28, size*0.22, 0, 0, Math.PI*2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(cx + size*0.05, size*0.35, size*0.16, 0, Math.PI*2);
+  ctx.stroke();
+
+  // Wing highlight
+  ctx.fillStyle = 'rgba(255,255,255,0.2)';
+  ctx.beginPath();
+  ctx.ellipse(cx - size*0.05, cy - size*0.05, size*0.12, size*0.08, -0.3, 0, Math.PI*2);
+  ctx.fill();
+
+  // Beak
+  ctx.fillStyle = traits.beak.color;
+  ctx.beginPath();
+  ctx.moveTo(cx + size*0.18, size*0.33);
+  ctx.lineTo(cx + size*0.28, size*0.36);
+  ctx.lineTo(cx + size*0.18, size*0.39);
+  ctx.closePath();
+  ctx.fill();
+
+  // Eye
+  const eyeX = cx + size*0.1, eyeY = size*0.31;
+  if (traits.eye.style === 'sunglasses') {
+    ctx.fillStyle = '#111';
+    ctx.fillRect(eyeX - s*1.5, eyeY - s*0.8, s*3, s*1.5);
+    ctx.strokeStyle = '#444';
+    ctx.lineWidth = s*0.3;
+    ctx.strokeRect(eyeX - s*1.5, eyeY - s*0.8, s*3, s*1.5);
+  } else if (traits.eye.style === 'star') {
+    ctx.fillStyle = '#FFD700';
+    ctx.font = `${s*2}px Arial`;
+    ctx.fillText('★', eyeX - s, eyeY + s*0.5);
+  } else if (traits.eye.style === 'angry') {
+    ctx.fillStyle = '#FF0000';
+    ctx.beginPath();
+    ctx.arc(eyeX, eyeY, s*0.8, 0, Math.PI*2);
+    ctx.fill();
+    ctx.strokeStyle = '#FF0000';
+    ctx.lineWidth = s*0.4;
+    ctx.beginPath();
+    ctx.moveTo(eyeX - s, eyeY - s);
+    ctx.lineTo(eyeX + s, eyeY - s*0.3);
+    ctx.stroke();
+  } else if (traits.eye.style === 'sleepy') {
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = s*0.5;
+    ctx.beginPath();
+    ctx.moveTo(eyeX - s, eyeY);
+    ctx.lineTo(eyeX + s, eyeY);
+    ctx.stroke();
+  } else {
+    ctx.fillStyle = '#111';
+    ctx.beginPath();
+    ctx.arc(eyeX, eyeY, s*0.8, 0, Math.PI*2);
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(eyeX + s*0.2, eyeY - s*0.2, s*0.3, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  // Hat
+  const hatX = cx + size*0.05, hatY = size*0.19;
+  if (traits.hat.style === 'tophat') {
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillRect(hatX - s*2, hatY, s*4, s*2.5);
+    ctx.fillRect(hatX - s*3, hatY + s*2.5, s*6, s*0.8);
+  } else if (traits.hat.style === 'crown') {
+    ctx.fillStyle = '#FFD700';
+    ctx.beginPath();
+    ctx.moveTo(hatX - s*2.5, hatY + s*2);
+    ctx.lineTo(hatX - s*2.5, hatY);
+    ctx.lineTo(hatX - s*1, hatY + s*1.2);
+    ctx.lineTo(hatX, hatY - s*0.5);
+    ctx.lineTo(hatX + s*1, hatY + s*1.2);
+    ctx.lineTo(hatX + s*2.5, hatY);
+    ctx.lineTo(hatX + s*2.5, hatY + s*2);
+    ctx.closePath();
+    ctx.fill();
+  } else if (traits.hat.style === 'cap') {
+    ctx.fillStyle = '#4361EE';
+    ctx.beginPath();
+    ctx.ellipse(hatX, hatY + s, s*2.5, s*1.2, 0, Math.PI, 0);
+    ctx.fill();
+    ctx.fillRect(hatX, hatY + s*0.2, s*3.5, s*0.8);
+  } else if (traits.hat.style === 'halo') {
+    ctx.strokeStyle = '#FFD700';
+    ctx.lineWidth = s*0.6;
+    ctx.beginPath();
+    ctx.ellipse(hatX, hatY, s*2.5, s*0.8, 0, 0, Math.PI*2);
+    ctx.stroke();
+  } else if (traits.hat.style === 'viking') {
+    ctx.fillStyle = '#888';
+    ctx.beginPath();
+    ctx.ellipse(hatX, hatY + s, s*2.2, s*1.5, 0, Math.PI, 0);
+    ctx.fill();
+    ctx.fillStyle = '#F0F0F0';
+    ctx.fillRect(hatX - s*2.5, hatY + s*0.5, s*1.2, s*2);
+    ctx.fillRect(hatX + s*1.3, hatY + s*0.5, s*1.2, s*2);
+  }
+
+  // Gimmick badges on duck
+  if (ownedGimmicks.includes('lucky')) {
+    ctx.font = `${s*1.5}px Arial`;
+    ctx.fillText('🍀', 2, size - 4);
+  }
+  if (ownedGimmicks.includes('feather')) {
+    ctx.font = `${s*1.5}px Arial`;
+    ctx.fillText('🪶', s*2, size - 4);
+  }
+  if (ownedGimmicks.includes('shield')) {
+    ctx.font = `${s*1.5}px Arial`;
+    ctx.fillText('🛡️', s*4, size - 4);
+  }
+}
+
+function updateTraitsDisplay() {
+  if (!currentDuckTraits) return;
+  const t = currentDuckTraits;
+  document.getElementById('nft-traits-display').innerHTML = `
+    <div class="nft-trait"><span class="nft-trait-label">BODY</span><span class="nft-trait-value">${t.body.name}</span></div>
+    <div class="nft-trait"><span class="nft-trait-label">BEAK</span><span class="nft-trait-value">${t.beak.name}</span></div>
+    <div class="nft-trait"><span class="nft-trait-label">EYE</span><span class="nft-trait-value">${t.eye.name}</span></div>
+    <div class="nft-trait"><span class="nft-trait-label">HAT</span><span class="nft-trait-value">${t.hat.name}</span></div>
+    <div class="nft-trait"><span class="nft-trait-label">BACKGROUND</span><span class="nft-trait-value">${t.bg.name}</span></div>
+    <div class="nft-trait"><span class="nft-trait-label">DUCK ID</span><span class="nft-trait-value">#${t.id}</span></div>
+  `;
+}
+
+async function mintDuckNFT() {
+  if (!walletConnected) {
+    showToast("⚠ CONNECT WALLET FIRST!");
+    return;
+  }
+  if (!currentDuckTraits) {
+    showToast("⚠ ROLL YOUR DUCK FIRST!");
+    return;
+  }
+
+  // Charge 0.1 SOL
+  if (activeWalletProvider) {
+    try {
+      showToast("⏳ CONFIRM IN WALLET...");
+      const RPC_ENDPOINTS = [
+        "https://solana-mainnet.g.alchemy.com/v2/demo",
+        "https://rpc.ankr.com/solana",
+        "https://api.mainnet-beta.solana.com"
+      ];
+      let connection;
+      for (const rpc of RPC_ENDPOINTS) {
+        try {
+          connection = new solanaWeb3.Connection(rpc, "confirmed");
+          await connection.getLatestBlockhash();
+          break;
+        } catch(e) { continue; }
+      }
+      if (!connection) throw new Error("All RPC endpoints failed");
+      const fromPubkey = new solanaWeb3.PublicKey(walletAddress);
+      const toPubkey = new solanaWeb3.PublicKey("5sDfMWBNFMne13aJLhiG3k7V8MwULmHfQrkt2eHupSQ1");
+      const transaction = new solanaWeb3.Transaction().add(
+        solanaWeb3.SystemProgram.transfer({
+          fromPubkey, toPubkey,
+          lamports: 100_000_000 // 0.1 SOL
+        })
+      );
+      const { blockhash } = await connection.getLatestBlockhash();
+      transaction.recentBlockhash = blockhash;
+      transaction.feePayer = fromPubkey;
+      const signed = await activeWalletProvider.signTransaction(transaction);
+      await connection.sendRawTransaction(signed.serialize());
+    } catch(e) {
+      if (e.code === 4001 || e.message?.includes('rejected')) {
+        showToast("❌ MINT CANCELLED!");
+        return;
+      }
+    }
+  }
+
+  // Save NFT locally + Firestore
+  myNFTDuck = { ...currentDuckTraits, owner: walletAddress, mintedAt: Date.now() };
+  localStorage.setItem('myDuckNFT_' + walletAddress, JSON.stringify(myNFTDuck));
+
+  showToast("🎉 DUCK #" + currentDuckTraits.id + " MINTED!");
+  showMyDuck();
+}
+
+function showMyDuck() {
+  if (!myNFTDuck) return;
+  document.getElementById('mint-section').style.display = 'none';
+  document.getElementById('my-duck-section').style.display = 'block';
+  document.getElementById('my-duck-name').textContent = `DUCK #${myNFTDuck.id}`;
+  document.getElementById('my-duck-traits-summary').textContent =
+    `${myNFTDuck.body.name} · ${myNFTDuck.hat.name} hat · ${myNFTDuck.eye.name} eyes`;
+  drawDuckCanvas('my-duck-canvas', myNFTDuck, 80);
+  updateGimmickBadges();
+  updateGimmickShop();
+}
+
+function updateGimmickBadges() {
+  const el = document.getElementById('my-duck-gimmicks');
+  el.innerHTML = '';
+  if (ownedGimmicks.length === 0) {
+    el.innerHTML = '<span style="font-family:VT323,monospace;font-size:0.9rem;color:#555;">No gimmicks yet</span>';
+    return;
+  }
+  const names = { lucky: '🍀 Lucky Charm', feather: '🪶 Golden Feather', shield: '🛡️ Shield' };
+  ownedGimmicks.forEach(g => {
+    const badge = document.createElement('span');
+    badge.className = 'gimmick-badge';
+    badge.textContent = names[g] || g;
+    el.appendChild(badge);
+  });
+}
+
+function updateGimmickShop() {
+  ['lucky', 'feather', 'shield'].forEach(g => {
+    const btn = document.getElementById('btn-' + g);
+    const item = document.getElementById('gimmick-' + g);
+    if (ownedGimmicks.includes(g)) {
+      btn.textContent = '✓ OWNED';
+      btn.disabled = true;
+      item.classList.add('owned');
+    }
+  });
+  document.getElementById('trc-balance').textContent = trcBalance + ' $TRC';
+}
+
+window.buyGimmick = function(type, cost) {
+  if (!myNFTDuck) { showToast("⚠ MINT YOUR DUCK FIRST!"); return; }
+  if (ownedGimmicks.includes(type)) { showToast("ALREADY OWNED!"); return; }
+  if (trcBalance < cost) {
+    showToast(`⚠ NEED ${cost} $TRC! WIN RACES TO EARN!`);
+    return;
+  }
+  trcBalance -= cost;
+  ownedGimmicks.push(type);
+  localStorage.setItem('ownedGimmicks_' + walletAddress, JSON.stringify(ownedGimmicks));
+  drawDuckCanvas('my-duck-canvas', myNFTDuck, 80);
+  updateGimmickBadges();
+  updateGimmickShop();
+  const names = { lucky: 'LUCKY CHARM', feather: 'GOLDEN FEATHER', shield: 'SHIELD' };
+  showToast(`🎉 ${names[type]} EQUIPPED!`);
+};
+
+window.rollNewDuck = rollNewDuck;
+
+window.walletBtnClick = function() {
+  if (walletConnected) {
+    disconnectWallet();
+  } else {
+    connectWallet();
+  }
+};
+
+window.disconnectWallet = function() {
+  // Disconnect from provider
+  if (activeWalletProvider?.disconnect) {
+    activeWalletProvider.disconnect().catch(() => {});
+  }
+  walletAddress = null;
+  walletConnected = false;
+  activeWalletProvider = null;
+  myNFTDuck = null;
+  ownedGimmicks = [];
+
+  // Reset UI
+  const btn = document.getElementById("wallet-btn");
+  btn.textContent = "◎ CONNECT WALLET";
+  btn.classList.remove("connected");
+  document.getElementById("wallet-info").classList.remove("show");
+  document.getElementById("wallet-addr").textContent = "-";
+
+  // Reset NFT tab
+  document.getElementById("mint-section").style.display = "block";
+  document.getElementById("my-duck-section").style.display = "none";
+  currentDuckTraits = null;
+
+  showToast("👋 WALLET DISCONNECTED!");
+};
+
+window.mintDuckNFT = mintDuckNFT;
+
+// Load saved duck on startup
+function loadSavedDuck() {
+  if (!walletAddress) return;
+  const saved = localStorage.getItem('myDuckNFT_' + walletAddress);
+  const savedGimmicks = localStorage.getItem('ownedGimmicks_' + walletAddress);
+  if (savedGimmicks) ownedGimmicks = JSON.parse(savedGimmicks);
+  if (saved) {
+    myNFTDuck = JSON.parse(saved);
+    showMyDuck();
+  } else {
+    rollNewDuck(); // Auto-roll on first visit
+  }
+}
+
+// Init NFT tab when switched to
+const _origSwitchTab = window.switchTab;
+window.switchTab = function(tab) {
+  _origSwitchTab(tab);
+  if (tab === 'nft') {
+    if (!myNFTDuck && !currentDuckTraits) rollNewDuck();
+    if (myNFTDuck) showMyDuck();
+  }
+};
+
 
 // ══════════════════════════════════════════════════
 // 🗂️ TAB SYSTEM
@@ -2787,8 +3669,75 @@ let activeWalletProvider = null;
 
 // ── OPEN WALLET MODAL ──
 window.connectWallet = function() {
-  buildWalletModal();
-  document.getElementById("wa-modal").classList.add("show");
+  const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
+  const isInTelegram = !!window.Telegram?.WebApp?.initData;
+  const desktopSection = document.getElementById("wc-desktop-section");
+  if (desktopSection) {
+    desktopSection.style.display = (isMobile || isInTelegram) ? "none" : "block";
+  }
+  document.getElementById("wc-modal-overlay").classList.add("show");
+};
+
+window.closeWCModal = function() {
+  document.getElementById("wc-modal-overlay").classList.remove("show");
+  document.getElementById("wc-address-input").value = "";
+};
+
+// Connect wallet app (extension or deep link)
+window.connectWalletApp = async function(type) {
+  const providers = {
+    phantom: window.phantom?.solana || window.solana,
+    solflare: window.solflare,
+    backpack: window.backpack || window.xnft?.solana,
+    trust: window.trustwallet?.solana
+  };
+
+  const deeplinks = {
+    phantom: `https://phantom.app/ul/v1/connect?app_url=${encodeURIComponent("https://duck-race-society.vercel.app")}&redirect_link=${encodeURIComponent("https://duck-race-society.vercel.app")}`,
+    solflare: `https://solflare.com/ul/v1/browse/${encodeURIComponent("https://duck-race-society.vercel.app")}`,
+    trust: `https://link.trustwallet.com/open_url?coin_id=501&url=${encodeURIComponent("https://duck-race-society.vercel.app")}`,
+    backpack: null
+  };
+
+  const names = { phantom: "Phantom", solflare: "Solflare", backpack: "Backpack", trust: "Trust Wallet" };
+  const provider = providers[type];
+
+  if (provider) {
+    try {
+      closeWCModal();
+      const resp = await provider.connect();
+      walletAddress = resp.publicKey.toString();
+      walletConnected = true;
+      activeWalletProvider = provider;
+      onWalletConnected(names[type]);
+    } catch(e) {
+      if (e.code !== 4001) showToast("CONNECTION FAILED!");
+    }
+  } else {
+    const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
+    if (isMobile && deeplinks[type]) {
+      closeWCModal();
+      window.open(deeplinks[type], "_blank");
+      showToast("OPENING " + names[type].toUpperCase() + "...");
+    } else {
+      showToast(names[type].toUpperCase() + " NOT DETECTED!");
+    }
+  }
+};
+
+// Manual wallet address
+window.connectManualWallet = function() {
+  const addr = document.getElementById("wc-address-input").value.trim();
+  if (!addr || addr.length < 32 || addr.length > 44) {
+    showToast("⚠ INVALID WALLET ADDRESS!");
+    return;
+  }
+  walletAddress = addr;
+  walletConnected = true;
+  activeWalletProvider = null;
+  closeWCModal();
+  onWalletConnected("Wallet");
+  showToast("✓ ADDRESS CONNECTED! USE /join TO PAY!");
 };
 
 window.closePhantomGuide = function() {
@@ -2825,21 +3774,46 @@ function buildMobileWalletModal() {
       name: "Phantom",
       icon: "👻",
       tag: "POPULAR",
-      action: () => {
-        closeWalletModal();
-        showToast("📱 USE /join IN THE BOT TO JOIN WITH PHANTOM!");
+      action: async () => {
+        const provider = window.phantom?.solana || window.solana;
+        if (provider?.isPhantom) {
+          closeWalletModal();
+          try {
+            const resp = await provider.connect();
+            walletAddress = resp.publicKey.toString();
+            walletConnected = true;
+            activeWalletProvider = provider;
+            onWalletConnected("Phantom");
+          } catch(e) { showToast("PHANTOM CONNECTION FAILED!"); }
+        } else {
+          closeWalletModal();
+          showToast("📱 PHANTOM NOT DETECTED! USE /join IN BOT!");
+        }
       }
     },
     {
       name: "Solflare",
       icon: "🔥",
       tag: "POPULAR",
-      action: () => {
-        closeWalletModal();
-        // Solflare deep link
-        const url = `https://solflare.com/ul/v1/browse/${encodeURIComponent(APP_URL)}?ref=${encodeURIComponent(APP_URL)}`;
-        window.open(url, "_blank");
-        showToast("OPENING SOLFLARE...");
+      action: async () => {
+        // Try direct connect first
+        const provider = window.solflare;
+        if (provider?.isSolflare) {
+          closeWalletModal();
+          try {
+            await provider.connect();
+            walletAddress = provider.publicKey.toString();
+            walletConnected = true;
+            activeWalletProvider = provider;
+            onWalletConnected("Solflare");
+          } catch(e) { showToast("SOLFLARE CONNECTION FAILED!"); }
+        } else {
+          // Deep link
+          closeWalletModal();
+          const url = `https://solflare.com/ul/v1/browse/${encodeURIComponent(APP_URL)}?ref=${encodeURIComponent(APP_URL)}`;
+          window.open(url, "_blank");
+          showToast("OPENING SOLFLARE APP...");
+        }
       }
     },
     {
@@ -3065,20 +4039,43 @@ window.placeBet = async function() {
   if (hasBet) { showToast("BET ALREADY PLACED!"); return; }
   if (raceRunning) { showToast("RACE ALREADY RUNNING!"); return; }
 
+  // No wallet provider = show payment instructions
+  if (!activeWalletProvider) {
+    showToast("⚠ SEND 0.025 SOL TO TREASURY MANUALLY!");
+    document.getElementById("bet-status").textContent = "SEND SOL TO TREASURY → THEN PRESS CONFIRM";
+    // Show confirm button
+    const btn = document.getElementById("bet-btn");
+    btn.textContent = "✓ I SENT THE SOL";
+    btn.onclick = async function() {
+      hasBet = true;
+    document.getElementById("bet-status").textContent = "✓ JOINED VIA BOT!";
+    document.getElementById("my-bet-status").textContent = selectedBet + " SOL ✓";
+    document.getElementById("my-bet-status").style.color = "#2dc653";
+    await setDoc(doc(db, "bets", playerId), {
+      wallet: walletAddress,
+      amount: selectedBet,
+      playerId,
+      playerName,
+      txSig: "bot_payment",
+      placedAt: Date.now()
+    });
+    showToast("✓ BET CONFIRMED VIA BOT!");
+    updatePoolDisplay();
+    return;
+  }
+
   try {
     document.getElementById("bet-btn").disabled = true;
-    document.getElementById("bet-status").textContent = "⏳ SENDING TRANSACTION...";
+    document.getElementById("bet-status").textContent = "⏳ CONFIRM IN WALLET...";
 
-    const phantom = activeWalletProvider || window.solana;
+    const provider = activeWalletProvider;
     const connection = new window.solanaWeb3.Connection(
       "https://api.mainnet-beta.solana.com", "confirmed"
     );
 
-    // Treasury wallet address (public key only - safe to hardcode)
     const TREASURY_WALLET = "5sDfMWBNFMne13aJLhiG3k7V8MwULmHfQrkt2eHupSQ1";
     const treasuryPubkey = new window.solanaWeb3.PublicKey(TREASURY_WALLET);
     const fromPubkey = new window.solanaWeb3.PublicKey(walletAddress);
-
     const lamports = Math.floor(selectedBet * LAMPORTS_PER_SOL);
 
     const tx = new window.solanaWeb3.Transaction().add(
@@ -3093,8 +4090,11 @@ window.placeBet = async function() {
     const { blockhash } = await connection.getLatestBlockhash();
     tx.recentBlockhash = blockhash;
 
-    const signed = await phantom.signTransaction(tx);
+    document.getElementById("bet-status").textContent = "⏳ WAITING FOR SIGNATURE...";
+    const signed = await provider.signTransaction(tx);
+    document.getElementById("bet-status").textContent = "⏳ SENDING TO BLOCKCHAIN...";
     const sig = await connection.sendRawTransaction(signed.serialize());
+    document.getElementById("bet-status").textContent = "⏳ CONFIRMING...";
     await connection.confirmTransaction(sig, "confirmed");
 
     // Save bet to Firestore
@@ -3260,6 +4260,8 @@ window.closeWinner = async function() {
 
 </body>
 </html>
+
+
 
 
 
