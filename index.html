@@ -4,13 +4,16 @@
 <head>
 
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 
 <title>Duck Race Society</title>
 
+<meta http-equiv="Content-Security-Policy"
+content="default-src 'self' https: data: blob: 'unsafe-inline' 'unsafe-eval'; connect-src https: wss:;">
+
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
 
-<script defer src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.js"></script>
+<script defer src="https://unpkg.com/@solana/web3.js@1.91.8/lib/index.iife.min.js"></script>
 
 <style>
 
@@ -31,25 +34,24 @@ padding:10px;
 
 header{
 background:black;
-padding:15px;
+padding:20px;
 border-bottom:2px solid var(--gold);
 }
 
 h1{
-margin:0;
 color:var(--gold);
-font-size:22px;
+margin:0;
 }
 
 button{
 width:100%;
 padding:16px;
-margin:8px 0;
+margin:10px 0;
 border:none;
 border-radius:10px;
 background:var(--gold);
-font-size:16px;
 font-weight:bold;
+font-size:16px;
 }
 
 .section{
@@ -60,13 +62,23 @@ padding:20px 5px;
 background:#222;
 padding:10px;
 border-radius:10px;
+position:relative;
+}
+
+.finish{
+position:absolute;
+right:5px;
+top:0;
+bottom:0;
+width:4px;
+background:red;
 }
 
 .lane{
-height:40px;
-background:#333;
+height:45px;
 margin:8px 0;
-border-radius:6px;
+background:#333;
+border-radius:8px;
 position:relative;
 overflow:hidden;
 }
@@ -78,23 +90,14 @@ top:5px;
 font-size:28px;
 }
 
-.finish{
-position:absolute;
-right:0;
-top:0;
-bottom:0;
-width:4px;
-background:red;
-}
-
 .status{
-margin-top:10px;
 color:#aaa;
+margin-top:10px;
 }
 
 .pool{
 color:#00ff9c;
-font-size:16px;
+font-size:18px;
 }
 
 </style>
@@ -106,7 +109,7 @@ font-size:16px;
 <header>
 
 <h1>🦆 Duck Race Society</h1>
-<p>Solana Web3 Racing</p>
+<p>Solana Web3 Duck Racing</p>
 
 </header>
 
@@ -114,7 +117,7 @@ font-size:16px;
 
 <h2>Wallet</h2>
 
-<button id="connectBtn">Connect Phantom</button>
+<button id="walletBtn">Connect Phantom</button>
 
 <p id="walletStatus">Not connected</p>
 
@@ -124,10 +127,10 @@ font-size:16px;
 
 <h2>Bet</h2>
 
-<button onclick="bet(0)">Bet Pirate Duck</button>
-<button onclick="bet(1)">Bet Cyber Duck</button>
-<button onclick="bet(2)">Bet Golden Duck</button>
-<button onclick="bet(3)">Bet Alien Duck</button>
+<button onclick="placeBet(0)">Pirate Duck</button>
+<button onclick="placeBet(1)">Cyber Duck</button>
+<button onclick="placeBet(2)">Golden Duck</button>
+<button onclick="placeBet(3)">Alien Duck</button>
 
 <p class="pool">Prize Pool: <span id="pool">0</span> SOL</p>
 
@@ -138,9 +141,9 @@ font-size:16px;
 <h2>Race</h2>
 
 <button onclick="startRace()">Start Race</button>
-<button onclick="resetRace()">Reset Race</button>
+<button onclick="resetRace()">Reset</button>
 
-<p class="status" id="raceStatus">Waiting...</p>
+<p class="status" id="raceStatus">Waiting for bets...</p>
 
 <div class="race-track">
 
@@ -158,60 +161,68 @@ font-size:16px;
 <script>
 
 let provider
-let walletAddress
+let wallet=null
 
 let prizePool=0
 let bets=[0,0,0,0]
 
-const ducks=[...document.querySelectorAll(".duck")]
-
 let running=false
 
-const trackWidth=Math.min(window.innerWidth,500)-80
+const ducks=[...document.querySelectorAll(".duck")]
+const trackWidth=Math.min(window.innerWidth,500)-90
+
+/* ---------------- RPC FALLBACK ---------------- */
+
+const RPC_ENDPOINTS=[
+"https://rpc.ankr.com/solana",
+"https://api.mainnet-beta.solana.com"
+]
+
+let connection=new solanaWeb3.Connection(RPC_ENDPOINTS[0])
+
+/* ---------------- WALLET ---------------- */
 
 async function connectWallet(){
 
 try{
 
-if(!window.solana){
+const providerDetected =
+window.phantom?.solana ||
+(window.solana?.isPhantom ? window.solana : null)
+
+if(!providerDetected){
 
 alert("Install Phantom Wallet")
 
 return
 }
 
-provider=window.solana
-
-if(!provider.isPhantom){
-
-alert("Phantom Wallet not found")
-
-return
-}
+provider=providerDetected
 
 const resp=await provider.connect()
 
-walletAddress=resp.publicKey.toString()
+wallet=resp.publicKey.toString()
 
-document.getElementById("walletStatus").innerText=
-walletAddress.slice(0,6)+"..."+walletAddress.slice(-4)
+document.getElementById("walletStatus").innerText =
+wallet.slice(0,6)+"..."+wallet.slice(-4)
 
-}catch(e){
+}catch(err){
 
-console.log(e)
+console.log(err)
 
-alert("Connection failed")
-
-}
+alert("Wallet connection failed")
 
 }
 
-document.getElementById("connectBtn").onclick=connectWallet
+}
 
+document.getElementById("walletBtn").onclick=connectWallet
 
-function bet(duck){
+/* ---------------- BETTING ---------------- */
 
-if(!walletAddress){
+function placeBet(duck){
+
+if(!wallet){
 
 alert("Connect wallet first")
 
@@ -226,10 +237,11 @@ document.getElementById("pool").innerText=prizePool.toFixed(2)
 
 }
 
+/* ---------------- RACE ENGINE ---------------- */
 
 function startRace(){
 
-if(running)return
+if(running) return
 
 if(prizePool===0){
 
@@ -246,11 +258,11 @@ document.getElementById("raceStatus").innerText="Race started!"
 
 function frame(){
 
-if(!running)return
+if(!running) return
 
 ducks.forEach((duck,i)=>{
 
-pos[i]+=Math.random()*2.5
+pos[i]+=Math.random()*2.2
 
 duck.style.left=pos[i]+"px"
 
@@ -258,12 +270,7 @@ if(pos[i]>trackWidth){
 
 running=false
 
-document.getElementById("raceStatus").innerText=
-"🏆 Winner Duck "+(i+1)
-
-let payout=(prizePool*0.9).toFixed(2)
-
-alert("Winner Prize: "+payout+" SOL")
+finishRace(i)
 
 }
 
@@ -277,6 +284,18 @@ frame()
 
 }
 
+function finishRace(winner){
+
+document.getElementById("raceStatus").innerText =
+"🏆 Winner Duck "+(winner+1)
+
+let reward=(prizePool*0.9).toFixed(2)
+
+alert("Winner Prize: "+reward+" SOL")
+
+}
+
+/* ---------------- RESET ---------------- */
 
 function resetRace(){
 
@@ -297,8 +316,8 @@ document.getElementById("raceStatus").innerText="Waiting..."
 </script>
 
 </body>
-
 </html>
+
 
 
 
