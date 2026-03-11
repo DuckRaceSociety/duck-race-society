@@ -2413,6 +2413,34 @@ window.joinRace = async function() {
       await deleteDoc(doc(db, "lobby", d.id));
     }
   }
+  // SECURITY: Re-verify TRC balance server-side before join
+  if (!spectatorMode) {
+    try {
+      const conn = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com");
+      const mint = new solanaWeb3.PublicKey("H4FTTQ5nhGdFFqHa3FPd5TpjcXYLAokN8SYFdBq4yERL");
+      const pk = new solanaWeb3.PublicKey(walletAddress);
+      const accs = await conn.getParsedTokenAccountsByOwner(pk, { mint });
+      const bal = accs.value[0]?.account?.data?.parsed?.info?.tokenAmount?.uiAmount || 0;
+      if (bal < MIN_TRC_BALANCE) {
+        showToast("⛔ INSUFFICIENT $TRC! NEED 10,000+");
+        spectatorMode = true;
+        return;
+      }
+    } catch(e) { /* fail open - don't block if RPC down */ }
+  }
+  // SECURITY: Check lobby isn't full before joining (max 8 players)
+  const currentSnap = await getDocs(lobbyRef);
+  if (currentSnap.size >= 8) {
+    showToast("⛔ LOBBY FULL! MAX 8 PLAYERS!");
+    return;
+  }
+  // SECURITY: Check this playerId isn't already in lobby
+  const alreadyIn = currentSnap.docs.some(d => d.data().id === playerId || d.data().uid === currentUser.uid);
+  if (alreadyIn) {
+    showToast("ALREADY IN LOBBY!");
+    isInLobby = true;
+    return;
+  }
   await addDoc(lobbyRef, { 
     name: sanitize(playerName), 
     id: playerId, 
@@ -2557,8 +2585,11 @@ async function cleanupBeforeRace() {
 
 window.startRace = async function() {
   if (!isInLobby) { showToast("⛔ JOIN LOBBY FIRST!"); return; }
+  if (!walletConnected) { showToast("⛔ CONNECT WALLET FIRST!"); return; }
   if (players.length < 2) { showToast("⚠ NEED 2+ PLAYERS! WAIT 15s FOR BOTS..."); return; }
   if (raceRunning) { showToast("⚠ RACE ALREADY RUNNING!"); return; }
+  // SECURITY: Must have placed bet before starting
+  if (!hasBet) { showToast("⛔ PLACE YOUR BET FIRST!"); switchTab('bet'); return; }
 
   // Clean stale data before starting
   await cleanupBeforeRace();
@@ -5044,8 +5075,11 @@ async function triggerPayout(winner) {
   document.getElementById("share-section").style.display = "block";
   
   // Only show claim button to the actual winner
-  const isWinner = winner.id === playerId || winner.uid === currentUid;
-  if (isWinner && winnerWallet && !winner.isBot) {
+  // SECURITY: Verify winner using Firebase auth uid (not client-controlled var)
+  const authUid = currentUser?.uid;
+  const isWinner = (winner.id === playerId && !!authUid) || (winner.uid === authUid && !!authUid);
+  // SECURITY: Bots cannot claim prizes, winner must have a real wallet
+  if (isWinner && winnerWallet && !winner.isBot && winner.uid !== "bot") {
     document.getElementById("claim-section").style.display = "block";
     document.getElementById("share-section").style.display = "none"; // show after claim
     // Store data for claim
@@ -5219,6 +5253,8 @@ window.closeWinner = async function() {
 
 </body>
 </html>
+
+
 
 
 
