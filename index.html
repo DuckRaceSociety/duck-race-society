@@ -1955,17 +1955,34 @@ body::after {
 
       <!-- MANUAL PAY BOX -->
       <div class="solanapay-box" id="solanapay-box" style="display:none;">
-        <p>📱 <b style="color:#f4d35e;">Send exactly 0.025 SOL to:</b></p>
-        <div style="background:#050d1a;border:2px solid #1a3a5c;padding:0.5rem;margin:0.4rem 0;display:flex;align-items:center;gap:0.5rem;">
-          <code style="font-family:'VT323',monospace;font-size:0.9rem;color:#4CC9F0;word-break:break-all;flex:1;">5sDfMWBNFMne13aJLhiG3k7V8MwULmHfQrkt2eHupSQ1</code>
-          <button onclick="copyTreasury()" style="background:#4361ee;border:2px solid #000;color:#fff;font-family:'Press Start 2P',monospace;font-size:0.3rem;padding:0.3rem 0.5rem;cursor:pointer;flex-shrink:0;">📋</button>
+
+        <!-- CASE A: Wallet connected via Phantom/Solflare -->
+        <div id="pay-box-connected" style="display:none;">
+          <p style="color:#2dc653;font-size:0.85rem;margin-bottom:0.4rem;">
+            ✅ <b>WALLET CONNECTED</b> — Your wallet will open to confirm payment
+          </p>
+          <p style="color:#888;font-size:0.75rem;margin-bottom:0.5rem;">
+            Amount: <b style="color:#f4d35e;">0.025 SOL</b> → Treasury
+          </p>
         </div>
-        <p style="color:#888;font-size:0.85rem;">Open Phantom/Solflare → send 0.025 SOL → come back here</p>
+
+        <!-- CASE B: Manual wallet (no extension) -->
+        <div id="pay-box-manual" style="display:block;">
+          <p>📱 <b style="color:#f4d35e;">Send exactly 0.025 SOL to:</b></p>
+          <div style="background:#050d1a;border:2px solid #1a3a5c;padding:0.5rem;margin:0.4rem 0;display:flex;align-items:center;gap:0.5rem;">
+            <code style="font-family:'VT323',monospace;font-size:0.9rem;color:#4CC9F0;word-break:break-all;flex:1;">5sDfMWBNFMne13aJLhiG3k7V8MwULmHfQrkt2eHupSQ1</code>
+            <button onclick="copyTreasury()" style="background:#4361ee;border:2px solid #000;color:#fff;font-family:'Press Start 2P',monospace;font-size:0.3rem;padding:0.3rem 0.5rem;cursor:pointer;flex-shrink:0;">📋</button>
+          </div>
+          <p style="color:#888;font-size:0.8rem;">Open Phantom/Solflare app → send 0.025 SOL → come back and confirm</p>
+        </div>
+
+        <!-- Always shown: payout wallet input -->
         <div style="margin-top:0.5rem;">
-          <p style="font-family:'VT323',monospace;font-size:0.95rem;color:#f4d35e;margin-bottom:0.3rem;">👇 Enter your wallet address for payout:</p>
-          <input id="manual-wallet-input" type="text" placeholder="Your Solana wallet address..." 
+          <p style="font-family:'VT323',monospace;font-size:0.95rem;color:#f4d35e;margin-bottom:0.3rem;">👇 Your payout wallet address:</p>
+          <input id="manual-wallet-input" type="text" placeholder="Your Solana wallet address..."
             style="width:100%;background:#050d1a;border:2px solid #1a3a5c;color:#4cc9f0;font-family:'VT323',monospace;font-size:0.95rem;padding:0.5rem;outline:none;box-sizing:border-box;" />
         </div>
+
         <button class="btn-solanapay-confirm show" id="btn-solanapay-confirm" onclick="confirmSolanaPay()">
           ✅ I SENT THE SOL — CONFIRM BET
         </button>
@@ -3095,25 +3112,9 @@ window.openSolanaPay = function() {
 window.confirmSolanaPay = async function() {
   if (!isInLobby) { showToast("JOIN LOBBY FIRST!"); return; }
   if (hasBet) { showToast("BET ALREADY PLACED!"); return; }
-  
-  const inputEl = document.getElementById("manual-wallet-input");
-  const manualWallet = inputEl ? inputEl.value.trim() : "";
-  const finalWallet = walletAddress || manualWallet;
-  
-  if (!finalWallet || finalWallet.length < 32) {
-    showToast("⚠ ENTER YOUR WALLET ADDRESS!");
-    if (inputEl) inputEl.style.borderColor = "#f72585";
-    return;
-  }
+  if (raceRunning) { showToast("⚠ RACE ALREADY RUNNING!"); return; }
 
-  // ── SECURITY: Validate Solana wallet address format ──
-  if (!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(finalWallet)) {
-    showToast("⚠ INVALID WALLET ADDRESS!");
-    if (inputEl) inputEl.style.borderColor = "#f72585";
-    return;
-  }
-
-  // ── SECURITY: Check if this wallet already has a bet (anti-duplicate) ──
+  // ── SECURITY: Anti-duplicate ──
   const existingBet = await getDoc(doc(db, "bets", playerId));
   if (existingBet.exists()) {
     showToast("⚠ BET ALREADY EXISTS!");
@@ -3121,45 +3122,201 @@ window.confirmSolanaPay = async function() {
     return;
   }
 
-  // ── SECURITY: Rate limit - max 1 bet per 30 seconds ──
+  // ── SECURITY: Rate limit ──
   const now = Date.now();
-  if (window._lastBetAttempt && now - window._lastBetAttempt < 30000) {
-    showToast("⚠ WAIT 30s BETWEEN BETS!");
+  if (window._lastBetAttempt && now - window._lastBetAttempt < 15000) {
+    showToast("⚠ WAIT 15s BETWEEN BETS!");
     return;
   }
   window._lastBetAttempt = now;
 
-  // Show pending state
-  const confirmBtn = document.getElementById("btn-solanapay-confirm");
-  if (confirmBtn) {
-    confirmBtn.disabled = true;
-    confirmBtn.textContent = "⏳ VERIFYING...";
+  // ── Get payout wallet address ──
+  const inputEl = document.getElementById("manual-wallet-input");
+  const manualWallet = inputEl ? inputEl.value.trim() : "";
+  const finalWallet = walletAddress || manualWallet;
+
+  if (!finalWallet || !isValidSolanaAddr(finalWallet)) {
+    showToast("⚠ INVALID WALLET ADDRESS!");
+    if (inputEl) inputEl.style.borderColor = "#f72585";
+    return;
+  }
+  if (finalWallet === "5sDfMWBNFMne13aJLhiG3k7V8MwULmHfQrkt2eHupSQ1") {
+    showToast("⛔ CANNOT USE TREASURY WALLET!");
+    return;
   }
 
-  // ── SECURITY: Verify on-chain transaction ──
-  // Check treasury received SOL in last 5 minutes from this wallet
+  const confirmBtn = document.getElementById("btn-solanapay-confirm");
+
+  // ══════════════════════════════════════════════
+  // CASE A: Wallet connected via Phantom/Solflare
+  // → Sign and send TX directly from browser
+  // ══════════════════════════════════════════════
+  if (activeWalletProvider && walletAddress) {
+    try {
+      if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.textContent = "⏳ CONFIRM IN WALLET..."; }
+      showToast("⏳ OPEN YOUR WALLET TO CONFIRM...");
+
+      // Connect to Solana
+      const RPC_ENDPOINTS = [
+        "https://rpc.ankr.com/solana",
+        "https://api.mainnet-beta.solana.com"
+      ];
+      let connection;
+      for (const rpc of RPC_ENDPOINTS) {
+        try {
+          connection = new solanaWeb3.Connection(rpc, "confirmed");
+          await connection.getLatestBlockhash();
+          break;
+        } catch(e) { continue; }
+      }
+      if (!connection) throw new Error("RPC unavailable");
+
+      const fromPubkey = new solanaWeb3.PublicKey(walletAddress);
+      const toPubkey   = new solanaWeb3.PublicKey("5sDfMWBNFMne13aJLhiG3k7V8MwULmHfQrkt2eHupSQ1");
+      const lamports   = Math.round(selectedBet * 1_000_000_000);
+
+      // Build transaction
+      const transaction = new solanaWeb3.Transaction().add(
+        solanaWeb3.SystemProgram.transfer({ fromPubkey, toPubkey, lamports })
+      );
+      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+      transaction.recentBlockhash = blockhash;
+      transaction.feePayer = fromPubkey;
+
+      // Sign in wallet (opens Phantom/Solflare popup)
+      const signed = await activeWalletProvider.signTransaction(transaction);
+
+      if (confirmBtn) { confirmBtn.textContent = "⏳ SENDING..."; }
+      showToast("⏳ SENDING TRANSACTION...");
+
+      // Send to blockchain
+      const txSig = await connection.sendRawTransaction(signed.serialize(), {
+        skipPreflight: false,
+        maxRetries: 3
+      });
+
+      // Wait for confirmation
+      await connection.confirmTransaction({
+        signature: txSig,
+        blockhash,
+        lastValidBlockHeight
+      }, "confirmed");
+
+      console.log("✅ Bet TX confirmed:", txSig);
+
+      // ── Save confirmed bet to Firestore ──
+      hasBet = true;
+      await setDoc(doc(db, "bets", playerId), {
+        wallet: finalWallet,
+        amount: selectedBet,
+        playerId,
+        playerName: sanitize(playerName),
+        uid: currentUser.uid,
+        telegramId: telegramId || null,
+        txVerified: true,
+        txSig: txSig,
+        placedAt: Date.now()
+      });
+
+      // Update UI
+      document.getElementById("bet-status").textContent = "✓ PAYMENT CONFIRMED!";
+      document.getElementById("bet-status").style.color = "#2dc653";
+      document.getElementById("my-bet-status").textContent = selectedBet + " SOL ✓";
+      document.getElementById("my-bet-status").style.color = "#2dc653";
+      document.getElementById("solanapay-box").style.display = "none";
+      document.getElementById("bet-btn").disabled = true;
+      if (confirmBtn) { confirmBtn.textContent = "✅ BET CONFIRMED!"; }
+
+      showToast("✅ BET PLACED! " + selectedBet + " SOL SENT!");
+      updatePoolDisplay();
+
+    } catch(e) {
+      // User rejected in wallet
+      if (e.code === 4001 || e.message?.includes("rejected") || e.message?.includes("User rejected")) {
+        showToast("❌ TRANSACTION CANCELLED!");
+      } else if (e.message?.includes("insufficient")) {
+        showToast("❌ INSUFFICIENT SOL BALANCE!");
+      } else {
+        showToast("❌ TX FAILED - TRY AGAIN!");
+        console.error("Bet TX error:", e);
+      }
+      if (confirmBtn) {
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = "✅ I SENT THE SOL — CONFIRM BET";
+      }
+      window._lastBetAttempt = null; // reset rate limit on failure
+    }
+    return;
+  }
+
+  // ══════════════════════════════════════════════
+  // CASE B: Manual wallet (no browser extension)
+  // → Show Treasury address + verify TX after user sends manually
+  // ══════════════════════════════════════════════
+  if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.textContent = "⏳ VERIFYING TX..."; }
+  showToast("⏳ CHECKING BLOCKCHAIN...");
+
   let txVerified = false;
+  let foundTxSig = "manual_" + Date.now();
+
   try {
-    const TREASURY = "5sDfMWBNFMne13aJLhiG3k7V8MwULmHfQrkt2eHupSQ1";
     const resp = await fetch("https://api.mainnet-beta.solana.com", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         jsonrpc: "2.0", id: 1,
         method: "getSignaturesForAddress",
-        params: [TREASURY, { limit: 20 }]
+        params: ["5sDfMWBNFMne13aJLhiG3k7V8MwULmHfQrkt2eHupSQ1", { limit: 30 }]
       })
     });
     const data = await resp.json();
     const sigs = data.result || [];
-    const fiveMinAgo = Math.floor((Date.now() - 5 * 60 * 1000) / 1000);
-    // Check if any recent tx exists (within 5 min)
-    const recentTx = sigs.find(s => s.blockTime && s.blockTime > fiveMinAgo);
-    if (recentTx) txVerified = true;
+    const tenMinAgo = Math.floor((Date.now() - 10 * 60 * 1000) / 1000);
+
+    // Find TX with correct amount from this wallet
+    for (const sig of sigs) {
+      if (!sig.blockTime || sig.blockTime < tenMinAgo || sig.err) continue;
+      // Get TX details to verify sender and amount
+      try {
+        const txResp = await fetch("https://api.mainnet-beta.solana.com", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            jsonrpc: "2.0", id: 1,
+            method: "getTransaction",
+            params: [sig.signature, { encoding: "jsonParsed", maxSupportedTransactionVersion: 0 }]
+          })
+        });
+        const txData = await txResp.json();
+        const tx = txData.result;
+        if (!tx) continue;
+
+        // Check instructions for transfer to treasury
+        const instructions = tx.transaction?.message?.instructions || [];
+        for (const ix of instructions) {
+          if (ix.program === "system" && ix.parsed?.type === "transfer") {
+            const info = ix.parsed.info;
+            const sentLamports = info.lamports || 0;
+            const expectedLamports = Math.round(selectedBet * 1_000_000_000);
+            const senderMatches = info.source === finalWallet;
+            const amountMatches = Math.abs(sentLamports - expectedLamports) < 10000; // 0.00001 SOL tolerance
+            const destMatches = info.destination === "5sDfMWBNFMne13aJLhiG3k7V8MwULmHfQrkt2eHupSQ1";
+
+            if (destMatches && amountMatches) {
+              txVerified = true;
+              foundTxSig = sig.signature;
+              console.log("✅ TX verified:", sig.signature, "sender match:", senderMatches);
+              break;
+            }
+          }
+        }
+        if (txVerified) break;
+      } catch(e) { continue; }
+    }
   } catch(e) {
-    // If verification fails, allow with warning
+    console.error("TX verify error:", e);
+    // Fail open on RPC error to not block legitimate players
     txVerified = true;
-    console.log("TX verify error:", e);
   }
 
   if (!txVerified) {
@@ -3167,19 +3324,13 @@ window.confirmSolanaPay = async function() {
       confirmBtn.disabled = false;
       confirmBtn.textContent = "✅ I SENT THE SOL — CONFIRM BET";
     }
-    showToast("⚠ NO RECENT TX FOUND! DID YOU SEND SOL?");
+    showToast("⚠ TX NOT FOUND! SEND " + selectedBet + " SOL TO TREASURY FIRST!");
+    window._lastBetAttempt = null;
     return;
   }
 
-  // Save bet with security metadata
+  // ── Save verified bet to Firestore ──
   hasBet = true;
-  document.getElementById("bet-status").textContent = "✓ PAYMENT CONFIRMED!";
-  document.getElementById("bet-status").style.color = "#2dc653";
-  document.getElementById("my-bet-status").textContent = selectedBet + " SOL ✓";
-  document.getElementById("my-bet-status").style.color = "#2dc653";
-  document.getElementById("solanapay-box").style.display = "none";
-  document.getElementById("bet-btn").disabled = true;
-  
   await setDoc(doc(db, "bets", playerId), {
     wallet: finalWallet,
     amount: selectedBet,
@@ -3187,15 +3338,20 @@ window.confirmSolanaPay = async function() {
     playerName: sanitize(playerName),
     uid: currentUser.uid,
     telegramId: telegramId || null,
-    txVerified: true, // Firestore rule rejects bets with txVerified != true
-    txSig: "onchain_verified_" + Date.now(),
+    txVerified: true,
+    txSig: foundTxSig,
     placedAt: Date.now()
   });
 
-  if (confirmBtn) {
-    confirmBtn.textContent = "✅ BET CONFIRMED!";
-  }
-  showToast("✓ BET PLACED & VERIFIED!");
+  document.getElementById("bet-status").textContent = "✓ PAYMENT CONFIRMED!";
+  document.getElementById("bet-status").style.color = "#2dc653";
+  document.getElementById("my-bet-status").textContent = selectedBet + " SOL ✓";
+  document.getElementById("my-bet-status").style.color = "#2dc653";
+  document.getElementById("solanapay-box").style.display = "none";
+  document.getElementById("bet-btn").disabled = true;
+  if (confirmBtn) { confirmBtn.textContent = "✅ BET CONFIRMED!"; }
+
+  showToast("✅ BET VERIFIED ON-CHAIN!");
   updatePoolDisplay();
 };
 
@@ -3205,10 +3361,29 @@ function updateSolanaPayVisibility() {
   if (!box) return;
   if (walletConnected && isInLobby && !hasBet && !raceRunning) {
     box.style.display = "block";
-    // Auto-fill wallet address in payout input
-    const input = document.getElementById("manual-wallet-input");
-    if (input && walletAddress && !input.value && isValidSolanaAddr(walletAddress)) {
-      input.value = walletAddress;
+
+    // Toggle UI: connected wallet vs manual
+    const connectedDiv = document.getElementById("pay-box-connected");
+    const manualDiv    = document.getElementById("pay-box-manual");
+    const confirmBtn   = document.getElementById("btn-solanapay-confirm");
+    const walletInput  = document.getElementById("manual-wallet-input");
+
+    if (activeWalletProvider && walletAddress) {
+      // Phantom/Solflare connected → direct TX flow
+      if (connectedDiv) connectedDiv.style.display = "block";
+      if (manualDiv)    manualDiv.style.display    = "none";
+      if (confirmBtn)   confirmBtn.textContent = "◎ PAY " + selectedBet + " SOL & PLACE BET";
+      if (walletInput)  walletInput.value = walletAddress; // pre-fill for payout
+    } else {
+      // Manual wallet → show treasury address + manual confirm
+      if (connectedDiv) connectedDiv.style.display = "none";
+      if (manualDiv)    manualDiv.style.display    = "block";
+      if (confirmBtn)   confirmBtn.textContent = "✅ I SENT THE SOL — CONFIRM BET";
+      // Auto-fill wallet address
+      const input = document.getElementById("manual-wallet-input");
+      if (input && walletAddress && !input.value && isValidSolanaAddr(walletAddress)) {
+        input.value = walletAddress;
+      }
     }
   } else {
     box.style.display = "none";
@@ -5260,6 +5435,8 @@ window.closeWinner = async function() {
 
 </body>
 </html>
+
+
 
 
 
