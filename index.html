@@ -2167,52 +2167,37 @@ body::after {
 <!-- WALLETCONNECT MODAL -->
 <div id="wc-modal-overlay">
   <div class="wc-box">
-    <h3>◎ CONNECT WALLET</h3>
+    <!-- Header + close button -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+      <h3 style="margin:0;">◎ CONNECT WALLET</h3>
+      <button onclick="closeWCModal()" style="background:none;border:2px solid #555;color:#aaa;font-size:1rem;width:28px;height:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">✕</button>
+    </div>
 
-    <!-- Desktop wallet options -->
-    <div id="wc-desktop-section">
-      <div class="wc-wallet-grid">
-        <div class="wc-wallet-item" onclick="connectWalletApp('phantom')">
-          <span style="font-size:2rem;">👻</span>
-          <span>Phantom</span>
-          <span class="wc-tag">DESKTOP</span>
-        </div>
-        <div class="wc-wallet-item" onclick="connectWalletApp('solflare')">
-          <span style="font-size:2rem;">🔥</span>
-          <span>Solflare</span>
-          <span class="wc-tag">DESKTOP</span>
-        </div>
-        <div class="wc-wallet-item" onclick="connectWalletApp('backpack')">
-          <span style="font-size:2rem;">🎒</span>
-          <span>Backpack</span>
-          <span class="wc-tag">DESKTOP</span>
-        </div>
-        <div class="wc-wallet-item" onclick="connectWalletApp('trust')">
-          <span style="font-size:2rem;">🛡️</span>
-          <span>Trust</span>
-          <span class="wc-tag">DESKTOP</span>
-        </div>
+    <!-- Wallet extension buttons (shown if any detected) -->
+    <div id="wc-extension-section">
+      <div class="wc-wallet-grid" id="wc-wallet-grid">
+        <!-- Populated dynamically by buildWalletModal() -->
       </div>
-      <div class="wc-divider">── OR ──</div>
+      <div class="wc-divider" id="wc-divider" style="display:none;">── OR ──</div>
     </div>
 
     <!-- Manual address input -->
-    <p style="font-family:'Press Start 2P',monospace;font-size:0.4rem;color:#f4d35e;margin-bottom:0.6rem;">
-      📋 PASTE YOUR WALLET ADDRESS
+    <p style="font-family:'Press Start 2P',monospace;font-size:0.38rem;color:#f4d35e;margin-bottom:0.5rem;">
+      📋 PASTE WALLET ADDRESS FOR PAYOUT
     </p>
     <div class="wc-input-row">
-      <input 
-        class="wc-address-input" 
+      <input
+        class="wc-address-input"
         id="wc-address-input"
         placeholder="e.g. 7xKXtg2CW..."
         maxlength="44"
       />
     </div>
-    <p style="font-family:'VT323',monospace;font-size:0.95rem;color:#555;margin-bottom:0.8rem;line-height:1.4;">
-      📱 Mobile: Copy address from Phantom/Solflare → paste here
+    <p style="font-family:'VT323',monospace;font-size:0.9rem;color:#555;margin-bottom:0.8rem;line-height:1.4;">
+      📱 Mobile: Open Phantom/Solflare → copy address → paste above
     </p>
 
-    <button class="btn-wc-close" onclick="connectManualWallet()">✅ CONFIRM & ENTER GAME</button>
+    <button class="btn-wc-close" onclick="connectManualWallet()">✅ CONFIRM ADDRESS</button>
   </div>
 </div>
 
@@ -2267,6 +2252,14 @@ body::after {
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
+import {
+  getFirestore, collection, addDoc, onSnapshot,
+  deleteDoc, doc, getDocs, setDoc, getDoc, updateDoc, collectionGroup
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {
+  getAuth, signInAnonymously, onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
 // ── SECURITY: XSS Sanitizer ──
 function sanitize(str) {
   if (!str) return '';
@@ -2277,20 +2270,24 @@ function sanitize(str) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#x27;')
     .replace(/\//g, '&#x2F;')
-    .slice(0, 64); // max length
+    .slice(0, 64);
 }
 
 // ── SECURITY: Validate Solana address ──
 function isValidSolanaAddr(addr) {
   return addr && typeof addr === 'string' && /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(addr);
 }
-import {
-  getFirestore, collection, addDoc, onSnapshot,
-  deleteDoc, doc, getDocs, setDoc, getDoc, updateDoc, collectionGroup
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import {
-  getAuth, signInAnonymously, onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+// ── SECURITY: Sanitize player name ──
+function sanitizePlayerName(name) {
+  if (!name) return "Guest";
+  return String(name)
+    .replace(/[<>&"'\/\\]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 32) || "Guest";
+}
+
 
 const firebaseConfig = {
   apiKey: "AIzaSyDjdM2QAPbNwQXlnFbS9pf9Yi9eH1aK42c",
@@ -4706,59 +4703,118 @@ let activeWalletProvider = null;
 
 // ── OPEN WALLET MODAL ──
 window.connectWallet = function() {
-  const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
-  const isInTelegram = !!window.Telegram?.WebApp?.initData;
-  const desktopSection = document.getElementById("wc-desktop-section");
-  if (desktopSection) {
-    desktopSection.style.display = (isMobile || isInTelegram) ? "none" : "block";
-  }
+  buildWalletModal();
   document.getElementById("wc-modal-overlay").classList.add("show");
 };
 
+// Dynamically detect available wallets and populate modal
+function buildWalletModal() {
+  const grid = document.getElementById("wc-wallet-grid");
+  const divider = document.getElementById("wc-divider");
+  if (!grid) return;
+  grid.innerHTML = "";
+
+  const detected = [];
+
+  // Detect Phantom
+  const phantom = window.phantom?.solana || (window.solana?.isPhantom ? window.solana : null);
+  if (phantom) detected.push({ name: "Phantom", icon: "👻", tag: "DETECTED", provider: phantom, type: "phantom" });
+
+  // Detect Solflare
+  if (window.solflare?.isSolflare) detected.push({ name: "Solflare", icon: "🔥", tag: "DETECTED", provider: window.solflare, type: "solflare" });
+
+  // Detect Backpack
+  if (window.backpack || window.xnft?.solana) detected.push({ name: "Backpack", icon: "🎒", tag: "DETECTED", provider: window.backpack || window.xnft?.solana, type: "backpack" });
+
+  // Detect Coinbase
+  if (window.coinbaseSolana) detected.push({ name: "Coinbase", icon: "🔵", tag: "DETECTED", provider: window.coinbaseSolana, type: "coinbase" });
+
+  // Detect any generic solana wallet not matched above
+  if (!phantom && !window.solflare && window.solana) {
+    detected.push({ name: "Browser Wallet", icon: "🌐", tag: "DETECTED", provider: window.solana, type: "generic" });
+  }
+
+  if (detected.length > 0) {
+    detected.forEach(w => {
+      const el = document.createElement("div");
+      el.className = "wc-wallet-item";
+      el.innerHTML = \`<span style="font-size:2rem;">\${w.icon}</span><span>\${sanitize(w.name)}</span><span class="wc-tag">\${w.tag}</span>\`;
+      el.onclick = () => connectWalletDirect(w.provider, w.name);
+      grid.appendChild(el);
+    });
+    if (divider) divider.style.display = "block";
+  } else {
+    // No extension: offer mobile deeplinks
+    const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
+    if (isMobile) {
+      const APP_URL = "https://duck-race-society.vercel.app";
+      [
+        { name: "Phantom", icon: "👻", url: \`https://phantom.app/ul/v1/connect?app_url=\${encodeURIComponent(APP_URL)}&redirect_link=\${encodeURIComponent(APP_URL)}\` },
+        { name: "Solflare", icon: "🔥", url: \`https://solflare.com/ul/v1/browse/\${encodeURIComponent(APP_URL)}\` },
+      ].forEach(w => {
+        const el = document.createElement("div");
+        el.className = "wc-wallet-item";
+        el.innerHTML = \`<span style="font-size:2rem;">\${w.icon}</span><span>\${sanitize(w.name)}</span><span class="wc-tag">OPEN APP</span>\`;
+        el.onclick = () => { closeWCModal(); window.open(w.url, "_blank"); showToast("OPENING " + w.name.toUpperCase() + "..."); };
+        grid.appendChild(el);
+      });
+      if (divider) divider.style.display = "block";
+    }
+    // No extensions found on desktop → no buttons, just manual input
+  }
+}
+
+// Direct wallet connect (extension detected)
+async function connectWalletDirect(provider, name) {
+  try {
+    closeWCModal();
+    showToast("⏳ CONNECTING " + name.toUpperCase() + "...");
+    let pubkey;
+    // Solflare returns publicKey directly after connect
+    if (provider.isSolflare) {
+      await provider.connect();
+      pubkey = provider.publicKey.toString();
+    } else {
+      const resp = await provider.connect();
+      pubkey = resp.publicKey.toString();
+    }
+    walletAddress = pubkey;
+    walletConnected = true;
+    activeWalletProvider = provider;
+    onWalletConnected(name);
+  } catch(e) {
+    if (e.code === 4001 || e.message?.includes("rejected")) {
+      showToast("❌ CONNECTION CANCELLED!");
+    } else {
+      showToast("❌ " + name.toUpperCase() + " CONNECTION FAILED!");
+      console.error("Wallet connect error:", e);
+    }
+  }
+}
+
 window.closeWCModal = function() {
-  document.getElementById("wc-modal-overlay").classList.remove("show");
-  document.getElementById("wc-address-input").value = "";
+  const overlay = document.getElementById("wc-modal-overlay");
+  if (overlay) overlay.classList.remove("show");
+  const addrInput = document.getElementById("wc-address-input");
+  if (addrInput) addrInput.value = "";
 };
 
 // Connect wallet app (extension or deep link)
 window.connectWalletApp = async function(type) {
+  // Legacy handler - now delegates to connectWalletDirect
   const providers = {
-    phantom: window.phantom?.solana || window.solana,
-    solflare: window.solflare,
-    backpack: window.backpack || window.xnft?.solana,
-    trust: window.trustwallet?.solana
+    phantom: window.phantom?.solana || (window.solana?.isPhantom ? window.solana : null),
+    solflare: window.solflare?.isSolflare ? window.solflare : null,
+    backpack: window.backpack || window.xnft?.solana || null,
+    trust: window.trustwallet?.solana || null,
+    coinbase: window.coinbaseSolana || null
   };
-
-  const deeplinks = {
-    phantom: `https://phantom.app/ul/v1/connect?app_url=${encodeURIComponent("https://duck-race-society.vercel.app")}&redirect_link=${encodeURIComponent("https://duck-race-society.vercel.app")}`,
-    solflare: `https://solflare.com/ul/v1/browse/${encodeURIComponent("https://duck-race-society.vercel.app")}`,
-    trust: `https://link.trustwallet.com/open_url?coin_id=501&url=${encodeURIComponent("https://duck-race-society.vercel.app")}`,
-    backpack: null
-  };
-
-  const names = { phantom: "Phantom", solflare: "Solflare", backpack: "Backpack", trust: "Trust Wallet" };
+  const names = { phantom: "Phantom", solflare: "Solflare", backpack: "Backpack", trust: "Trust Wallet", coinbase: "Coinbase" };
   const provider = providers[type];
-
   if (provider) {
-    try {
-      closeWCModal();
-      const resp = await provider.connect();
-      walletAddress = resp.publicKey.toString();
-      walletConnected = true;
-      activeWalletProvider = provider;
-      onWalletConnected(names[type]);
-    } catch(e) {
-      if (e.code !== 4001) showToast("CONNECTION FAILED!");
-    }
+    await connectWalletDirect(provider, names[type] || type);
   } else {
-    const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
-    if (isMobile && deeplinks[type]) {
-      closeWCModal();
-      window.open(deeplinks[type], "_blank");
-      showToast("OPENING " + names[type].toUpperCase() + "...");
-    } else {
-      showToast(names[type].toUpperCase() + " NOT DETECTED!");
-    }
+    showToast((names[type] || type).toUpperCase() + " NOT DETECTED!");
   }
 };
 
@@ -4808,7 +4864,11 @@ window.copyGameUrl = function() {
 };
 
 window.closeWalletModal = function() {
-  document.getElementById("wa-modal").classList.remove("show");
+  // Unified close - handles both modal variants
+  const wc = document.getElementById("wc-modal-overlay");
+  const wa = document.getElementById("wa-modal");
+  if (wc) wc.classList.remove("show");
+  if (wa) wa.classList.remove("show");
 };
 
 function buildMobileWalletModal() {
@@ -4908,86 +4968,6 @@ function buildMobileWalletModal() {
     list.appendChild(btn);
   });
 }
-
-function buildWalletModal() {
-  const list = document.getElementById("wa-wallet-list");
-  list.innerHTML = "";
-  const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
-  // Re-detect all wallets fresh each time modal opens
-  
-
-  SUPPORTED_WALLETS.forEach(wallet => {
-    const provider = wallet.detect();
-    const isDetected = !!provider;
-
-    // On mobile show all, on desktop only detected + install links
-    const btn = document.createElement("button");
-    btn.className = "wa-wallet-btn";
-    btn.innerHTML = `
-      <img src="${wallet.icon && wallet.icon.startsWith("https://") ? wallet.icon : ""}" alt="${sanitize(wallet.name)}" onerror="this.src=''">
-      <span class="wa-wallet-name">${sanitize(wallet.name)}</span>
-      ${wallet.tag ? `<span class="wa-wallet-tag">${sanitize(wallet.tag)}</span>` : ""}
-      ${isDetected ? '<span style="color:#2dc653;font-size:0.8rem;">●</span>' : '<span style="color:#555;font-size:0.8rem;">○</span>'}
-    `;
-
-    btn.onclick = () => connectWithWallet(wallet, provider, isMobile);
-    list.appendChild(btn);
-  });
-
-  // WalletConnect option
-  const wcBtn = document.createElement("button");
-  wcBtn.className = "wa-wallet-btn";
-  wcBtn.innerHTML = `
-    <span style="font-size:1.4rem;">🔗</span>
-    <span class="wa-wallet-name">Other Wallets</span>
-    <span class="wa-wallet-tag">300+</span>
-  `;
-  wcBtn.onclick = () => showToast("WALLETCONNECT COMING SOON!");
-  list.appendChild(wcBtn);
-}
-
-async function connectWithWallet(wallet, provider, isMobile) {
-  try {
-    // Re-detect provider at click time
-    if (!provider) provider = wallet.detect();
-
-    const isInTelegram = !!window.Telegram?.WebApp?.initData;
-    const isMobileDevice = /Android|iPhone|iPad/i.test(navigator.userAgent);
-
-    // On mobile/Telegram: always use deep link for Phantom
-    if ((isInTelegram || isMobileDevice) && wallet.name === "Phantom") {
-      closeWalletModal();
-      usePhanomDeepLink();
-      return;
-    }
-
-    if (!provider) {
-      // Desktop - not installed
-      showToast("⚠ INSTALL " + wallet.name.toUpperCase() + " FIRST!");
-      window.open("https://phantom.app", "_blank");
-      closeWalletModal();
-      return;
-    }
-
-    closeWalletModal();
-    showToast("⏳ CONNECTING...");
-
-    const resp = await provider.connect();
-    walletAddress = resp.publicKey.toString();
-    walletConnected = true;
-    activeWalletProvider = provider;
-    onWalletConnected(wallet.name);
-
-  } catch(e) {
-    console.error("Wallet connect error:", e);
-    if (e.code === 4001) {
-      showToast("CONNECTION REJECTED!");
-    } else {
-      showToast("ERROR: " + (e.message?.slice(0,20) || "Unknown"));
-    }
-  }
-}
-
 function onWalletConnected(walletName) {
   document.getElementById("wallet-btn").textContent = "✓ " + walletName.toUpperCase();
   document.getElementById("wallet-btn").classList.add("connected");
@@ -5012,6 +4992,35 @@ function usePhanomDeepLink() {
   showToast("OPENING PHANTOM APP...");
   window.open(deepLink, "_blank");
 }
+
+// ── AUTO-RECONNECT: Try to reconnect previously trusted wallets ──
+(function tryAutoReconnect() {
+  setTimeout(async () => {
+    if (walletConnected) return; // already connected
+    // Try Phantom auto-connect (only if trusted/already approved)
+    const phantom = window.phantom?.solana || (window.solana?.isPhantom ? window.solana : null);
+    if (phantom?.isPhantom) {
+      try {
+        const resp = await phantom.connect({ onlyIfTrusted: true });
+        walletAddress = resp.publicKey.toString();
+        walletConnected = true;
+        activeWalletProvider = phantom;
+        onWalletConnected("Phantom");
+        return;
+      } catch(e) { /* not trusted yet - user must click connect */ }
+    }
+    // Try Solflare auto-connect
+    if (window.solflare?.isSolflare && window.solflare.publicKey) {
+      try {
+        walletAddress = window.solflare.publicKey.toString();
+        walletConnected = true;
+        activeWalletProvider = window.solflare;
+        onWalletConnected("Solflare");
+        return;
+      } catch(e) {}
+    }
+  }, 500);
+})();
 
 // ── CHECK FOR PHANTOM REDIRECT RETURN ──
 (function checkPhantomReturn() {
@@ -5435,6 +5444,8 @@ window.closeWinner = async function() {
 
 </body>
 </html>
+
+
 
 
 
