@@ -16,6 +16,22 @@ const MAX_POOL_SOL     = 10;
 const claimLog = {};
 const CLAIM_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour per wallet
 
+// Check Firestore if this winnerId was already paid (survives cold starts)
+async function wasRecentlyPaid(winnerId, apiKey) {
+  try {
+    const url = `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents/payouts?key=${apiKey}`;
+    const resp = await fetch(url);
+    const data = await resp.json();
+    if (!data.documents) return false;
+    const oneHourAgo = Date.now() - CLAIM_COOLDOWN_MS;
+    return data.documents.some(doc => {
+      const claimedAt = parseInt(doc.fields?.claimedAt?.integerValue || 0);
+      const docId = doc.name?.split('/').pop() || '';
+      return docId.startsWith(winnerId) && claimedAt > oneHourAgo;
+    });
+  } catch(e) { return false; }
+}
+
 // ── Verify Firebase ID Token via Google's public endpoint ──
 async function verifyFirebaseToken(idToken) {
   try {
@@ -58,6 +74,17 @@ async function verifyTreasuryReceived(connection) {
 }
 
 module.exports = async function handler(req, res) {
+  // ── CORS: Only allow from our own domain ──
+  const origin = req.headers.origin || "";
+  const allowed = ["https://duck-race-society.vercel.app", "https://web.telegram.org"];
+  if (origin && !allowed.some(a => origin.startsWith(a))) {
+    return res.status(403).json({ success: false, error: "Forbidden origin" });
+  }
+  res.setHeader("Access-Control-Allow-Origin", origin || allowed[0]);
+  res.setHeader("Access-Control-Allow-Methods", "POST");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-Firebase-Token");
+
+  if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "POST") {
     return res.status(405).json({ success: false, error: "Method not allowed" });
   }
@@ -80,16 +107,62 @@ module.exports = async function handler(req, res) {
   // ══════════════════════════════════════════════
   // SECURITY LAYER 2: Input validation
   // ══════════════════════════════════════════════
-  const { winnerWallet, totalPoolSOL, raceId, winnerId } = req.body;
+  const { winnerWallet, raceId, winnerId } = req.body;
+  // NOTE: totalPoolSOL is NOT trusted from client - server calculates from Firestore
 
   if (!winnerWallet || !isValidSolanaAddress(winnerWallet)) {
     return res.status(400).json({ success: false, error: "Invalid winner wallet" });
   }
-  if (!totalPoolSOL || isNaN(totalPoolSOL) || totalPoolSOL <= 0 || totalPoolSOL > MAX_POOL_SOL) {
-    return res.status(400).json({ success: false, error: "Invalid pool amount" });
-  }
   if (winnerWallet === TREASURY_ADDRESS) {
     return res.status(400).json({ success: false, error: "Cannot pay treasury" });
+  }
+
+  // ── SECURITY: Calculate pool SOL from Firestore bets (NOT client-provided) ──
+  let totalPoolSOL = 0;
+  try {
+    const FIREBASE_API_KEY = process.env.FIREBASE_API_KEY;
+    const betsUrl = `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents/bets?key=${FIREBASE_API_KEY}`;
+    const betsResp = await fetch(betsUrl);
+    const betsData = await betsResp.json();
+    if (betsData.documents) {
+      for (const doc of betsData.documents) {
+        const amount = doc.fields?.amount?.doubleValue || doc.fields?.amount?.integerValue || 0;
+        const verified = doc.fields?.txVerified?.booleanValue;
+        if (verified === true && amount > 0) {
+          totalPoolSOL += parseFloat(amount);
+        }
+      }
+    }
+    if (totalPoolSOL <= 0) {
+      return res.status(400).json({ success: false, error: "No verified bets found" });
+    }
+    if (totalPoolSOL > MAX_POOL_SOL) {
+      totalPoolSOL = MAX_POOL_SOL; // Safety cap
+    }
+    console.log(`Pool from Firestore: ${totalPoolSOL} SOL`);
+  } catch(e) {
+    console.error("Bets fetch error:", e);
+    return res.status(500).json({ success: false, error: "Could not verify pool amount" });
+  }
+
+  // ── SECURITY: Also verify winner wallet matches stored bet wallet ──
+  let storedWinnerWallet = null;
+  try {
+    const FIREBASE_API_KEY = process.env.FIREBASE_API_KEY;
+    const betUrl = `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents/bets/${winnerId}?key=${FIREBASE_API_KEY}`;
+    const betResp = await fetch(betUrl);
+    const betDoc = await betResp.json();
+    storedWinnerWallet = betDoc.fields?.wallet?.stringValue;
+    if (storedWinnerWallet && storedWinnerWallet !== winnerWallet) {
+      console.error(`SECURITY: Wallet mismatch! Stored: ${storedWinnerWallet}, Claimed: ${winnerWallet}`);
+      return res.status(403).json({ success: false, error: "Wallet does not match stored bet" });
+    }
+  } catch(e) {
+    console.error("Wallet check error:", e);
+    // If we can't verify, use stored wallet if available
+    if (storedWinnerWallet) {
+      return res.status(500).json({ success: false, error: "Wallet verification failed" });
+    }
   }
 
   // ══════════════════════════════════════════════
@@ -124,12 +197,17 @@ module.exports = async function handler(req, res) {
   }
 
   // ══════════════════════════════════════════════
-  // SECURITY LAYER 4: Rate limiting per wallet
+  // SECURITY LAYER 4: Rate limiting - checks both memory AND Firestore
   // ══════════════════════════════════════════════
   const now = Date.now();
   if (claimLog[winnerWallet] && now - claimLog[winnerWallet] < CLAIM_COOLDOWN_MS) {
     const waitMin = Math.ceil((CLAIM_COOLDOWN_MS - (now - claimLog[winnerWallet])) / 60000);
     return res.status(429).json({ success: false, error: `Already claimed. Wait ${waitMin}min.` });
+  }
+  // Also check Firestore (survives cold starts)
+  const FIREBASE_API_KEY_CHECK = process.env.FIREBASE_API_KEY;
+  if (winnerId && await wasRecentlyPaid(winnerId, FIREBASE_API_KEY_CHECK)) {
+    return res.status(429).json({ success: false, error: "Prize already claimed (Firestore)" });
   }
 
   // ══════════════════════════════════════════════
@@ -231,8 +309,27 @@ module.exports = async function handler(req, res) {
     );
   } catch(e) { console.error("Firestore mark error:", e); }
 
-  // Record claim
-  claimLog[winnerWallet] = now;
+  // Record claim in Firestore for persistence across Vercel cold starts
+  claimLog[winnerWallet] = now; // in-memory backup
+  try {
+    const FIREBASE_API_KEY = process.env.FIREBASE_API_KEY;
+    await fetch(
+      `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents/payouts/${winnerId}_${raceId || Date.now()}?key=${FIREBASE_API_KEY}`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fields: {
+            winnerWallet: { stringValue: winnerWallet },
+            claimedAt: { integerValue: String(now) },
+            solPayout: { doubleValue: solPayout },
+            solSignature: { stringValue: solSignature || "" },
+            trcSignature: { stringValue: trcSignature || "" }
+          }
+        })
+      }
+    );
+  } catch(e) { console.error("Payout record error:", e); }
 
   return res.status(200).json({
     success: true,
