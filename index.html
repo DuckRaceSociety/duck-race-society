@@ -2314,8 +2314,6 @@ function parseTelegramData() {
     if (user?.first_name) {
       playerName = sanitizePlayerName(user.first_name + (user.last_name ? " " + user.last_name : ""));
       telegramId = String(user.id).replace(/[^0-9]/g, ''); // Only digits
-      // NOTE: initData is used for display only - not trusted for security decisions
-      // Server-side HMAC validation of initData would be required for production
       return;
     }
     // Method 2: parse initData string
@@ -2450,7 +2448,7 @@ window.joinRace = async function() {
     joinedAt: Date.now(), 
     isHost: snap.empty,
     telegramId: telegramId || null,
-    walletAddress: isValidSolanaAddr(walletAddress) ? walletAddress : null,
+    walletAddress: walletAddress || null,
     userAgent: navigator.userAgent.slice(0, 100) // For bot detection
   });
   isInLobby = true;
@@ -3184,7 +3182,7 @@ window.confirmSolanaPay = async function() {
     wallet: finalWallet,
     amount: selectedBet,
     playerId,
-    playerName: sanitize(playerName),
+    playerName,
     uid: currentUser.uid,
     telegramId: telegramId || null,
     txVerified: true, // Firestore rule rejects bets with txVerified != true
@@ -3207,7 +3205,7 @@ function updateSolanaPayVisibility() {
     box.style.display = "block";
     // Auto-fill wallet address in payout input
     const input = document.getElementById("manual-wallet-input");
-    if (input && walletAddress && !input.value && isValidSolanaAddr(walletAddress)) {
+    if (input && walletAddress && !input.value) {
       input.value = walletAddress;
     }
   } else {
@@ -4214,7 +4212,7 @@ window.buyPowerUp = async function() {
     await setDoc(doc(db, "powerups", playerId), {
       type: selectedPowerUp,
       playerId,
-      playerName: sanitize(playerName),
+      playerName,
       used: false,
       txSig: sig,
       boughtAt: Date.now()
@@ -4256,7 +4254,7 @@ window.activatePowerUp = async function() {
   await setDoc(doc(db, "powerups", playerId), {
     type: purchasedPowerUp,
     playerId,
-    playerName: sanitize(playerName),
+    playerName,
     used: true,
     activatedAt: Date.now()
   }, { merge: true });
@@ -4946,13 +4944,8 @@ window.placeBet = async function() {
     await connection.confirmTransaction(sig, "confirmed");
 
     await setDoc(doc(db, "bets", playerId), {
-      wallet: isValidSolanaAddr(walletAddress) ? walletAddress : null,
-      amount: selectedBet,
-      playerId,
-      playerName: sanitize(playerName),
-      txSig: sig,
-      placedAt: Date.now(),
-      uid: currentUser?.uid || null
+      wallet: walletAddress, amount: selectedBet,
+      playerId, playerName, txSig: sig, placedAt: Date.now()
     });
 
     hasBet = true;
@@ -4999,10 +4992,10 @@ async function updatePoolDisplay() {
       listBar.style.display = "block";
       listEl.innerHTML = wallets.map(w => {
         const isYou = w.id === playerId || w.wallet === walletAddress;
-        const safeWallet = w.wallet ? sanitize(w.wallet.slice(0,4)) + "..." + sanitize(w.wallet.slice(-4)) : "?";
+        const short = w.wallet.slice(0,4) + "..." + w.wallet.slice(-4);
         return `<div class="wallet-tag ${isYou ? 'is-you' : ''}">
           <span class="wallet-dot"></span>
-          ${sanitize(w.name)}: <b>${safeWallet}</b>${isYou ? ' 👈 YOU' : ''}
+          ${w.name}: <b>${short}</b>${isYou ? ' 👈 YOU' : ''}
         </div>`;
       }).join('');
     } else {
@@ -5181,7 +5174,7 @@ window.claimPrize = async function() {
         "X-Firebase-Token": idToken  // Server verifies this with Google
       },
       body: JSON.stringify({
-        winnerWallet: isValidSolanaAddr(data.winnerWallet) ? data.winnerWallet : null,
+        winnerWallet: data.winnerWallet,
         raceId: Date.now().toString(),
         totalPoolSOL: data.totalPoolSOL,
         winnerId: data.winner?.id || playerId
@@ -5201,8 +5194,8 @@ window.claimPrize = async function() {
       
       // Save payout record
       await setDoc(doc(db, "payouts", data.winner.id + "_" + Date.now()), {
-        winner: sanitize(String(data.winner?.name || window._localWinner?.name || '').slice(0,64)),
-        wallet: isValidSolanaAddr(data.winnerWallet) ? data.winnerWallet : null,
+        winner: sanitize(data.winner.name),
+        wallet: data.winnerWallet,
         solPayout: result.solPayout,
         tokenBonus: 500,
         solTx: result.solSignature,
@@ -5260,6 +5253,184 @@ window.closeWinner = async function() {
 
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
