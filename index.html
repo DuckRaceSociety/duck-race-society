@@ -1908,7 +1908,7 @@ body::after {
     </p>
     <div class="host-info" id="host-info">YOU HAVE NOT JOINED YET.</div>
     <div style="font-size:0.8rem;color:var(--text-dim);margin-top:0.4rem;font-family:VT323,monospace;" id="bot-info"></div>
-    <button class="btn btn-start" id="start-btn" onclick="startRace()" disabled>▶▶ START RACE</button>
+    <button class="btn btn-start" id="start-btn" onclick="startRace()" disabled>▶▶ JOIN LOBBY FIRST</button>
     <div id="race-status"></div>
   </div>
 
@@ -2211,6 +2211,28 @@ body::after {
     </div>
 
     <div id="winner-sol-payout" style="font-family:'VT323',monospace;font-size:1rem;color:#2dc653;margin-bottom:0.5rem;"></div>
+    <div id="share-section" style="display:none;margin-bottom:0.8rem;">
+      <button onclick="shareWin()" 
+        style="width:100%;background:#1DA1F2;color:#fff;border:4px solid #000;box-shadow:4px 4px 0 #000;padding:0.7rem;font-family:'Press Start 2P',monospace;font-size:0.45rem;cursor:pointer;margin-bottom:0.4rem;">
+        🐦 SHARE YOUR WIN ON X
+      </button>
+      <button onclick="shareTelegram()"
+        style="width:100%;background:#0088cc;color:#fff;border:4px solid #000;box-shadow:4px 4px 0 #000;padding:0.7rem;font-family:'Press Start 2P',monospace;font-size:0.45rem;cursor:pointer;">
+        ✈️ SHARE ON TELEGRAM
+      </button>
+    </div>
+    <!-- SHARE WIN BUTTONS -->
+    <div id="share-section" style="display:none;margin-bottom:0.8rem;">
+      <p style="font-family:'VT323',monospace;font-size:1rem;color:#888;margin-bottom:0.4rem;">🎉 Share your win!</p>
+      <div style="display:flex;gap:0.5rem;">
+        <button onclick="shareOnX()" style="flex:1;background:#000;color:#fff;border:3px solid #fff;box-shadow:3px 3px 0 #444;padding:0.6rem;font-family:'Press Start 2P',monospace;font-size:0.35rem;cursor:pointer;">
+          𝕏 POST WIN
+        </button>
+        <button onclick="shareOnTelegram()" style="flex:1;background:#2AABEE;color:#fff;border:3px solid #000;box-shadow:3px 3px 0 #000;padding:0.6rem;font-family:'Press Start 2P',monospace;font-size:0.35rem;cursor:pointer;">
+          ✈ SHARE TG
+        </button>
+      </div>
+    </div>
     <button class="btn-close-winner" onclick="closeWinner()">▶ PLAY AGAIN</button>
   </div>
 </div>
@@ -2327,6 +2349,26 @@ window.joinRace = async function() {
   if (!currentUser) { showToast("⚠ PLEASE WAIT..."); return; }
   if (raceRunning) { showToast("⚠ RACE RUNNING!"); return; }
   if (isInLobby) { showToast("ALREADY IN LOBBY!"); return; }
+
+  // ── ANTI-BOT PROTECTION ──
+  if (!walletConnected) {
+    showToast("⚠ CONNECT WALLET FIRST!");
+    connectWallet();
+    return;
+  }
+  const _now = Date.now();
+  if (window._lastJoinAttempt && _now - window._lastJoinAttempt < 8000) {
+    showToast("⚠ SLOW DOWN! WAIT A MOMENT.");
+    return;
+  }
+  window._lastJoinAttempt = _now;
+  // Add banned Telegram IDs here:
+  const BLOCKED_IDS = [];
+  if (telegramId && BLOCKED_IDS.includes(String(telegramId))) {
+    showToast("⛔ ACCESS DENIED!");
+    return;
+  }
+  // ── END ANTI-BOT ──
   const snap = await getDocs(lobbyRef);
   let exists = false;
   snap.forEach(d => { if (d.data().id === playerId) exists = true; });
@@ -2339,8 +2381,10 @@ window.joinRace = async function() {
   }
   await addDoc(lobbyRef, { name: playerName, id: playerId, uid: currentUser.uid, joinedAt: Date.now(), isHost: snap.empty });
   isInLobby = true;
-  showToast("🦆 JOINED!");
-  setTimeout(() => { switchTab('bet'); updateSolanaPayVisibility(); }, 800);
+  updateStartButton();
+  updateBetUI();
+  showToast("🦆 JOINED! → PLACE YOUR BET!");
+  setTimeout(() => { switchTab('bet'); updateSolanaPayVisibility(); }, 600);
   const botInfoEl = document.getElementById("bot-info");
   if (botInfoEl) botInfoEl.textContent = "⏳ WAITING 15s FOR OTHER PLAYERS...";
 
@@ -2470,8 +2514,8 @@ async function cleanupBeforeRace() {
 
 window.startRace = async function() {
   if (!isInLobby) { showToast("⛔ JOIN LOBBY FIRST!"); return; }
-  if (players.length < 2) { showToast("⚠ BOTS JOINING IN 15s..."); return; }
-  if (raceRunning) return;
+  if (players.length < 2) { showToast("⚠ NEED 2+ PLAYERS! WAIT 15s FOR BOTS..."); return; }
+  if (raceRunning) { showToast("⚠ RACE ALREADY RUNNING!"); return; }
 
   // Clean stale data before starting
   await cleanupBeforeRace();
@@ -2890,13 +2934,25 @@ function updateStartButton() {
   btn.disabled = !canStart;
   if (canStart) {
     btn.textContent = "▶▶ START RACE (" + players.length + " PLAYERS)";
-    btn.style.background = "#2dc653";
-  } else if (isInLobby) {
-    btn.textContent = "⏳ WAITING FOR PLAYERS...";
+    btn.style.background = "#f72585";
+    btn.style.color = "#fff";
+    btn.style.boxShadow = "4px 4px 0 #000, 0 0 20px rgba(247,37,133,0.5)";
+    btn.style.animation = "pulse-pink 1.5s ease-in-out infinite";
+  } else if (isInLobby && players.length < 2) {
+    btn.textContent = "⏳ WAITING FOR PLAYERS (" + players.length + "/2)...";
+    btn.style.background = "#555";
+    btn.style.boxShadow = "";
+    btn.style.animation = "";
+  } else if (!isInLobby) {
+    btn.textContent = "▶▶ JOIN LOBBY FIRST";
     btn.style.background = "";
+    btn.style.boxShadow = "";
+    btn.style.animation = "";
   } else {
     btn.textContent = "▶▶ START RACE";
     btn.style.background = "";
+    btn.style.boxShadow = "";
+    btn.style.animation = "";
   }
 }
 
@@ -2987,8 +3043,13 @@ window.confirmSolanaPay = async function() {
 function updateSolanaPayVisibility() {
   const box = document.getElementById("solanapay-box");
   if (!box) return;
-  if (walletConnected && isInLobby && !hasBet) {
+  if (walletConnected && isInLobby && !hasBet && !raceRunning) {
     box.style.display = "block";
+    // Auto-fill wallet address in payout input
+    const input = document.getElementById("manual-wallet-input");
+    if (input && walletAddress && !input.value) {
+      input.value = walletAddress;
+    }
   } else {
     box.style.display = "none";
   }
@@ -4842,14 +4903,58 @@ async function triggerPayout(winner) {
   document.getElementById("winner-prize-display").textContent = "◎ " + solPayout.toFixed(3) + " SOL + 500 $TRC";
   document.getElementById("winner-token-payout").textContent = "Press CLAIM to receive your prize!";
 
+  // Show share button to everyone
+  document.getElementById("share-section").style.display = "block";
+  
   // Only show claim button to the actual winner
   const isWinner = winner.id === playerId || winner.uid === currentUid;
   if (isWinner && winnerWallet && !winner.isBot) {
     document.getElementById("claim-section").style.display = "block";
+    document.getElementById("share-section").style.display = "none"; // show after claim
     // Store data for claim
     window._claimData = { winnerWallet, totalPoolSOL, winner };
   }
 }
+
+window.shareWin = function() {
+  const prize = document.getElementById("winner-prize-display")?.textContent || "";
+  const solMatch = prize.match(/[\d.]+(?= SOL)/);
+  const sol = solMatch ? solMatch[0] : "SOL";
+  const text = encodeURIComponent(
+    `🦆 Just won ${sol} SOL on Duck Race Society!\n\n` +
+    `Race ducks, win SOL & $TRC on Solana!\n` +
+    `👉 t.me/duck_race_society_bot\n\n` +
+    `#DuckRace #Solana #Web3Gaming $TRC`
+  );
+  window.open(`https://twitter.com/intent/tweet?text=${text}`, "_blank");
+};
+
+window.shareTelegram = function() {
+  const prize = document.getElementById("winner-prize-display")?.textContent || "";
+  const solMatch = prize.match(/[\d.]+(?= SOL)/);
+  const sol = solMatch ? solMatch[0] : "SOL";
+  const text = encodeURIComponent(
+    `🦆 Just won ${sol} SOL on Duck Race Society!\n\n` +
+    `Race ducks, win SOL & $TRC on Solana!\n` +
+    `👉 t.me/duck_race_society_bot`
+  );
+  window.open(`https://t.me/share/url?url=https://t.me/duck_race_society_bot&text=${text}`, "_blank");
+};
+
+
+// ── SHARE WIN ──
+window.shareOnX = function() {
+  const prize = document.getElementById("winner-prize-display")?.textContent || "";
+  const name = document.getElementById("winner-name")?.textContent || "I";
+  const text = `🦆 ${name} just won a Duck Race on @DuckRaceSociety!\n\n${prize}\n\n🏁 Play now and win SOL!\n👉 t.me/duck_race_society_bot\n\n#Solana #DuckRace #Web3Gaming $TRC`;
+  window.open("https://twitter.com/intent/tweet?text=" + encodeURIComponent(text), "_blank");
+};
+
+window.shareOnTelegram = function() {
+  const prize = document.getElementById("winner-prize-display")?.textContent || "";
+  const text = `🦆 I just won a Duck Race on Duck Race Society!\n\n${prize}\n\n🏁 Play now → t.me/duck_race_society_bot\n#Solana #DuckRace $TRC`;
+  window.open("https://t.me/share/url?url=https://t.me/duck_race_society_bot&text=" + encodeURIComponent(text), "_blank");
+};
 
 window.claimPrize = async function() {
   const btn = document.getElementById("claim-btn");
@@ -4882,6 +4987,8 @@ window.claimPrize = async function() {
       status.textContent = "◎ " + result.solPayout.toFixed(3) + " SOL + 500 TRC sent!";
       status.style.color = "#2dc653";
       showToast("🏆 " + result.solPayout.toFixed(3) + " SOL SENT TO YOUR WALLET!");
+      document.getElementById("share-section").style.display = "block";
+      document.getElementById("share-section").style.display = "block";
       document.getElementById("winner-sol-payout").textContent = "✅ Prize claimed!";
       
       // Save payout record
@@ -4942,6 +5049,8 @@ window.closeWinner = async function() {
 
 </body>
 </html>
+
+
 
 
 
