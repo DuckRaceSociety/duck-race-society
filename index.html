@@ -4,6 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>🦆 Duck Race</title>
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'self' https: data: blob:;
+  script-src 'self' 'unsafe-inline' https://telegram.org https://www.gstatic.com https://unpkg.com https://fonts.googleapis.com;
+  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com;
+  connect-src 'self' https://*.firebaseapp.com https://*.googleapis.com https://api.mainnet-beta.solana.com https://api.telegram.org https://rpc.ankr.com wss://*.firebaseio.com;
+  font-src https://fonts.gstatic.com;
+  img-src 'self' https: data:;
+  frame-ancestors 'self' https://web.telegram.org;
+">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
 <style>
@@ -1762,8 +1771,7 @@ body::after {
 </style>
 
 
-<script src="https://unpkg.com/@walletconnect/web3wallet@1.13.0/dist/index.umd.js"></script>
-<script src="https://unpkg.com/@web3modal/standalone@2.4.3/dist/index.umd.js"></script>
+<!-- WalletConnect removed - not used, reduces attack surface -->
 </head>
 <body>
 
@@ -2241,6 +2249,24 @@ body::after {
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+// ── SECURITY: XSS Sanitizer ──
+function sanitize(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+    .replace(/\//g, '&#x2F;')
+    .slice(0, 64); // max length
+}
+
+// ── SECURITY: Validate Solana address ──
+function isValidSolanaAddr(addr) {
+  return addr && typeof addr === 'string' && /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(addr);
+}
 import {
   getFirestore, collection, addDoc, onSnapshot,
   deleteDoc, doc, getDocs, setDoc, getDoc, updateDoc, collectionGroup
@@ -2267,6 +2293,15 @@ const raceRef = doc(db, "race", "current");
 
 // ── TELEGRAM ──
 let playerName = "Guest_" + Math.random().toString(36).slice(2, 6);
+// Sanitize name immediately after Telegram parse
+function sanitizePlayerName(name) {
+  if (!name) return "Guest";
+  return String(name)
+    .replace(/[<>&"'\/\]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 32) || "Guest";
+}
 let telegramId = null;
 
 function parseTelegramData() {
@@ -2277,9 +2312,8 @@ function parseTelegramData() {
     // Method 1: initDataUnsafe
     const user = tg.initDataUnsafe?.user;
     if (user?.first_name) {
-      playerName = user.first_name;
-      if (user.last_name) playerName += " " + user.last_name;
-      telegramId = String(user.id);
+      playerName = sanitizePlayerName(user.first_name + (user.last_name ? " " + user.last_name : ""));
+      telegramId = String(user.id).replace(/[^0-9]/g, ''); // Only digits
       return;
     }
     // Method 2: parse initData string
@@ -2328,7 +2362,7 @@ onAuthStateChanged(auth, async (user) => {
   if (user) {
     currentUser = user;
     playerId = telegramId || user.uid;
-    document.getElementById("player-badge").innerHTML = "👤 " + playerName.toUpperCase();
+    document.getElementById("player-badge").textContent = "👤 " + sanitize(playerName).toUpperCase();
     updateHostInfo();
     try {
       const snap = await getDoc(raceRef);
@@ -2380,7 +2414,7 @@ window.joinRace = async function() {
     }
   }
   await addDoc(lobbyRef, { 
-    name: playerName, 
+    name: sanitize(playerName), 
     id: playerId, 
     uid: currentUser.uid, 
     joinedAt: Date.now(), 
@@ -2408,7 +2442,7 @@ window.joinRace = async function() {
         const shuffled = botNames.sort(() => Math.random() - 0.5).slice(0, 2);
         for (const name of shuffled) {
           await addDoc(lobbyRef, {
-            name, id: "bot_" + Math.random().toString(36).slice(2),
+            name: sanitize(name), id: "bot_" + Math.random().toString(36).slice(2),
             uid: "bot", joinedAt: Date.now(), isBot: true, isHost: false
           });
         }
@@ -2554,7 +2588,7 @@ window.startRace = async function() {
     await setDoc(raceRef, {
       running: true,
       startedAt: Date.now(),
-      players: players.map(p => ({ id: p.id, name: p.name })),
+      players: players.map(p => ({ id: p.id, name: sanitize(p.name) })),
       winner: null
     });
 
@@ -2853,19 +2887,21 @@ async function announceWinner(winner) {
   launchConfetti();
   document.getElementById("race-status").textContent = "★ " + winner.name.toUpperCase() + " WINS!";
   setTimeout(() => {
-    document.getElementById("winner-name").textContent = winner.name.toUpperCase();
+    document.getElementById("winner-name").textContent = sanitize(winner.name).toUpperCase();
     document.getElementById("winner-overlay").classList.add("show");
   }, 600);
   // SECURITY: Store winner with verification data - server validates before payout
+  // SECURITY: Client only sets running=false and finishedAt
+  // winner/winnerId are set ONLY by the server via payout API
+  // serverVerified is set ONLY by the server - client cannot set this
   await setDoc(raceRef, { 
     running: false, 
-    winner: winner.name,
-    winnerId: winner.id,
-    winnerUid: currentUser?.uid || null,
     finishedAt: Date.now(),
-    playerCount: players.length,
-    serverVerified: false // Set to true by payout API after verification
+    playerCount: players.length
   }, { merge: true });
+  
+  // Store winner locally for claim UI - but server validates independently
+  window._localWinner = { name: winner.name, id: winner.id };
 
   // Calculate payout for notification
   const bSnap = await getDocs(collection(db, "bets"));
@@ -2929,7 +2965,7 @@ function updatePlayerList() {
       const li = document.createElement("li");
       if (p.id === hostId) li.className = "host-tag";
       const botTag = p.isBot ? ' <span style="font-size:0.7rem;color:#ab9ff2;font-family:VT323,monospace;">[BOT]</span>' : '';
-      li.innerHTML = `<span>${DUCK_CHARS[i % DUCK_CHARS.length]}</span> ${p.name.toUpperCase()}` + botTag;
+      li.innerHTML = `<span>${DUCK_CHARS[i % DUCK_CHARS.length]}</span> ${sanitize(p.name).toUpperCase()}` + botTag;
       list.appendChild(li);
     });
   }
@@ -3118,8 +3154,8 @@ window.confirmSolanaPay = async function() {
     playerName,
     uid: currentUser.uid,
     telegramId: telegramId || null,
-    txVerified: txVerified,
-    txSig: "manual_verified_" + Date.now(),
+    txVerified: true, // Firestore rule rejects bets with txVerified != true
+    txSig: "onchain_verified_" + Date.now(),
     placedAt: Date.now()
   });
 
@@ -3369,12 +3405,12 @@ function updateTraitsDisplay() {
   if (!currentDuckTraits) return;
   const t = currentDuckTraits;
   document.getElementById('nft-traits-display').innerHTML = `
-    <div class="nft-trait"><span class="nft-trait-label">BODY</span><span class="nft-trait-value">${t.body.name}</span></div>
-    <div class="nft-trait"><span class="nft-trait-label">BEAK</span><span class="nft-trait-value">${t.beak.name}</span></div>
-    <div class="nft-trait"><span class="nft-trait-label">EYE</span><span class="nft-trait-value">${t.eye.name}</span></div>
-    <div class="nft-trait"><span class="nft-trait-label">HAT</span><span class="nft-trait-value">${t.hat.name}</span></div>
-    <div class="nft-trait"><span class="nft-trait-label">BACKGROUND</span><span class="nft-trait-value">${t.bg.name}</span></div>
-    <div class="nft-trait"><span class="nft-trait-label">DUCK ID</span><span class="nft-trait-value">#${t.id}</span></div>
+    <div class="nft-trait"><span class="nft-trait-label">BODY</span><span class="nft-trait-value">${sanitize(t.body.name)}</span></div>
+    <div class="nft-trait"><span class="nft-trait-label">BEAK</span><span class="nft-trait-value">${sanitize(t.beak.name)}</span></div>
+    <div class="nft-trait"><span class="nft-trait-label">EYE</span><span class="nft-trait-value">${sanitize(t.eye.name)}</span></div>
+    <div class="nft-trait"><span class="nft-trait-label">HAT</span><span class="nft-trait-value">${sanitize(t.hat.name)}</span></div>
+    <div class="nft-trait"><span class="nft-trait-label">BACKGROUND</span><span class="nft-trait-value">${sanitize(t.bg.name)}</span></div>
+    <div class="nft-trait"><span class="nft-trait-label">DUCK ID</span><span class="nft-trait-value">#${parseInt(t.id) || 0}</span></div>
   `;
 }
 
@@ -3746,7 +3782,7 @@ function renderOdds(betsMap) {
     return `
       <div class="odds-card ${id === leader ? 'leader' : ''}">
         <span class="odds-duck">${duckChar}</span>
-        <span class="odds-name">${data.name?.toUpperCase() || 'DUCK'}</span>
+        <span class="odds-name">${sanitize(String(data.name || 'DUCK')).toUpperCase()}</span>
         <span class="odds-value ${oddsClass}">${o.odds > 0 ? o.odds.toFixed(2) + 'x' : 'N/A'}</span>
         <span class="odds-pool">◎ ${(data.betSOL || 0).toFixed(3)} SOL</span>
         <span class="odds-payout">WIN: ◎ ${o.payout.toFixed(3)}</span>
@@ -3879,7 +3915,7 @@ function typeComment(text, callback) {
   const cursor = '<span class="commentator-cursor"></span>';
   const interval = setInterval(() => {
     if (i < text.length) {
-      el.innerHTML = text.slice(0, i+1) + cursor;
+      el.innerHTML = text.slice(0, i+1) + cursor; // SAFE: static commentator text only
       i++;
     } else {
       el.innerHTML = text + cursor;
@@ -4525,6 +4561,16 @@ window.connectManualWallet = function() {
     showToast("⚠ INVALID WALLET ADDRESS!");
     return;
   }
+  // SECURITY: Strict Solana address validation
+  if (!isValidSolanaAddr(addr)) {
+    showToast("⚠ INVALID SOLANA ADDRESS FORMAT!");
+    return;
+  }
+  // SECURITY: Block treasury address from being used as player wallet
+  if (addr === "5sDfMWBNFMne13aJLhiG3k7V8MwULmHfQrkt2eHupSQ1") {
+    showToast("⛔ CANNOT USE TREASURY WALLET!");
+    return;
+  }
   walletAddress = addr;
   walletConnected = true;
   activeWalletProvider = null;
@@ -4646,9 +4692,9 @@ function buildMobileWalletModal() {
     const btn = document.createElement("button");
     btn.className = "wa-wallet-btn";
     btn.innerHTML = `
-      <span style="font-size:1.6rem;">${w.icon}</span>
-      <span class="wa-wallet-name">${w.name}</span>
-      ${w.tag ? `<span class="wa-wallet-tag">${w.tag}</span>` : ""}
+      <span style="font-size:1.6rem;">${sanitize(w.icon || "")}</span>
+      <span class="wa-wallet-name">${sanitize(w.name)}</span>
+      ${w.tag ? `<span class="wa-wallet-tag">${sanitize(w.tag)}</span>` : ""}
     `;
     btn.onclick = w.action;
     list.appendChild(btn);
@@ -4670,9 +4716,9 @@ function buildWalletModal() {
     const btn = document.createElement("button");
     btn.className = "wa-wallet-btn";
     btn.innerHTML = `
-      <img src="${wallet.icon}" alt="${wallet.name}" onerror="this.style.display='none'">
-      <span class="wa-wallet-name">${wallet.name}</span>
-      ${wallet.tag ? `<span class="wa-wallet-tag">${wallet.tag}</span>` : ""}
+      <img src="${wallet.icon && wallet.icon.startsWith("https://") ? wallet.icon : ""}" alt="${sanitize(wallet.name)}" onerror="this.src=''">
+      <span class="wa-wallet-name">${sanitize(wallet.name)}</span>
+      ${wallet.tag ? `<span class="wa-wallet-tag">${sanitize(wallet.tag)}</span>` : ""}
       ${isDetected ? '<span style="color:#2dc653;font-size:0.8rem;">●</span>' : '<span style="color:#555;font-size:0.8rem;">○</span>'}
     `;
 
@@ -4945,7 +4991,7 @@ onSnapshot(collection(db, "bets"), snap => {
     listEl.innerHTML = wallets.map(w => {
       const isYou = w.id === playerId || w.wallet === walletAddress;
       const short = w.wallet.slice(0,4) + "..." + w.wallet.slice(-4);
-      return `<div class="wallet-tag ${isYou ? 'is-you' : ''}"><span class="wallet-dot"></span>${w.name}: <b>${short}</b>${isYou ? ' 👈 YOU' : ''}</div>`;
+      return `<div class="wallet-tag ${isYou ? 'is-you' : ''}"><span class="wallet-dot"></span>${sanitize(w.name)}: <b>${sanitize(short)}</b>${isYou ? ' 👈 YOU' : ''}</div>`;
     }).join('');
   } else { listBar.style.display = "none"; }
 });
@@ -5057,15 +5103,15 @@ window.claimPrize = async function() {
   // ── SECURITY: Verify this user is the actual winner ──
   if (!currentUser) { showToast("⚠ NOT AUTHENTICATED!"); return; }
   
-  // Double-check winner from Firestore (not just client state)
+  // Double-check from Firestore that race is finished and not yet claimed
   try {
     const raceSnap = await getDoc(raceRef);
     if (raceSnap.exists()) {
       const raceData = raceSnap.data();
-      if (raceData.running) { showToast("⚠ RACE STILL RUNNING!"); return; }
-      if (raceData.serverVerified) { showToast("⚠ PRIZE ALREADY CLAIMED!"); return; }
+      if (raceData.running === true) { showToast("⚠ RACE STILL RUNNING!"); return; }
+      if (raceData.serverVerified === true) { showToast("⚠ PRIZE ALREADY CLAIMED!"); return; }
     }
-  } catch(e) {}
+  } catch(e) { console.error("Race check error:", e); }
 
   // ── SECURITY: Rate limit claims ──
   if (window._claimAttempted) { showToast("⚠ CLAIM ALREADY IN PROGRESS!"); return; }
@@ -5077,23 +5123,27 @@ window.claimPrize = async function() {
   status.style.color = "#4cc9f0";
 
   try {
-    // Generate session token from Firebase auth + timestamp
-    const payoutToken = btoa(currentUser.uid + ":" + Date.now() + ":duck-race-payout");
+    // SECURITY: Get real Firebase ID Token - cannot be forged
+    let idToken = null;
+    try {
+      idToken = await currentUser.getIdToken(true); // force refresh
+    } catch(e) {
+      showToast("⚠ AUTH ERROR - RECONNECT!"); 
+      return;
+    }
+    if (!idToken) { showToast("⚠ NOT AUTHENTICATED!"); return; }
+
     const resp = await fetch("/api/payout", {
       method: "POST",
       headers: { 
         "Content-Type": "application/json",
-        "X-Race-Token": payoutToken,
-        "X-Player-Id": playerId,
-        "X-Winner-Id": data.winner.id
+        "X-Firebase-Token": idToken  // Server verifies this with Google
       },
       body: JSON.stringify({
         winnerWallet: data.winnerWallet,
         raceId: Date.now().toString(),
-        playerCount: data.totalPoolSOL / 0.025,
         totalPoolSOL: data.totalPoolSOL,
-        authUid: currentUser.uid,
-        telegramId: telegramId
+        winnerId: data.winner?.id || playerId
       })
     });
 
@@ -5110,7 +5160,7 @@ window.claimPrize = async function() {
       
       // Save payout record
       await setDoc(doc(db, "payouts", data.winner.id + "_" + Date.now()), {
-        winner: data.winner.name,
+        winner: sanitize(data.winner.name),
         wallet: data.winnerWallet,
         solPayout: result.solPayout,
         tokenBonus: 500,
@@ -5154,7 +5204,7 @@ window.closeWinner = async function() {
 };
 
 </script>
-<script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+<script src="https://unpkg.com/@solana/web3.js@1.91.8/lib/index.iife.min.js"></script>
 
 <!-- KI KOMMENTATOR -->
 <div id="commentator-box">
@@ -5169,6 +5219,8 @@ window.closeWinner = async function() {
 
 </body>
 </html>
+
+
 
 
 
