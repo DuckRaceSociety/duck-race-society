@@ -2297,7 +2297,7 @@ let playerName = "Guest_" + Math.random().toString(36).slice(2, 6);
 function sanitizePlayerName(name) {
   if (!name) return "Guest";
   return String(name)
-    .replace(/[<>&"'\/\]/g, '')
+  .replace(/[<>&"'\/]/g, '')
     .replace(/\s+/g, ' ')
     .trim()
     .slice(0, 32) || "Guest";
@@ -5253,6 +5253,7 @@ window.closeWinner = async function() {
 
 </body>
 </html>
+
 
 
 
