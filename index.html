@@ -2342,7 +2342,22 @@ parseTelegramData();
 setTimeout(() => { if (!telegramId) parseTelegramData(); }, 300);
 setTimeout(() => { if (!telegramId) parseTelegramData(); }, 800);
 setTimeout(() => { if (!telegramId) parseTelegramData(); }, 1500);
-try { const tg = window.Telegram?.WebApp; if (tg) { tg.expand(); try { tg.enableClosingConfirmation?.(); } catch(e){} } } catch(e) {}
+try {
+  const tg = window.Telegram?.WebApp;
+
+  if (tg) {
+    tg.ready();
+    tg.expand();
+
+    // Only enable closing confirmation on supported versions
+    if (tg.version && parseFloat(tg.version) >= 6.1) {
+      tg.enableClosingConfirmation();
+    }
+  }
+
+} catch(e) {
+  console.log("Telegram init error:", e);
+}
 
 // ── STATE ──
 let currentUser = null, playerId = null, players = [], isInLobby = false;
@@ -5253,6 +5268,7 @@ window.closeWinner = async function() {
 
 </body>
 </html>
+
 
 
 
