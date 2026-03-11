@@ -2174,7 +2174,7 @@ body::after {
     </div>
 
     <!-- Wallet extension buttons (shown if any detected) -->
-    <div id="wc-extension-section">
+    <div id="wc-desktop-section">
       <div class="wc-wallet-grid" id="wc-wallet-grid">
         <!-- Populated dynamically by buildWalletModal() -->
       </div>
@@ -4703,64 +4703,70 @@ let activeWalletProvider = null;
 
 // ── OPEN WALLET MODAL ──
 window.connectWallet = function() {
-  buildWalletModal();
-  document.getElementById("wc-modal-overlay").classList.add("show");
+  buildWalletModal();  // populates grid based on context (Telegram vs browser)
+  const overlay = document.getElementById("wc-modal-overlay");
+  if (overlay) overlay.classList.add("show");
+  // Focus the address input after short delay for easy paste
+  setTimeout(() => {
+    const inp = document.getElementById("wc-address-input");
+    if (inp) inp.focus();
+  }, 300);
 };
 
 // Dynamically detect available wallets and populate modal
 function buildWalletModal() {
   const grid = document.getElementById("wc-wallet-grid");
   const divider = document.getElementById("wc-divider");
+  const desktopSection = document.getElementById("wc-desktop-section");
   if (!grid) return;
   grid.innerHTML = "";
 
+  const APP_URL = "https://duck-race-society.vercel.app";
+  const isInTelegram = !!window.Telegram?.WebApp?.initData;
+  const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent) || isInTelegram;
+
+  // Detect installed browser extensions
   const detected = [];
-
-  // Detect Phantom
   const phantom = window.phantom?.solana || (window.solana?.isPhantom ? window.solana : null);
-  if (phantom) detected.push({ name: "Phantom", icon: "👻", tag: "DETECTED", provider: phantom, type: "phantom" });
+  if (phantom)                     detected.push({ name: "Phantom",        icon: "👻", provider: phantom });
+  if (window.solflare?.isSolflare) detected.push({ name: "Solflare",       icon: "🔥", provider: window.solflare });
+  if (window.backpack)             detected.push({ name: "Backpack",        icon: "🎒", provider: window.backpack });
+  if (window.coinbaseSolana)       detected.push({ name: "Coinbase",        icon: "🔵", provider: window.coinbaseSolana });
+  if (!phantom && !window.solflare && window.solana)
+                                   detected.push({ name: "Browser Wallet",  icon: "🌐", provider: window.solana });
 
-  // Detect Solflare
-  if (window.solflare?.isSolflare) detected.push({ name: "Solflare", icon: "🔥", tag: "DETECTED", provider: window.solflare, type: "solflare" });
-
-  // Detect Backpack
-  if (window.backpack || window.xnft?.solana) detected.push({ name: "Backpack", icon: "🎒", tag: "DETECTED", provider: window.backpack || window.xnft?.solana, type: "backpack" });
-
-  // Detect Coinbase
-  if (window.coinbaseSolana) detected.push({ name: "Coinbase", icon: "🔵", tag: "DETECTED", provider: window.coinbaseSolana, type: "coinbase" });
-
-  // Detect any generic solana wallet not matched above
-  if (!phantom && !window.solflare && window.solana) {
-    detected.push({ name: "Browser Wallet", icon: "🌐", tag: "DETECTED", provider: window.solana, type: "generic" });
-  }
-
-  if (detected.length > 0) {
+  if (detected.length > 0 && !isInTelegram) {
+    // Desktop browser with extension → connect directly
+    if (desktopSection) desktopSection.style.display = "block";
     detected.forEach(w => {
       const el = document.createElement("div");
       el.className = "wc-wallet-item";
-      el.innerHTML = \`<span style="font-size:2rem;">\${w.icon}</span><span>\${sanitize(w.name)}</span><span class="wc-tag">\${w.tag}</span>\`;
+      el.innerHTML = '<span style="font-size:2rem;">' + w.icon + '</span><span>' + sanitize(w.name) + '</span><span class="wc-tag" style="color:#2dc653;">DETECTED</span>';
       el.onclick = () => connectWalletDirect(w.provider, w.name);
       grid.appendChild(el);
     });
     if (divider) divider.style.display = "block";
+
   } else {
-    // No extension: offer mobile deeplinks
-    const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
-    if (isMobile) {
-      const APP_URL = "https://duck-race-society.vercel.app";
-      [
-        { name: "Phantom", icon: "👻", url: \`https://phantom.app/ul/v1/connect?app_url=\${encodeURIComponent(APP_URL)}&redirect_link=\${encodeURIComponent(APP_URL)}\` },
-        { name: "Solflare", icon: "🔥", url: \`https://solflare.com/ul/v1/browse/\${encodeURIComponent(APP_URL)}\` },
-      ].forEach(w => {
-        const el = document.createElement("div");
-        el.className = "wc-wallet-item";
-        el.innerHTML = \`<span style="font-size:2rem;">\${w.icon}</span><span>\${sanitize(w.name)}</span><span class="wc-tag">OPEN APP</span>\`;
-        el.onclick = () => { closeWCModal(); window.open(w.url, "_blank"); showToast("OPENING " + w.name.toUpperCase() + "..."); };
-        grid.appendChild(el);
-      });
-      if (divider) divider.style.display = "block";
-    }
-    // No extensions found on desktop → no buttons, just manual input
+    // Mobile / Telegram / no extension → deep link buttons + manual input
+    if (desktopSection) desktopSection.style.display = "none";
+
+    [
+      { name: "Phantom",  icon: "👻", tag: "RECOMMENDED",
+        url: "https://phantom.app/ul/v1/connect?app_url=" + encodeURIComponent(APP_URL) + "&redirect_link=" + encodeURIComponent(APP_URL) + "&cluster=mainnet-beta" },
+      { name: "Solflare", icon: "🔥", tag: "POPULAR",
+        url: "https://solflare.com/ul/v1/browse/" + encodeURIComponent(APP_URL) + "?ref=" + encodeURIComponent(APP_URL) },
+    ].forEach(function(w) {
+      const el = document.createElement("div");
+      el.className = "wc-wallet-item";
+      el.innerHTML = '<span style="font-size:2rem;">' + w.icon + '</span><span>' + sanitize(w.name) + '</span><span class="wc-tag">' + w.tag + '</span>';
+      el.onclick = function() {
+        window.open(w.url, "_blank");
+        showToast("📱 OPENING " + w.name.toUpperCase() + " — COPY YOUR ADDRESS AND PASTE BELOW");
+      };
+      grid.appendChild(el);
+    });
+    if (divider) divider.style.display = "block";
   }
 }
 
@@ -5444,6 +5450,8 @@ window.closeWinner = async function() {
 
 </body>
 </html>
+
+
 
 
 
