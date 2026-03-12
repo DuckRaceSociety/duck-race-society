@@ -1820,13 +1820,12 @@ body::after {
   <div style="background:#0a1628;border:3px solid #4361ee;padding:0.7rem 1rem;display:flex;gap:0.8rem;align-items:flex-start;">
     <div style="font-size:1.3rem;flex-shrink:0;">💡</div>
     <div style="font-family:'VT323',monospace;font-size:1.05rem;color:#fff;line-height:1.6;">
-      <div style="font-family:'VT323',monospace;font-size:1.05rem;color:#fff;line-height:1.6;">
       <b style="color:#f4d35e;">HOW TO PLAY:</b><br>
       1️⃣ Press <b style="color:#f4d35e;">JOIN RACE</b> in the Lobby tab<br>
-      2️⃣ Choose your bet amount in <b style="color:#f4d35e;">$TRC</b> and press <b style="color:#f4d35e;">PLACE BET</b><br>
-      3️⃣ Press <b style="color:#f4d35e;">✅ CONFIRM BET</b> to lock in your $TRC wager<br>
+      2️⃣ Send <b style="color:#f4d35e;">0.025 SOL</b> to the treasury address shown<br>
+      3️⃣ Press <b style="color:#f4d35e;">✅ I SENT THE SOL</b> to confirm your bet<br>
       4️⃣ Wait for players → Press <b style="color:#f4d35e;">START RACE</b> → 🏁 Race!<br>
-      🏆 Winner gets <b style="color:#f4d35e;">80% of the $TRC pool</b> automatically!
+      🏆 Winner gets <b style="color:#f4d35e;">80% SOL + 500 $TRC</b> automatically!
     </div>
     <button onclick="this.parentElement.parentElement.style.display='none'" style="margin-left:auto;background:none;border:none;color:#666;cursor:pointer;font-family:'Press Start 2P',monospace;font-size:0.4rem;flex-shrink:0;padding-left:0.5rem;">✕</button>
   </div>
@@ -1837,7 +1836,7 @@ body::after {
   <div class="pool-display">
     <div class="pool-item">
       <div class="pool-label">PRIZE POOL</div>
-      <div class="pool-value green" id="pool-sol">0 $TRC</div>
+      <div class="pool-value green" id="pool-sol">0.000 SOL</div>
     </div>
     <div class="pool-item">
       <div class="pool-label">PLAYERS BET</div>
@@ -1845,15 +1844,15 @@ body::after {
     </div>
     <div class="pool-item">
       <div class="pool-label">ENTRY FEE</div>
-      <div class="pool-value purple">1,000 $TRC</div>
+      <div class="pool-value">0.025 SOL</div>
     </div>
     <div class="pool-item">
-      <div class="pool-label">CURRENCY</div>
-      <div class="pool-value purple">$TRC TOKEN</div>
+      <div class="pool-label">TRC BONUS</div>
+      <div class="pool-value purple">500 TRC</div>
     </div>
     <div class="pool-item">
       <div class="pool-label">WINNER GETS</div>
-      <div class="pool-value green">80% $TRC POOL</div>
+      <div class="pool-value green">80% SOL + 500 TRC</div>
     </div>
     <div class="pool-item">
       <div class="pool-label">YOUR BET</div>
@@ -1944,39 +1943,31 @@ body::after {
         CONNECT WALLET & JOIN THE RACE TO PLACE YOUR BET!
       </p>
       <div class="bet-amount-row">
-        <button class="bet-preset active" onclick="selectBet(1000)">1,000 $TRC</button>
-        <button class="bet-preset" onclick="selectBet(5000)">5,000 $TRC</button>
-        <button class="bet-preset" onclick="selectBet(10000)">10,000 $TRC</button>
+        <button class="bet-preset active" onclick="selectBet(0.025)">0.025 SOL</button>
+        <button class="bet-preset" onclick="selectBet(0.05)">0.05 SOL</button>
+        <button class="bet-preset" onclick="selectBet(0.1)">0.1 SOL</button>
       </div>
       <button class="btn-bet" id="bet-btn" onclick="placeBet()" disabled>
-        🦆 PLACE BET IN $TRC
+        ◎ PLACE BET
       </button>
-```
       <div class="bet-status" id="bet-status">CONNECT WALLET FIRST</div>
       <a class="tx-link" id="tx-link" target="_blank">VIEW ON SOLSCAN ↗</a>
 
       <!-- MANUAL PAY BOX -->
       <div class="solanapay-box" id="solanapay-box" style="display:none;">
-        <p>💜 <b style="color:#f4d35e;">Send your $TRC bet to the treasury:</b></p>
-        <div style="background:#050d1a;border:2px solid #9945FF;padding:0.5rem;margin:0.4rem 0;text-align:center;">
-          <span style="font-family:'Press Start 2P',monospace;font-size:0.5rem;color:#ab9ff2;">TOKEN MINT</span><br>
-          <code style="font-family:'VT323',monospace;font-size:0.85rem;color:#4CC9F0;word-break:break-all;">H4FTTQ5nhGdFFqHa3FPd5TpjcXYLAokN8SYFdBq4yERL</code>
-        </div>
+        <p>📱 <b style="color:#f4d35e;">Send exactly 0.025 SOL to:</b></p>
         <div style="background:#050d1a;border:2px solid #1a3a5c;padding:0.5rem;margin:0.4rem 0;display:flex;align-items:center;gap:0.5rem;">
-          <span style="font-family:'Press Start 2P',monospace;font-size:0.4rem;color:#7fb3d3;flex-shrink:0;">TREASURY:</span>
           <code style="font-family:'VT323',monospace;font-size:0.9rem;color:#4CC9F0;word-break:break-all;flex:1;">5sDfMWBNFMne13aJLhiG3k7V8MwULmHfQrkt2eHupSQ1</code>
           <button onclick="copyTreasury()" style="background:#4361ee;border:2px solid #000;color:#fff;font-family:'Press Start 2P',monospace;font-size:0.3rem;padding:0.3rem 0.5rem;cursor:pointer;flex-shrink:0;">📋</button>
         </div>
-        <p style="color:#888;font-size:0.85rem;line-height:1.5;">
-          📱 Open Phantom/Solflare → select <b style="color:#f4d35e;">$TRC</b> token → send your chosen amount → come back here
-        </p>
+        <p style="color:#888;font-size:0.85rem;">Open Phantom/Solflare → send 0.025 SOL → come back here</p>
         <div style="margin-top:0.5rem;">
           <p style="font-family:'VT323',monospace;font-size:0.95rem;color:#f4d35e;margin-bottom:0.3rem;">👇 Enter your wallet address for payout:</p>
           <input id="manual-wallet-input" type="text" placeholder="Your Solana wallet address..." 
             style="width:100%;background:#050d1a;border:2px solid #1a3a5c;color:#4cc9f0;font-family:'VT323',monospace;font-size:0.95rem;padding:0.5rem;outline:none;box-sizing:border-box;" />
         </div>
         <button class="btn-solanapay-confirm show" id="btn-solanapay-confirm" onclick="confirmSolanaPay()">
-          ✅ I SENT $TRC — CONFIRM BET
+          ✅ I SENT THE SOL — CONFIRM BET
         </button>
       </div>
     </div>
@@ -5277,6 +5268,553 @@ window.closeWinner = async function() {
 
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
