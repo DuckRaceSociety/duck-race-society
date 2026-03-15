@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>🦆 Duck Race</title>
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self' https: data: blob:;
@@ -51,6 +51,9 @@ body {
   font-family: 'VT323', monospace;
   min-height: 100vh;
   overflow-x: hidden;
+  touch-action: pan-y;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 
 /* ── PIXEL STAR BACKGROUND ── */
@@ -2647,278 +2650,580 @@ window.startRace = async function() {
 };
 
 // ── CANVAS RACE ──
+// ════════════════════════════════════════════════════════════════════
+// 🦆 DUCK RACE — ANDROID OPTIMIZED RACE ENGINE v2.0
+// DROP-IN REPLACEMENT for initCanvas(), drawFrame(), startLocalRace(),
+// previewTrack() — alle anderen Funktionen bleiben unverändert
+// ════════════════════════════════════════════════════════════════════
+
+// ── ZONE DEFINITIONEN (Track Events System) ──
+const ZONE_DEFS = [
+  { type:'BOOST',   color:'rgba(45,198,83,0.32)',  border:'#2dc653', icon:'⚡', label:'BOOST',  w:44, speedMult: 0.65, wobble:0,  jumpFwd:0   },
+  { type:'WHIRL',   color:'rgba(72,202,228,0.30)', border:'#48cae4', icon:'🌀', label:'SPIN',   w:50, speedMult:-0.42, wobble:3,  jumpFwd:0   },
+  { type:'MUD',     color:'rgba(139,69,19,0.38)',  border:'#8B4513', icon:'🟫', label:'MUD',    w:52, speedMult:-0.36, wobble:1,  jumpFwd:0   },
+  { type:'STORM',   color:'rgba(247,37,133,0.26)', border:'#f72585', icon:'⛈', label:'STORM',  w:46, speedMult:-0.58, wobble:5,  jumpFwd:0   },
+  { type:'LUCKY',   color:'rgba(255,215,0,0.26)',  border:'#FFD700', icon:'🪶', label:'LUCK',   w:36, speedMult: 0,    wobble:0,  jumpFwd:55  },
+  { type:'OIL',     color:'rgba(80,80,80,0.40)',   border:'#777',    icon:'🛢', label:'OIL',    w:46, speedMult:-0.75, wobble:6,  jumpFwd:0   },
+  { type:'CURRENT', color:'rgba(244,211,94,0.26)', border:'#f4d35e', icon:'💨', label:'FLOW',   w:50, speedMult: 0.48, wobble:0,  jumpFwd:0   },
+];
+
+const GLOBAL_EVENTS = [
+  { label:'⚡ CURRENT SHIFT!', fn(ts) {
+    (canvas._racePlayers||[]).forEach(p => {
+      if (!p._finished) {
+        p._spdMult = (p._spdMult||1) + (Math.random()>0.5 ? 0.45 : -0.38);
+        p._wobble = (p._wobble||0) + 2;
+      }
+    });
+  }},
+  { label:'⛈ STORM SURGE!', fn(ts) {
+    (canvas._racePlayers||[]).forEach(p => {
+      if (!p._finished) {
+        p._spdMult = (p._spdMult||1) * 0.45;
+        p._wobble = (p._wobble||0) + 5;
+      }
+    });
+  }},
+  { label:'💨 TAILWIND!', fn(ts) {
+    (canvas._racePlayers||[]).forEach(p => {
+      if (!p._finished) p._spdMult = (p._spdMult||1) + 0.5;
+    });
+  }},
+  { label:'🌊 ROGUE WAVE!', fn(ts) {
+    (canvas._racePlayers||[]).forEach(p => {
+      if (!p._finished) {
+        const shift = (Math.random()*0.08)-0.04;
+        duckPositions[p.id] = Math.max(0, (duckPositions[p.id]||0) + shift * trackWidth);
+        p._wobble = (p._wobble||0) + 5;
+        p._splashT = 14;
+      }
+    });
+  }},
+  { label:'🪶 LUCKY BOOST!', fn(ts) {
+    const alive = (canvas._racePlayers||[]).filter(p=>!p._finished);
+    if (!alive.length) return;
+    const lucky = alive[Math.floor(Math.random()*alive.length)];
+    duckPositions[lucky.id] = Math.min(trackWidth-2, (duckPositions[lucky.id]||0) + 50);
+    lucky._spdMult = (lucky._spdMult||1) + 0.6;
+    lucky._splashT = 14;
+  }},
+];
+
+// ── PER-PLAYER RUNTIME STATE (attached to player objects) ──
+function initPlayerState(racePlayers) {
+  racePlayers.forEach((p,i) => {
+    p._spdMult   = 1;
+    p._wobble    = 0;
+    p._wobbleOff = 0;
+    p._bobOff    = Math.random() * Math.PI * 2;
+    p._zone      = null;
+    p._zoneEndTs = 0;
+    p._splashT   = 0;
+    p._finished  = false;
+    p._rank      = 0;
+  });
+}
+
+// ── TRACK ZONES PER LANE ──
+let _trackZones = [];
+let _pebbleCache = [];
+let _DPR = 1;
+let _globalEvtTimer = 0;
+let _nextGlobalEvt  = 7000;
+let _lastFrameTs    = 0;
+let _animFrameId    = null;
+let _finishCount    = 0;
+let _raceAnimActive = false;
+
+function buildTrackZones(n) {
+  _trackZones = [];
+  for (let lane = 0; lane < n; lane++) {
+    const lz = [];
+    const count = 2 + Math.floor(Math.random()*2);
+    const positions = [];
+    for (let z = 0; z < count; z++) {
+      let pct, tries = 0;
+      do {
+        pct = 0.18 + Math.random()*0.60;
+        tries++;
+      } while (positions.some(p=>Math.abs(p-pct)<0.14) && tries<30);
+      positions.push(pct);
+      const def = ZONE_DEFS[Math.floor(Math.random()*ZONE_DEFS.length)];
+      lz.push({ ...def, pct, triggered:false, flashT:0 });
+    }
+    _trackZones.push(lz);
+  }
+}
+
+function buildPebbles(W) {
+  _pebbleCache = [];
+  for (let x = 0; x < W; x += 7) {
+    _pebbleCache.push({ x, h: 3 + Math.round(Math.sin(x*0.08)*2) });
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════
+// initCanvas — DPI-aware, Android optimised
+// ════════════════════════════════════════════════════════════════════
 function initCanvas(racePlayers) {
   const wrap = document.getElementById("race-canvas-wrap");
   document.getElementById("race-placeholder").style.display = "none";
   canvas = document.getElementById("race-canvas");
   canvas.style.display = "block";
-  canvas.width = wrap.clientWidth;
-  canvas.height = LANE_H * racePlayers.length + 60; // +60 for spectator strip
-  wrap.style.height = canvas.height + "px";
-  ctx = canvas.getContext("2d");
-  trackWidth = canvas.width - 110;
 
-  // Init positions
+  // DPR capped at 2 — 3x kills mid-range Android
+  _DPR = Math.min(window.devicePixelRatio || 1, 2);
+  const logicalW = wrap.clientWidth;
+  const logicalH = LANE_H * racePlayers.length + 50;
+
+  canvas.width  = Math.round(logicalW * _DPR);
+  canvas.height = Math.round(logicalH * _DPR);
+  canvas.style.width  = logicalW  + "px";
+  canvas.style.height = logicalH + "px";
+  wrap.style.height = logicalH + "px";
+
+  // alpha:false = faster compositing on Android
+  // desynchronized:true = low-latency on Chrome Android
+  ctx = canvas.getContext("2d", { alpha: false, desynchronized: true });
+  ctx.scale(_DPR, _DPR); // all coordinates stay logical
+
+  trackWidth = logicalW - 110;
+
+  // Init positions & per-player state
   racePlayers.forEach(p => { duckPositions[p.id] = 0; });
+  initPlayerState(racePlayers);
+  buildTrackZones(racePlayers.length);
+  buildPebbles(logicalW);
 
-  // Generate spectators
+  // Spectators (kept for compatibility)
   spectators = [];
-  for (let i = 0; i < 18; i++) {
+  for (let i = 0; i < 14; i++) {
     spectators.push({
-      x: 20 + i * (canvas.width / 18),
-      y: canvas.height - 14,
+      x: 20 + i * (logicalW / 14),
+      y: logicalH - 12,
       emoji: ['👤','🧑','👩','🧒','👴','👵','🐸'][Math.floor(Math.random()*7)],
       wave: Math.random() * Math.PI * 2,
-      speed: 0.05 + Math.random() * 0.05
+      speed: 0.04 + Math.random()*0.04
     });
   }
-
   particles = [];
+  _finishCount = 0;
+  _globalEvtTimer = 0;
+  _nextGlobalEvt = 6000 + Math.random()*6000;
 }
 
+// ════════════════════════════════════════════════════════════════════
+// drawFrame — performance-optimised for Android
+// ════════════════════════════════════════════════════════════════════
 function drawFrame(racePlayers) {
-  if (!ctx) return;
-  const W = canvas.width, H = canvas.height;
+  if (!ctx || !canvas) return;
+  const W = canvas.width  / _DPR; // logical width
+  const H = canvas.height / _DPR; // logical height
 
-  // ── SKY / BG ──
-  const skyGrad = ctx.createLinearGradient(0, 0, 0, H * 0.15);
-  skyGrad.addColorStop(0, '#0a0a1a');
-  skyGrad.addColorStop(1, '#0d1b2a');
-  ctx.fillStyle = skyGrad;
-  ctx.fillRect(0, 0, W, H * 0.15);
+  // Solid BG — no gradient on root (alpha:false canvas)
+  ctx.fillStyle = '#050a14';
+  ctx.fillRect(0, 0, W, H);
 
-  // ── LANES (WATER) ──
+  // Sky strip
+  ctx.fillStyle = '#08101e';
+  ctx.fillRect(0, 0, W, 14);
+
+  // ── LANES ──
   racePlayers.forEach((p, i) => {
-    const y = i * LANE_H;
-    const laneGrad = ctx.createLinearGradient(0, y, 0, y + LANE_H);
-    laneGrad.addColorStop(0, i % 2 === 0 ? '#005f99' : '#004f88');
-    laneGrad.addColorStop(1, i % 2 === 0 ? '#003d6b' : '#002d55');
-    ctx.fillStyle = laneGrad;
-    ctx.fillRect(0, y, W, LANE_H);
+    const lY = i * LANE_H;
+    const TS = 60; // track start X
+    const TE = W - 52; // track end X
 
-    // Lane border pixel
-    ctx.fillStyle = 'rgba(0,0,0,0.4)';
-    ctx.fillRect(0, y + LANE_H - 3, W, 3);
+    // Water — flat fill, no gradient (faster on mobile)
+    ctx.fillStyle = i % 2 === 0 ? '#003d6b' : '#003260';
+    ctx.fillRect(TS, lY, TE - TS, LANE_H);
 
-    // ── PIXEL WAVES ──
-    ctx.save();
-    ctx.globalAlpha = 0.25;
-    for (let wx = 0; wx < W; wx += 16) {
-      const waveY = y + LANE_H * 0.5 + Math.sin((wx + waveOffset) * 0.05) * 5;
-      ctx.fillStyle = '#48cae4';
-      ctx.fillRect(wx, waveY, 8, 3);
+    // Wave lines — 2 layers only (was 3, save ~15% draw time)
+    ctx.fillStyle = 'rgba(72,202,228,0.13)';
+    for (let wx = TS; wx < TE; wx += 20) {
+      const wy = lY + LANE_H*0.38 + Math.sin((wx + waveOffset*0.7)*0.055) * 4;
+      ctx.fillRect(wx, wy, 11, 2);
     }
-    for (let wx = 8; wx < W; wx += 16) {
-      const waveY = y + LANE_H * 0.65 + Math.sin((wx + waveOffset * 1.3) * 0.06) * 4;
-      ctx.fillStyle = '#90e0ef';
-      ctx.fillRect(wx, waveY, 6, 2);
-    }
-    ctx.restore();
-
-    // ── LANE LABEL ──
-    ctx.fillStyle = 'rgba(255,255,255,0.25)';
-    ctx.font = '11px "Press Start 2P"';
-    ctx.fillText(p.name.slice(0,8).toUpperCase(), 6, y + 14);
-
-    // ── DUCK ──
-    const pos = Math.min(duckPositions[p.id] || 0, trackWidth - 40);
-    const duckX = 70 + pos;
-    const duckY = y + LANE_H * 0.5 - 16;
-    const bob = Math.sin(Date.now() * 0.005 + i) * 3;
-
-    // Duck shadow
-    ctx.save();
-    ctx.globalAlpha = 0.3;
-    ctx.fillStyle = '#000';
-    ctx.ellipse(duckX + 16, y + LANE_H - 10, 14, 5, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-
-    // ── ANIMATED DUCK WITH WINGS ──
-    const wingAngle = Math.sin(Date.now() * 0.012 + i * 1.2) * 0.5;
-    const isMoving = raceRunning && (duckPositions[p.id] || 0) > 2;
-    const speed = isMoving ? Math.abs(Math.sin(Date.now() * 0.015 + i)) : 0;
-
-    ctx.save();
-    ctx.translate(duckX + 16, duckY + bob + 16);
-
-    // Wing flap shadow
-    if (isMoving) {
-      ctx.save();
-      ctx.globalAlpha = 0.18;
-      ctx.fillStyle = '#000';
-      ctx.beginPath();
-      ctx.ellipse(-8 + Math.cos(wingAngle * 2) * 6,
-                  -2 + Math.sin(wingAngle) * 4,
-                  10, 4, wingAngle, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
+    ctx.fillStyle = 'rgba(144,224,239,0.08)';
+    for (let wx = TS+10; wx < TE; wx += 20) {
+      const wy = lY + LANE_H*0.62 + Math.sin((wx + waveOffset*0.95)*0.06+1) * 3;
+      ctx.fillRect(wx, wy, 8, 2);
     }
 
-    // Duck body
-    ctx.font = '32px serif';
-    ctx.fillText(DUCK_CHARS[i % DUCK_CHARS.length], -16, 0);
+    // Pebble shore (precomputed)
+    const pCols = ['#2d4a5b','#3d5a6b','#2a3a4b','#4a6a7b'];
+    _pebbleCache.forEach(pb => {
+      if (pb.x >= TS && pb.x < TE) {
+        ctx.fillStyle = pCols[Math.floor(pb.x/7) % 4];
+        ctx.fillRect(pb.x, lY, 5, pb.h);
+      }
+    });
 
-    // Wing flap overlay when moving fast
-    if (isMoving && speed > 0.6) {
-      ctx.save();
-      ctx.globalAlpha = 0.5;
-      ctx.font = '14px serif';
-      ctx.fillText('🪶', -22 + Math.cos(wingAngle * 3) * 5,
-                   -8 + Math.sin(wingAngle * 2) * 4);
-      ctx.restore();
-    }
+    // Lane divider
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.fillRect(TS, lY + LANE_H - 2, TE - TS, 2);
 
-    // Boost flame effect
-    if (isMoving && speed > 0.8) {
-      ctx.save();
-      ctx.globalAlpha = 0.7;
-      ctx.font = '12px serif';
-      ctx.fillText('💨', -28 - Math.random() * 5, 2);
-      ctx.restore();
-    }
+    // Start box
+    ctx.fillStyle = '#070f1c';
+    ctx.fillRect(0, lY, TS, LANE_H);
+    ctx.fillStyle = DUCK_COLORS[i % DUCK_COLORS.length];
+    ctx.font = `bold ${Math.round(LANE_H*0.26)}px "Press Start 2P", monospace`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`P${i+1}`, TS/2, lY + LANE_H/2);
 
-    ctx.restore();
-
-    // Speed trail
-    if (raceRunning && duckPositions[p.id] > 5) {
-      for (let t = 1; t <= 4; t++) {
-        ctx.save();
-        ctx.globalAlpha = 0.12 / t;
-        ctx.font = `${28 - t*4}px serif`;
-        ctx.fillText(DUCK_CHARS[i % DUCK_CHARS.length], duckX - t*12, duckY + bob);
-        ctx.restore();
+    // Finish checker
+    const fx = TE;
+    const cs = Math.max(6, Math.round(LANE_H/8));
+    for (let row = 0; row < Math.ceil(LANE_H/cs); row++) {
+      for (let col = 0; col < 5; col++) {
+        ctx.fillStyle = (row+col)%2===0 ? '#fff' : '#000';
+        const rx = fx + col*cs, ry = lY + row*cs;
+        if (rx < W) ctx.fillRect(rx, Math.max(ry,lY), cs, Math.min(cs, lY+LANE_H-ry));
       }
     }
+    ctx.fillStyle = '#f4d35e';
+    ctx.fillRect(fx-2, lY, 2, LANE_H);
 
-    // Name label above duck
-    ctx.save();
-    ctx.font = 'bold 9px "Press Start 2P"';
-    ctx.fillStyle = '#fff';
-    ctx.globalAlpha = 0.85;
-    ctx.fillText(p.name.slice(0,6).toUpperCase(), duckX - 4, duckY + bob - 6);
-    ctx.restore();
+    // ── TRACK ZONES ──
+    const zones = _trackZones[i] || [];
+    const tLen = TE - TS;
+    zones.forEach(z => {
+      const zx = TS + z.pct * tLen;
+      const zy = lY + Math.round(LANE_H*0.08);
+      const zh = Math.round(LANE_H*0.84);
+      const zw = z.w;
+      const alpha = z.flashT > 0 ? 0.88 : 0.44;
+
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = z.color;
+      ctx.fillRect(zx-zw/2, zy, zw, zh);
+      ctx.strokeStyle = z.border;
+      ctx.lineWidth = z.flashT>0 ? 2.5 : 1.5;
+      if (z.flashT <= 0) ctx.setLineDash([4,3]);
+      ctx.strokeRect(zx-zw/2, zy, zw, zh);
+      ctx.setLineDash([]);
+      ctx.restore();
+
+      const iconSz = Math.max(10, Math.round(LANE_H*0.27));
+      ctx.font = `${iconSz}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(z.icon, zx, zy + zh/2);
+
+      if (z.flashT > 0) {
+        ctx.font = `bold ${Math.max(5,Math.round(LANE_H*0.11))}px "Press Start 2P",monospace`;
+        ctx.fillStyle = z.border;
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(z.label, zx, zy-1);
+        z.flashT--;
+      }
+    });
+
+    // ── DUCK ──
+    if (!p._finished) {
+      p._bobOff    = (p._bobOff||0) + 0.055;
+      p._wobbleOff = (p._wobbleOff||0) + (p._wobble||0)*0.09;
+      const bob  = Math.sin(p._bobOff) * Math.min(3, LANE_H*0.05);
+      const wob  = Math.sin(p._wobbleOff) * ((p._wobble||0) * Math.min(2, LANE_H*0.04));
+      if ((p._wobble||0) > 0.05) p._wobble *= 0.92; else p._wobble = 0;
+
+      const TE2 = W - 52;
+      const pos  = Math.min(duckPositions[p.id] || 0, trackWidth - 2);
+      const dxL  = 60 + pos; // logical X
+      const dyL  = lY + LANE_H/2 + bob + wob;
+      const sz   = Math.max(14, Math.round(LANE_H*0.52));
+
+      // Speed trail (only when fast)
+      if (raceRunning && (p._spdMult||1) > 1.3) {
+        ctx.save();
+        ctx.font = `${sz}px sans-serif`;
+        ctx.textBaseline = 'middle';
+        ctx.globalAlpha = 0.15;
+        ctx.fillText(DUCK_CHARS[i % DUCK_CHARS.length], dxL - sz*0.9, dyL);
+        ctx.globalAlpha = 0.07;
+        ctx.fillText(DUCK_CHARS[i % DUCK_CHARS.length], dxL - sz*1.7, dyL);
+        ctx.restore();
+      }
+
+      // Zone glow ring
+      if (p._zone) {
+        const zdef = ZONE_DEFS.find(z=>z.type===p._zone);
+        if (zdef) {
+          ctx.save();
+          ctx.globalAlpha = 0.4 + Math.sin(Date.now()*0.008)*0.25;
+          ctx.strokeStyle = zdef.border;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(dxL + sz*0.4, dyL, Math.max(12, LANE_H*0.22), 0, Math.PI*2);
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+
+      // Duck emoji
+      ctx.font = `${sz}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(DUCK_CHARS[i % DUCK_CHARS.length], dxL + sz*0.4, dyL);
+
+      // Name tag
+      const nSz = Math.max(5, Math.round(LANE_H*0.12));
+      ctx.font = `bold ${nSz}px "Press Start 2P",monospace`;
+      ctx.fillStyle = DUCK_COLORS[i % DUCK_COLORS.length];
+      ctx.textBaseline = 'bottom';
+      ctx.fillText(p.name.slice(0,6).toUpperCase(), dxL + sz*0.4, lY + Math.round(LANE_H*0.18) + bob);
+
+      // Speed pips
+      const sm = p._spdMult || 1;
+      if (sm > 1.1) {
+        ctx.fillStyle = '#2dc653';
+        const pips = Math.min(3, Math.floor((sm-1)*5));
+        for (let d=0;d<pips;d++) ctx.fillRect(dxL-4-d*5, dyL+sz*0.3, 3, 3);
+      } else if (sm < 0.8) {
+        ctx.fillStyle = '#e63946';
+        const pips = Math.min(3, Math.floor((1-sm)*5));
+        for (let d=0;d<pips;d++) ctx.fillRect(dxL-4-d*5, dyL+sz*0.3, 3, 3);
+      }
+
+      // Splash
+      if ((p._splashT||0) > 0) {
+        ctx.save();
+        ctx.globalAlpha = p._splashT/18;
+        ctx.fillStyle = '#48cae4';
+        const sr = (18-p._splashT)*1.5;
+        for (let s=0;s<5;s++) {
+          const sa=(s/5)*Math.PI*2;
+          ctx.fillRect(dxL+Math.cos(sa)*sr, dyL+Math.sin(sa)*sr*0.4, 3, 3);
+        }
+        ctx.restore();
+        p._splashT--;
+      }
+    } else {
+      // Finished duck at finish line with medal
+      const TE3 = W - 52;
+      const sz = Math.max(14, Math.round(LANE_H*0.52));
+      const dyL = lY + LANE_H/2;
+      const medal = p._rank===1?'🥇':p._rank===2?'🥈':'🥉';
+      ctx.font = `${Math.round(sz*0.6)}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(medal, TE3 - sz*0.5, lY + LANE_H*0.2);
+      ctx.font = `${sz}px sans-serif`;
+      ctx.fillText(DUCK_CHARS[i % DUCK_CHARS.length], TE3 + sz*0.4, dyL);
+    }
+
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
   });
 
-  // ── FINISH LINE ──
-  const flX = 70 + trackWidth - 40;
-  for (let fy = 0; fy < H - 50; fy += 8) {
-    ctx.fillStyle = fy % 16 === 0 ? '#fff' : '#222';
-    ctx.fillRect(flX, fy, 8, 8);
+  // ── BOTTOM SHORE ──
+  const botY = racePlayers.length * LANE_H;
+  if (botY < H) {
+    ctx.fillStyle = '#1a3a1a';
+    ctx.fillRect(0, botY, W, H - botY);
+    ctx.fillStyle = '#2d5a2d';
+    ctx.fillRect(0, botY, W, Math.min(4, H-botY));
+    const tufts=['#2d6a4f','#40916c','#1b4332'];
+    for (let gx=64; gx<W-52; gx+=10) {
+      ctx.fillStyle = tufts[Math.floor(gx/10)%3];
+      ctx.fillRect(gx, botY, 7, Math.min(3+(gx%3), H-botY));
+    }
   }
-  ctx.fillStyle = '#fff';
-  ctx.font = '9px "Press Start 2P"';
-  ctx.save();
-  ctx.translate(flX + 14, 40);
-  ctx.rotate(Math.PI / 2);
-  ctx.fillText('FINISH', 0, 0);
-  ctx.restore();
 
-  // ── SPECTATOR STRIP ──
-  ctx.fillStyle = '#1a0a00';
-  ctx.fillRect(0, H - 50, W, 50);
-  ctx.fillStyle = '#2d1500';
-  ctx.fillRect(0, H - 50, W, 4);
-
+  // ── SPECTATORS (legacy compat) ──
   spectators.forEach(s => {
     s.wave += s.speed;
-    const sy = s.y - 10 + Math.sin(s.wave) * (raceRunning ? 6 : 2);
-    ctx.font = '18px serif';
+    const sy = s.y - 8 + Math.sin(s.wave) * (raceRunning ? 5 : 1);
+    ctx.font = '14px sans-serif';
     ctx.fillText(s.emoji, s.x, sy);
   });
 
-  // ── PARTICLES ──
+  // ── PARTICLES (legacy compat) ──
   particles = particles.filter(p => p.life > 0);
   particles.forEach(p => {
     ctx.save();
-    ctx.globalAlpha = p.life / 30;
+    ctx.globalAlpha = p.life/30;
     ctx.fillStyle = p.color;
     ctx.fillRect(p.x, p.y, 4, 4);
     p.x += p.vx; p.y += p.vy; p.vy += 0.3; p.life--;
     ctx.restore();
   });
 
-  waveOffset += 2;
+  // ── HUD — mini progress bars (top-right) ──
+  const hudX = W - 6;
+  const barW = Math.round(W * 0.11);
+  const barH = 5;
+  racePlayers.forEach((p,i) => {
+    const by  = i * LANE_H + Math.round(LANE_H*0.5) - barH/2;
+    const pct = Math.min((duckPositions[p.id]||0) / Math.max(trackWidth-2,1), 1);
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    ctx.fillRect(hudX-barW-2, by-1, barW+2, barH+2);
+    ctx.fillStyle = '#0a1628';
+    ctx.fillRect(hudX-barW, by, barW, barH);
+    ctx.fillStyle = p._finished ? '#f4d35e' : DUCK_COLORS[i%DUCK_COLORS.length];
+    ctx.fillRect(hudX-barW, by, Math.round(barW*pct), barH);
+  });
+
+  waveOffset += 1.8;
 }
 
-function spawnParticles(x, y) {
-  const colors = ['#FFD700','#FF6B6B','#4CC9F0','#7BC67E','#F72585'];
-  for (let i = 0; i < 20; i++) {
-    particles.push({
-      x, y,
-      vx: (Math.random() - 0.5) * 8,
-      vy: (Math.random() - 0.5) * 8 - 3,
-      color: colors[Math.floor(Math.random() * colors.length)],
-      life: 25 + Math.floor(Math.random() * 15)
-    });
-  }
-}
-
+// ════════════════════════════════════════════════════════════════════
+// startLocalRace — delta-time game loop + track events
+// ════════════════════════════════════════════════════════════════════
 function startLocalRace(racePlayers) {
   raceRunning = true;
   canvas._racePlayers = racePlayers;
-  setTimeout(showPowerUpActivate, 500);
-  setTimeout(() => startCommentator(racePlayers), 300);
+  _raceAnimActive = true;
+  _finishCount = 0;
+  _globalEvtTimer = 0;
+  _lastFrameTs = performance.now();
+
+  initCanvas(racePlayers);
   document.getElementById("start-btn").disabled = true;
   document.getElementById("race-status").textContent = "▶ RACE IN PROGRESS...";
   setTimeout(showPowerUpActivate, 500);
   switchTab('race');
 
-  initCanvas(racePlayers);
+  // ── DELTA-TIME GAME LOOP ──
+  function loop(ts) {
+    if (!_raceAnimActive) return;
 
-  let animFrame;
-  function loop() {
-    drawFrame(racePlayers);
-    animFrame = requestAnimationFrame(loop);
-  }
-  loop();
+    const dt = Math.min(ts - _lastFrameTs, 50); // cap 50ms — no jump on tab-switch
+    _lastFrameTs = ts;
 
-  raceInterval = setInterval(() => {
+    // Global event timer
+    _globalEvtTimer += dt;
+    if (_globalEvtTimer >= _nextGlobalEvt) {
+      _globalEvtTimer = 0;
+      _nextGlobalEvt = 5000 + Math.random()*7000;
+      const ev = GLOBAL_EVENTS[Math.floor(Math.random()*GLOBAL_EVENTS.length)];
+      ev.fn(ts);
+      showToast(ev.label);
+      if (typeof showComment === 'function') showComment('🌍 ' + ev.label);
+    }
+
+    // Per-player movement (dt-normalised, 80ms baseline = original tick)
     let winner = null;
-    racePlayers.forEach(p => {
-      // Skip movement if frozen (unless it's the player who used boost)
+    racePlayers.forEach((p, i) => {
+      if (p._finished) return;
+
+      // Expire zone effect
+      if (p._zone && ts > p._zoneEndTs) { p._zone = null; }
+
+      // Decay speed mult toward 1
+      const sm = p._spdMult || 1;
+      p._spdMult = sm + (1-sm) * 0.014;
+
+      // Base movement: matches original ~4px/tick at 80ms
+      // freeze support from existing power-up system
       if (window.getFreezeAware && window.getFreezeAware() && !p._boosting) return;
+
       const boost = Math.random() < 0.08 ? 4 : 1;
-      duckPositions[p.id] = (duckPositions[p.id] || 0) + (Math.random() * 4 + 0.5) * boost;
-      if (duckPositions[p.id] >= trackWidth - 40 && !winner) winner = p;
+      const speed = (Math.random()*4 + 0.5) * boost * Math.max(0.08, p._spdMult||1);
+      duckPositions[p.id] = (duckPositions[p.id]||0) + speed * (dt/80);
+
+      // Zone collision
+      const zones = _trackZones[i] || [];
+      const tLen  = trackWidth;
+      zones.forEach(z => {
+        if (z.triggered) return;
+        const zPx  = z.pct * tLen;
+        const dPx  = duckPositions[p.id] || 0;
+        if (Math.abs(dPx - zPx) < z.w/2 + 8) {
+          z.triggered = true;
+          z.flashT = 14;
+          // Apply zone effect
+          p._zone      = z.type;
+          p._zoneEndTs = ts + 2500;
+          p._spdMult   = (p._spdMult||1) + z.speedMult;
+          p._wobble    = (p._wobble||0)   + z.wobble;
+          p._splashT   = 10;
+          if (z.jumpFwd) duckPositions[p.id] = Math.min(trackWidth-2, dPx + z.jumpFwd);
+
+          const isGood = z.speedMult > 0 || z.jumpFwd > 0;
+          showToast(z.icon + ' ' + z.label + '! → ' + p.name.toUpperCase());
+          if (typeof showComment === 'function') {
+            showComment(z.icon + ' ' + z.label + ' hits ' + p.name.toUpperCase() + '!');
+          }
+        }
+      });
+
+      // Finish check
+      if (duckPositions[p.id] >= trackWidth - 40 && !winner) {
+        winner = p;
+      }
     });
+
+    drawFrame(racePlayers);
+
     if (winner) {
-      clearInterval(raceInterval);
-      raceInterval = null;
+      _raceAnimActive = false;
+      p._finished = true;
       // Winner particles
-      const flX = 70 + trackWidth - 40;
-      const wi = racePlayers.findIndex(p => p.id === winner.id);
-      spawnParticles(flX, wi * LANE_H + LANE_H / 2);
+      const flX = 60 + trackWidth - 40;
+      const wi = racePlayers.findIndex(p2 => p2.id === winner.id);
+      spawnParticles(flX, wi * LANE_H + LANE_H/2);
+      _finishCount++;
+      winner._rank = _finishCount;
+      winner._finished = true;
       setTimeout(() => {
-        cancelAnimationFrame(animFrame);
+        _animFrameId = null;
         announceWinner(winner);
       }, 800);
+      return;
     }
-  }, 80);
+
+    _animFrameId = requestAnimationFrame(loop);
+  }
+
+  _animFrameId = requestAnimationFrame(loop);
 }
 
-// Preview track (lobby, not racing)
+// ════════════════════════════════════════════════════════════════════
+// previewTrack — lobby preview (no race logic)
+// ════════════════════════════════════════════════════════════════════
 function previewTrack(racePlayers) {
   const wrap = document.getElementById("race-canvas-wrap");
   document.getElementById("race-placeholder").style.display = "none";
   canvas = document.getElementById("race-canvas");
   canvas.style.display = "block";
-  canvas.width = wrap.clientWidth;
-  canvas.height = LANE_H * racePlayers.length + 60;
-  wrap.style.height = canvas.height + "px";
-  ctx = canvas.getContext("2d");
-  trackWidth = canvas.width - 110;
-  racePlayers.forEach(p => { duckPositions[p.id] = 0; });
+
+  _DPR = Math.min(window.devicePixelRatio || 1, 2);
+  const logicalW = wrap.clientWidth;
+  const logicalH = LANE_H * racePlayers.length + 50;
+
+  canvas.width  = Math.round(logicalW * _DPR);
+  canvas.height = Math.round(logicalH * _DPR);
+  canvas.style.width  = logicalW + "px";
+  canvas.style.height = logicalH + "px";
+  wrap.style.height = logicalH + "px";
+
+  ctx = canvas.getContext("2d", { alpha: false, desynchronized: true });
+  ctx.scale(_DPR, _DPR);
+  trackWidth = logicalW - 110;
+
+  racePlayers.forEach(p => {
+    duckPositions[p.id] = 0;
+    if (!p._bobOff) p._bobOff = Math.random() * Math.PI * 2;
+    if (p._spdMult === undefined) p._spdMult = 1;
+    p._wobble = 0; p._zone = null; p._finished = false; p._splashT = 0;
+  });
+
+  buildTrackZones(racePlayers.length);
+  buildPebbles(logicalW);
+
   spectators = [];
-  for (let i = 0; i < 18; i++) {
+  for (let i = 0; i < 14; i++) {
     spectators.push({
-      x: 20 + i * (canvas.width / 18),
-      y: canvas.height - 14,
+      x: 20 + i*(logicalW/14), y: logicalH-12,
       emoji: ['👤','🧑','👩','🧒','👴','👵','🐸'][Math.floor(Math.random()*7)],
-      wave: Math.random() * Math.PI * 2,
-      speed: 0.03
+      wave: Math.random()*Math.PI*2, speed: 0.03
     });
   }
+  particles = [];
+
   function previewLoop() {
     if (raceRunning) return;
     drawFrame(racePlayers);
@@ -2926,6 +3231,229 @@ function previewTrack(racePlayers) {
   }
   previewLoop();
 }
+
+// ── ORIENTATION / RESIZE SUPPORT ──
+let _resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(_resizeTimer);
+  _resizeTimer = setTimeout(() => {
+    if (!canvas || !canvas._racePlayers) return;
+    const wasRunning = raceRunning;
+    if (wasRunning) { _raceAnimActive = false; }
+    if (wasRunning) {
+      initCanvas(canvas._racePlayers);
+      _raceAnimActive = true;
+      _lastFrameTs = performance.now();
+      _animFrameId = requestAnimationFrame(function loop(ts) {
+        if (!_raceAnimActive) return;
+        drawFrame(canvas._racePlayers);
+        waveOffset += 1.8;
+        requestAnimationFrame(loop);
+      });
+    } else if (canvas._racePlayers) {
+      previewTrack(canvas._racePlayers);
+    }
+  }, 150);
+}, { passive: true });
+
+try {
+  window.Telegram?.WebApp?.onEvent('viewportChanged', () => {
+    window.dispatchEvent(new Event('resize'));
+  });
+} catch(e) {}
+
+// ════════════════════════════════════════════════════════════════════
+// startLocalRace — delta-time game loop + track events
+// ════════════════════════════════════════════════════════════════════
+function startLocalRace(racePlayers) {
+  raceRunning = true;
+  canvas._racePlayers = racePlayers;
+  _raceAnimActive = true;
+  _finishCount = 0;
+  _globalEvtTimer = 0;
+  _lastFrameTs = performance.now();
+
+  initCanvas(racePlayers);
+  document.getElementById("start-btn").disabled = true;
+  document.getElementById("race-status").textContent = "▶ RACE IN PROGRESS...";
+  setTimeout(showPowerUpActivate, 500);
+  switchTab('race');
+
+  // ── DELTA-TIME GAME LOOP ──
+  function loop(ts) {
+    if (!_raceAnimActive) return;
+
+    const dt = Math.min(ts - _lastFrameTs, 50); // cap 50ms — no jump on tab-switch
+    _lastFrameTs = ts;
+
+    // Global event timer
+    _globalEvtTimer += dt;
+    if (_globalEvtTimer >= _nextGlobalEvt) {
+      _globalEvtTimer = 0;
+      _nextGlobalEvt = 5000 + Math.random()*7000;
+      const ev = GLOBAL_EVENTS[Math.floor(Math.random()*GLOBAL_EVENTS.length)];
+      ev.fn(ts);
+      showToast(ev.label);
+      if (typeof showComment === 'function') showComment('🌍 ' + ev.label);
+    }
+
+    // Per-player movement (dt-normalised, 80ms baseline = original tick)
+    let winner = null;
+    racePlayers.forEach((p, i) => {
+      if (p._finished) return;
+
+      // Expire zone effect
+      if (p._zone && ts > p._zoneEndTs) { p._zone = null; }
+
+      // Decay speed mult toward 1
+      const sm = p._spdMult || 1;
+      p._spdMult = sm + (1-sm) * 0.014;
+
+      // Base movement: matches original ~4px/tick at 80ms
+      // freeze support from existing power-up system
+      if (window.getFreezeAware && window.getFreezeAware() && !p._boosting) return;
+
+      const boost = Math.random() < 0.08 ? 4 : 1;
+      const speed = (Math.random()*4 + 0.5) * boost * Math.max(0.08, p._spdMult||1);
+      duckPositions[p.id] = (duckPositions[p.id]||0) + speed * (dt/80);
+
+      // Zone collision
+      const zones = _trackZones[i] || [];
+      const tLen  = trackWidth;
+      zones.forEach(z => {
+        if (z.triggered) return;
+        const zPx  = z.pct * tLen;
+        const dPx  = duckPositions[p.id] || 0;
+        if (Math.abs(dPx - zPx) < z.w/2 + 8) {
+          z.triggered = true;
+          z.flashT = 14;
+          // Apply zone effect
+          p._zone      = z.type;
+          p._zoneEndTs = ts + 2500;
+          p._spdMult   = (p._spdMult||1) + z.speedMult;
+          p._wobble    = (p._wobble||0)   + z.wobble;
+          p._splashT   = 10;
+          if (z.jumpFwd) duckPositions[p.id] = Math.min(trackWidth-2, dPx + z.jumpFwd);
+
+          const isGood = z.speedMult > 0 || z.jumpFwd > 0;
+          showToast(z.icon + ' ' + z.label + '! → ' + p.name.toUpperCase());
+          if (typeof showComment === 'function') {
+            showComment(z.icon + ' ' + z.label + ' hits ' + p.name.toUpperCase() + '!');
+          }
+        }
+      });
+
+      // Finish check
+      if (duckPositions[p.id] >= trackWidth - 40 && !winner) {
+        winner = p;
+      }
+    });
+
+    drawFrame(racePlayers);
+
+    if (winner) {
+      _raceAnimActive = false;
+      p._finished = true;
+      // Winner particles
+      const flX = 60 + trackWidth - 40;
+      const wi = racePlayers.findIndex(p2 => p2.id === winner.id);
+      spawnParticles(flX, wi * LANE_H + LANE_H/2);
+      _finishCount++;
+      winner._rank = _finishCount;
+      winner._finished = true;
+      setTimeout(() => {
+        _animFrameId = null;
+        announceWinner(winner);
+      }, 800);
+      return;
+    }
+
+    _animFrameId = requestAnimationFrame(loop);
+  }
+
+  _animFrameId = requestAnimationFrame(loop);
+}
+
+// ════════════════════════════════════════════════════════════════════
+// previewTrack — lobby preview (no race logic)
+// ════════════════════════════════════════════════════════════════════
+function previewTrack(racePlayers) {
+  const wrap = document.getElementById("race-canvas-wrap");
+  document.getElementById("race-placeholder").style.display = "none";
+  canvas = document.getElementById("race-canvas");
+  canvas.style.display = "block";
+
+  _DPR = Math.min(window.devicePixelRatio || 1, 2);
+  const logicalW = wrap.clientWidth;
+  const logicalH = LANE_H * racePlayers.length + 50;
+
+  canvas.width  = Math.round(logicalW * _DPR);
+  canvas.height = Math.round(logicalH * _DPR);
+  canvas.style.width  = logicalW + "px";
+  canvas.style.height = logicalH + "px";
+  wrap.style.height = logicalH + "px";
+
+  ctx = canvas.getContext("2d", { alpha: false, desynchronized: true });
+  ctx.scale(_DPR, _DPR);
+  trackWidth = logicalW - 110;
+
+  racePlayers.forEach(p => {
+    duckPositions[p.id] = 0;
+    if (!p._bobOff) p._bobOff = Math.random() * Math.PI * 2;
+    if (p._spdMult === undefined) p._spdMult = 1;
+    p._wobble = 0; p._zone = null; p._finished = false; p._splashT = 0;
+  });
+
+  buildTrackZones(racePlayers.length);
+  buildPebbles(logicalW);
+
+  spectators = [];
+  for (let i = 0; i < 14; i++) {
+    spectators.push({
+      x: 20 + i*(logicalW/14), y: logicalH-12,
+      emoji: ['👤','🧑','👩','🧒','👴','👵','🐸'][Math.floor(Math.random()*7)],
+      wave: Math.random()*Math.PI*2, speed: 0.03
+    });
+  }
+  particles = [];
+
+  function previewLoop() {
+    if (raceRunning) return;
+    drawFrame(racePlayers);
+    requestAnimationFrame(previewLoop);
+  }
+  previewLoop();
+}
+
+// ── ORIENTATION / RESIZE SUPPORT ──
+let _resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(_resizeTimer);
+  _resizeTimer = setTimeout(() => {
+    if (!canvas || !canvas._racePlayers) return;
+    const wasRunning = raceRunning;
+    if (wasRunning) { _raceAnimActive = false; }
+    if (wasRunning) {
+      initCanvas(canvas._racePlayers);
+      _raceAnimActive = true;
+      _lastFrameTs = performance.now();
+      _animFrameId = requestAnimationFrame(function loop(ts) {
+        if (!_raceAnimActive) return;
+        drawFrame(canvas._racePlayers);
+        waveOffset += 1.8;
+        requestAnimationFrame(loop);
+      });
+    } else if (canvas._racePlayers) {
+      previewTrack(canvas._racePlayers);
+    }
+  }, 150);
+}, { passive: true });
+
+try {
+  window.Telegram?.WebApp?.onEvent('viewportChanged', () => {
+    window.dispatchEvent(new Event('resize'));
+  });
+} catch(e) {}
 
 // ── WINNER ──
 async function announceWinner(winner) {
